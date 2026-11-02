@@ -19,6 +19,9 @@ For new normal executors, start with the
 improved in place. The template supplies planning structure; card effects and
 selection callbacks still need script-backed implementation and testing.
 
+For a ready-to-copy request, use the
+[new executor or improvement prompt](WindBot/Guides/ExecutorAuthoring.md#copyable-starter-prompt).
+
 ## Build the bots
 
 Run from this directory in a Visual Studio Developer PowerShell with the .NET

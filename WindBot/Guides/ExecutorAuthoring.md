@@ -4,6 +4,112 @@ This is the maintained guide for the normal `WindBot/` project. The source files
 linked below define the current contracts. SKYNET has a separate policy and
 training lifecycle; adding an executor here does not teach SKYNET that deck.
 
+## Copyable starter prompt
+
+Paste the following into a new chat opened in this workspace. Replace the bracketed
+inputs; combo notes and reference sources are optional. Use `Improve` for an
+existing executor. The three-agent split is a suggested task assignment, not a
+requirement to create three separate implementations.
+
+```text
+Create a new normal WindBot executor for [DECK NAME] in this workspace.
+
+Inputs:
+- Deck list: [path to .ydk, or the exact Main/Extra/Side list]
+- Registration: Deck="[NAME]", deck file="AI_[NAME]"
+- Format/rules and banlist: [intended format, or explicitly unrestricted]
+- Combo notes: [opening hands, routes, desired end boards; optional]
+- Reference executor/replays: [explicit paths or links; optional]
+- Test data/host: [configured cards.cdb, loaded scripts and compatible server;
+  reuse this workspace's recorded configuration if these are already available]
+- Arena opponents: TheCrimsonKing and Swordsoul, plus [optional other opponents]
+
+Implement and validate the executor, rather than stopping at a plan. Spawn three
+agents for implementation, independent card/prompt review, and tests/Arena.
+Coordinate file ownership and review their work together before accepting it.
+
+1. Read the root and WindBot contributor instructions, applicable local/user
+   instructions, WindBot/Guides/ExecutorAuthoring.md and the executor skill if
+   available. Work in WindBot, preserving the separate SKYNET training project.
+   Inspect existing implementations before creating a duplicate. Preserve user
+   changes and the supplied deck list; propose deck changes separately.
+   Resolve inputs from the supplied files and current workspace configuration.
+   Ask only for essential missing inputs; state any remaining assumptions.
+
+2. Start new executors from WindBot/Templates/RdaPlannerExecutor.cs.template
+   and the live TheCrimsonKingExecutor. Reuse their separation of observations,
+   deck-specific prediction/search and execution of actual legal offers.
+   Implement this deck's effects explicitly; copying RDA priorities is not card
+   coverage. For an existing executor, preserve its working behavior and make
+   bounded changes rather than forcing a full rewrite. Preserve the baseline
+   source, executable and resources before building any candidate.
+
+3. Read every supplied card's text and the matching scripts loaded by the host.
+   Check IDs, effect descriptions, costs, targets, prompt order, once-per-turn
+   rules, summon/material restrictions and locks. Reuse relevant DefaultExecutor
+   or maintained executor behavior with its callbacks and reset lifecycle.
+   Record exact source revisions and distinguish implemented effects, inherited
+   behavior, intentional non-use and unsupported effects.
+
+4. Implement the supplied combos plus practical opening, going-second, recovery
+   and follow-up decisions. If no combo notes are supplied, derive a bounded set
+   of representative routes from the actual deck and scripts. Replan from the
+   observed state after interruption. Test relevant Ash, Veiler/Imperm, Droll,
+   removal and negation timings, including costs already paid and lost materials.
+   If a line cannot legally recover, choose and explain its best available
+   fallback. Do not assume every hand can reach the same end board.
+
+5. Follow the guide's legal-offer, hidden-information and callback contracts.
+   Give each prompt one owner, use the correct activation/resolution context,
+   handle mandatory triggers, and reset per-duel/turn/chain state correctly.
+   Rejected candidates must not mutate selections or usage flags. Keep planner
+   predictions separate from client state and bound the complete search lifetime.
+   Preserve C# 6 and the repository's formatting/project inclusion conventions.
+
+6. Package the completed executor with its .ydk and BotWrapper/bot.conf entry
+   using Dialog=Universal.EN. Preserve existing names. For a completed new
+   executor use [Deck("NAME", "AI_NAME")], which defaults to Normal; verify the
+   compiled registration and resources. Normal is a registration category, not
+   evidence that all effects or matchups have been tested.
+
+7. Build Debug and Release Any CPU. Add focused checks for changed decisions,
+   prompt stages, rejected offers, interruption and resets. Use native Lua-backed
+   fixtures to verify actual opening hands, intermediate moves and end boards
+   for the supported combos and recovery cases. Do not count model replay or
+   process completion as combo proof. Arena does not inject combo hands.
+
+8. Run a completion pilot, then aim for at least 20 best-of-three matches per
+   opponent per version. For an existing executor, compare baseline and candidate
+   with identical decks, database/scripts, settings and frozen opponents. For a
+   brand-new executor without an older version, report an initial benchmark,
+   not an invented before/after improvement. Freeze learning and RDA memory;
+   verify that in logs. Test both play orders where supported and record actual
+   first-player distributions. Do not claim the unknown core RNG was seeded.
+   Read Arena's instructions before operating it.
+
+9. Inspect losses and failed prompts, make targeted corrections, and rerun the
+   relevant checks. Keep comparison results tied to their exact tested binaries.
+   Separate code fixes from deck changes. Do not promote a candidate with an
+   unresolved material regression merely because its unit checks pass. Preserve
+   the previous working version and explain rejected changes and uncertainty.
+
+10. Update existing documentation with supported routes, unverified effects,
+    reproducible commands and actual limits. Save exact source/binary/deck/data
+    identities, logs and test receipts under ignored Artifacts. Report builds,
+    focused checks, native scenarios and Arena matches separately, including
+    failures, disconnects, exclusions and sample sizes. Follow this repository's
+    commit/push instructions. Finish with the result, evidence and remaining gaps;
+    do not claim completion for blocked or untested requirements.
+```
+
+For an improvement request, replace the opening sentence with:
+
+```text
+Improve the existing [DECK NAME] executor at [SOURCE PATH]. Preserve its names
+and deck list. Investigate [failed replay/decision, missing cards or new combos],
+and compare the changes against its current working version.
+```
+
 ## Use the RDA structure for new executors
 
 Start new work from the maintained

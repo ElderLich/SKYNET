@@ -87,6 +87,11 @@ separates observed state, deck-specific model transitions, bounded search and
 committing actual offered actions. It is deliberately unregistered and requires
 the new deck's effects and prompt handling before it can play.
 
+To request a new executor or an improvement, copy the
+[starter prompt](Guides/ExecutorAuthoring.md#copyable-starter-prompt) and fill in
+the deck list, intended format and any combo notes. It covers the three-agent
+workflow, script review, integration, native combo checks and frozen Arena tests.
+
 The live RDA planner now shares one monotonic deadline across background queueing,
 search-slot wait, route search and post-processing. Cancellation retires waiting
 work, and concurrency/node/candidate caps bound resource use. Three fixed model
