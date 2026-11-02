@@ -1,0 +1,43 @@
+            // Main Deck
+            public const int RedEyesDarknessMetalDragon = 88264978;     // REDMD
+            public const int RedEyesBlackFullmetalDragon = 80870883;    // Fullmetal
+            public const int MetalzoaX = 27268998;                      // MX
+            public const int ZoaTheFiendishBeast = 53753697;            // Zoa
+            public const int RedEyesMetalClawsDragon = 83711531;        // Claws
+            public const int MetalflameSwordsman = 27704731;            // Swordsman
+            public const int BystialBaldrake = 72656408;
+            public const int BystialMagnamhut = 33854624;
+            public const int AshBlossomJoyousSpring = 14558127;
+            public const int MaxxC = 23434538;
+            public const int BlackMetalDragon = 93969023;               // BMD
+            public const int MetalIllusionist = 29157292;               // Illusionist
+
+            // Spells
+            public const int IncomingMachine = 94661166;
+            public const int LimiterRemoval = 23171610;
+            public const int HeavyMetalRaiders = 3113667;
+            public const int DragonNails = 76076738;
+            public const int CalledByTheGrave = 24224830;
+            public const int CrossoutDesignator = 65681983;
+
+            // Traps
+            public const int TimeEngine = 15216188;
+            public const int FlameCoatingMetalmorph = 91152455;         // Flame
+            public const int MaxMetalmorph = 89812483;                  // Max
+            public const int InfiniteImpermanence = 10045474;
+
+            // Extra Deck
+            public const int DivineArsenalAAZEUSSkyThunder = 90448279;
+            public const int SuperStarslayerTYPHONSkyCrisis = 93039339;
+            public const int Number46Dragluon = 2978414;
+            public const int Number38HopeHarbingerDragonTitanicGalaxy = 63767246;
+            public const int DarkArmedTheDragonOfAnnihilation = 78144171;
+            public const int RedEyesFlareMetalDragon = 44405066;
+            public const int Number11BigEye = 80117527;
+            public const int VolofernigesTheDarkestDragonDoomrider = 38694052;
+            public const int MekkKnightCrusadiaAvramax = 21887175;
+            public const int KnightmarePhoenix = 2857636;
+            public const int SPLittleKnight = 29301450;
+            public const int IPMasquerena = 65741786;
+            public const int HieraticSealOfTheHeavenlySpheres = 24361622;   // Seal
+            public const int StrikerDragon = 73539069;                       // Striker

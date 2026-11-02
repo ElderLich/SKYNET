@@ -30,8 +30,32 @@ Use `-Build` after frontend changes, or `-Port 3137` for another port.
 .\Start-SkynetArena.ps1 -Build -Port 3137
 ```
 
-You can also run `npm run build` and `npm start` directly. Model files, card
-databases and server credentials are not shipped.
+You can also run `npm run build` and `npm start` directly on Windows or Linux.
+Model files and server credentials are not shipped. Standard and Rush database
+and script snapshots are included in `../DeckWorkshop/Data/`.
+
+## Deck Workshop
+
+Choose **Deck Workshop** in the top navigation, or open
+**http://127.0.0.1:3000/#workshop**. Import/paste a `.ydk` to browse card text,
+effect callbacks, numbered Lua source, literal script links and categorized
+RelatedCards relationships. Export the combined text/Lua report or generate a
+Standard RDA starter with its deck and provenance manifest. Analysis requires no
+duel server. The Workshop never changes bot source, settings or training state.
+
+The two CDBs and extracted scripts are versioned for fresh checkouts, with Edison
+excluded. Rush analysis/report export is supported; Rush executor generation is
+disabled. The generated Standard model starts disabled and its registration is
+`Test`. See [Deck Workshop instructions](../DeckWorkshop/README.md) for source
+provenance, refresh commands, generation and analysis limits.
+
+On Linux, install the Mono/compiler/SQLite prerequisites in
+[WindBot's README](../WindBot/README.md#build-and-check-on-windows-or-linux), then
+use `npm ci`, `npm run build`, and `npm start` here. Local normal-WindBot mode
+launches `mono WindBot.exe` on non-Windows hosts; Windows launches the executable
+directly. Remote WindBot remains supported. This change does not add Mono launch
+support to the separate native SKYNET mode. Linux command construction is tested;
+Linux execution was unavailable locally because WSL could not start.
 
 ## Normal WindBot setup
 
@@ -39,7 +63,7 @@ Build the restored normal project from the workspace root:
 
 ```powershell
 msbuild WindBot/WindBot.sln /t:Build /p:Configuration=Release /p:Platform="Any CPU"
-Copy-Item -LiteralPath 'D:/Programs/GitHub/MDPro4_Data/Data/locales/en-US/cards.cdb' `
+Copy-Item -LiteralPath 'DeckWorkshop/Data/standard/cards.cdb' `
   -Destination WindBot/bin/Release/cards.cdb
 ```
 

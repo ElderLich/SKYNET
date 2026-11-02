@@ -35,6 +35,98 @@ finally { Pop-Location }
 Set `Version=` and `HostInfo=` when required by your host. A successful build does
 not establish protocol compatibility or duel strength.
 
+## Build and check on Windows or Linux
+
+[Tools/bot_tool.py](Tools/bot_tool.py) provides the same commands on both systems.
+It discovers Visual Studio MSBuild on Windows, uses `msbuild` on Linux, and falls
+back to the deprecated `xbuild` only when MSBuild is absent. It keeps the existing
+.NET Framework 4.8 solution, executors and `BotWrapper` intact. Python 3.8+ is
+required; no Python packages are needed.
+
+- **Windows:** install Visual Studio or Build Tools with .NET desktop build tools
+  and the .NET Framework 4.8 targeting pack. A normal PowerShell is sufficient;
+  MSBuild does not need to be on PATH. The checked-in x86/x64 SQLite libraries are
+  copied by the project.
+- **Linux:** install your distribution's Mono development tools (including a C#
+  compiler, MSBuild or xbuild, and 4.8 API reference assemblies), Python 3, and
+  the SQLite runtime providing `libsqlite3.so.0`. Use recent Mono/compiler
+  packages. The imported executor collection already contains C# 7 constructs;
+  new workshop source and harnesses remain C# 6. `App.config` maps `sqlite3` to
+  the Linux shared library through [Mono's dllmap mechanism](https://www.mono-project.com/docs/advanced/pinvoke/dllmap/).
+  The modern `dotnet` runtime alone is insufficient for this classic project.
+
+Run these from the workspace root. On Linux use `python3` instead of `python`:
+
+```powershell
+python WindBot/Tools/bot_tool.py doctor --database DeckWorkshop/Data/standard/cards.cdb
+python WindBot/Tools/bot_tool.py build
+python WindBot/Tools/bot_tool.py check --database DeckWorkshop/Data/standard/cards.cdb --deck WindBot/Decks/AI_TheCrimsonKing.ydk --registration TheCrimsonKing --output Artifacts/my-runtime-check
+python WindBot/Tools/bot_tool.py check --suite rda --database DeckWorkshop/Data/standard/cards.cdb --deck WindBot/Decks/AI_TheCrimsonKing.ydk --output Artifacts/my-rda-check
+```
+
+`build` compiles Debug and Release; select one with `--configuration Debug` or
+`--configuration Release`. An unusual installation can use `--msbuild /path/to/msbuild`
+and checks can use `--compiler /path/to/csc`. Build errors about missing 4.8
+references require the targeting/API package, not retargeting the bot to another
+framework. [Mono documents its 4.8 reference profile support](https://www.mono-project.com/docs/about-mono/compatibility/).
+
+The default `check` suite loads the actual bot assembly and native SQLite,
+initializes the executor registry, checks every supplied deck ID against the
+selected CDB, and optionally verifies an exact compiled registration. It does not
+validate a banlist, card rules, behavior or server protocol. `--suite rda`,
+`--suite voiceless`, and `--suite metalmorph` run the existing deck-specific
+offline fixtures; use each suite's matching `.ydk`. They are not generic tests of
+a newly generated bot. Every check requires a fresh `--output` directory and
+retains hashes, results and logs. `--bot-exe` selects a frozen binary explicitly;
+otherwise checks use the Debug output. No checks start a duel server.
+
+After starting a compatible, explicitly configured duel host, connect one client:
+
+```powershell
+python WindBot/Tools/bot_tool.py run --database DeckWorkshop/Data/standard/cards.cdb --deck TheCrimsonKing --host 127.0.0.1 --port 7911 --debug
+```
+
+This sets the resource working directory and runs `mono WindBot.exe` on Linux.
+`--deck` is the exact `[Deck]` registration, not the filename; check it first,
+since the underlying client falls back to a random normal executor for unknown
+names. Add `--version`, `--host-info`, `--configuration Release`, or `--bot-exe`
+as needed by your host/runtime. The default timeout is 300 seconds; choose
+`--timeout` explicitly for longer sessions. Cancellation/timeout stops only this
+invocation's child. Arena can compare your frozen bot using its local or remote
+WindBot modes; see [Arena setup](../Arena/README.md).
+
+Validated locally on Windows: Debug/Release builds, the runtime check and the
+14 existing RDA model/scheduling checks. Linux execution was not available on
+this machine: the registered Ubuntu WSL instance could not start because its
+required virtualization service was unavailable. The repository also contains a
+Mono 6.8 Linux CI build job; its presence is not a claimed successful run of this
+change. Native duels and Arena strength results are separate evidence.
+
+Tooling-only regressions: `python WindBot/Tools/test_bot_tool.py`.
+
+## Generate your own executor in Deck Workshop
+
+Open Arena's **Deck Workshop**, import or paste a `.ydk`, select Standard or Rush,
+and inspect card text, prompt strings and Lua references. The workshop exports
+the analysis text and a registered RDA starter plus its separate planner base.
+See [Deck Workshop](../DeckWorkshop/README.md) for the imported data and limits.
+
+For a Standard starter, copy **both** generated `.cs` files to `Game/AI/Decks/`
+and its generated `AI_<Name>.ydk` to `Decks/` under this WindBot folder. Those
+directories already use project wildcards. Preserve existing files and use a
+unique name; the generated registration is `Test`, outside the random normal
+bot pool. Rebuild with `bot_tool.py build`, then run the default `check` with the
+new deck file and exact registration name. Add it to your launcher roster only
+when you deliberately want it offered there; direct `Deck=<Name>` does not need
+a roster entry.
+
+The generated model intentionally starts disabled. Implement card transitions,
+offered-action matching, effect-specific selections and reset behavior using
+the [authoring guide](Guides/ExecutorAuthoring.md) before expecting meaningful
+play. Card text and static Lua references do not establish a complete effect
+interpreter or automatic strategic understanding. Rush analysis does not make
+the current normal WindBot protocol/runtime a supported Rush Duel bot.
+
 The supplied resources are tracked snapshots, so this checkout is usable without
 the original source folders. All 259 dialog files come from
 `D:\Programs\GitHub\MDPro4_Data\Data\Windbot\Dialogs`; `default.json` is an

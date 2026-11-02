@@ -20,6 +20,7 @@ const {
 const { normalizeRank } = require('./stats');
 const { SkynetRuntime } = require('./skynet-runtime');
 const { validateSkynetRuntime } = require('./skynet-config');
+const { buildWindBotCommand } = require('./windbot-command');
 
 // M# and T# create Match and Tag rooms; keep names inside the 20-character protocol field.
 const DUEL_ROOM_MIN = 100000000;
@@ -706,11 +707,8 @@ class ArenaService {
     }
 
     startWindBot(name, label, instance) {
-        const child = childProcess.spawn(path.join(instance.runtimeDir, 'WindBot.exe'), [
-            'ServerMode=True',
-            `ServerPort=${instance.port}`,
-            'Chat=False',
-        ], {
+        const command = buildWindBotCommand(instance);
+        const child = childProcess.spawn(command.executable, command.args, {
             cwd: instance.runtimeDir,
             env: sanitizeEnvironment(),
             stdio: ['ignore', 'pipe', 'pipe'],
@@ -725,7 +723,7 @@ class ArenaService {
         this.windbotErrorLineBuffers[name] = '';
         // .NET Framework WindBot redirects Windows console output using the Chinese system code page.
         const captureOutput = (stream, outputPrefix, logPrefix, destination, scanErrors = false) => {
-            const decoder = new TextDecoder('gbk');
+            const decoder = new TextDecoder(command.encoding);
             const write = (output, flush = false) => {
                 if (output) {
                     this.appendWindBotOutput(name, `${outputPrefix}${output}`);

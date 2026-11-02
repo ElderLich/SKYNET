@@ -35,7 +35,25 @@ msbuild SKYNET/Skynet.sln /p:Configuration=Release /p:Platform="Any CPU"
 The outputs are `WindBot/bin/Release/WindBot.exe`,
 `WindBot/BotWrapper/bin/Release/Bot.exe`, and `SKYNET/bin/Release/SKYNET.exe`.
 Each bot has its own `Decks` and `Dialogs` resources. Supply an explicit compatible
-`cards.cdb` with `DbPath=...`; card databases and the duel server are not bundled.
+`cards.cdb` with `DbPath=...`. Standard and Rush database/script snapshots are
+bundled under `DeckWorkshop/Data/`; the duel server is configured separately.
+The selected database must match that server's scripts and rules.
+
+For automatic MSBuild discovery, Linux/Mono prerequisites and offline checks,
+see [WindBot's portable workflow](WindBot/README.md#build-and-check-on-windows-or-linux).
+
+## Deck Workshop
+
+Open Arena's **Deck Workshop** (`http://127.0.0.1:3000/#workshop`) to import a
+`.ydk`, explore card/effect/Lua graphs and categorized RelatedCards links, export
+a combined card-text/script report, and generate an RDA-first executor starter.
+The included Standard and Rush snapshots work without the original game folders;
+Edison is excluded. Rush supports research and reports, while Standard supports
+starter generation. See [setup, data provenance and limits](DeckWorkshop/README.md).
+
+Generated starters are `Test` executors with disabled models. Implement the card
+semantics and prompts, build, run offline checks, then validate against an explicit
+compatible duel host before comparing frozen versions in Arena.
 
 ## Run Arena
 

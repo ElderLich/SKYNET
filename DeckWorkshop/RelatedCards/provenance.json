@@ -1,0 +1,15 @@
+{
+  "source": "D:\\Programs\\GitHub\\MDPro_3\\Tools\\RelatedCards",
+  "revision": "878b7070a91272074438e118390b25d551b2e86b",
+  "files": [
+    {
+      "path": "build_related_cards.py",
+      "sha256": "9de44b44b169c20fffd7b27cc7dead7f7e30b4eb6c928d0c866d7f51368dfb86"
+    },
+    {
+      "path": "tests/test_build_related_cards.py",
+      "sha256": "640dc7249b77f56382fe83d914a00d35e9084c2c39e71af791ece8965b54c50a"
+    }
+  ],
+  "adaptation": "Builder copied byte-for-byte. Test import namespace adapted to DeckWorkshop.RelatedCards; build_relations.py supplies explicit local snapshots and compresses output."
+}

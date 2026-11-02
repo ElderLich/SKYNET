@@ -23,8 +23,12 @@ import {
     NTooltip,
     useMessage,
 } from 'naive-ui';
+import './deck-workshop.css';
 
 const SettingsModal = defineAsyncComponent(() => import('./SettingsModal.vue'));
+const DeckWorkshop = defineAsyncComponent(() => import('./DeckWorkshop.vue'));
+const workshopOpen = ref(window.location.hash === '#workshop');
+function updateWorkspacePage() { workshopOpen.value = window.location.hash === '#workshop'; }
 
 defineProps({
     darkMode: { type: Boolean, default: false },
@@ -1276,6 +1280,7 @@ watch(experimentKind, () => {
 });
 
 onMounted(async () => {
+    window.addEventListener('hashchange', updateWorkspacePage);
     eventSource = new EventSource('/api/events');
     eventSource.addEventListener('ready', handleRevisionEvent);
     eventSource.addEventListener('heartbeat', handleRevisionEvent);
@@ -1306,6 +1311,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+    window.removeEventListener('hashchange', updateWorkspacePage);
     clearInterval(clockTimer);
     clearInterval(inspectorTimer);
     eventSource?.close();
@@ -1321,6 +1327,10 @@ onBeforeUnmount(() => {
                     <strong>Skynet Arena</strong>
                 </span>
             </a>
+            <nav class="workspace-nav" aria-label="Workspace">
+                <a href="#arena" :class="{ active: !workshopOpen }" :aria-current="!workshopOpen ? 'page' : undefined">Arena</a>
+                <a href="#workshop" :class="{ active: workshopOpen }" :aria-current="workshopOpen ? 'page' : undefined">Deck Workshop</a>
+            </nav>
             <div class="topbar-actions">
                 <div class="theme-control" title="Switch light / dark theme">
                     <svg class="theme-icon" :class="{ active: !darkMode }" viewBox="0 0 24 24" aria-hidden="true">
@@ -1341,7 +1351,8 @@ onBeforeUnmount(() => {
             </div>
         </header>
 
-        <main>
+        <KeepAlive><DeckWorkshop v-if="workshopOpen" /></KeepAlive>
+        <main v-show="!workshopOpen">
             <section class="hero">
                 <div class="hero-copy">
                     <span class="eyebrow">DUEL EXPERIMENT LAB</span>

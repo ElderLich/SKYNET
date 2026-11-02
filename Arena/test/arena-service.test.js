@@ -1526,7 +1526,7 @@ test('local WindBot stderr errors are recorded for running tag tasks', () => {
     ]);
 });
 
-test('local WindBot output is decoded from the Windows Chinese code page', (context) => {
+test('local WindBot output is decoded with the platform encoding', (context) => {
     const child = Object.assign(new EventEmitter(), {
         exitCode: null,
         stderr: new PassThrough(),
@@ -1553,7 +1553,9 @@ test('local WindBot output is decoded from the Windows Chinese code page', (cont
         runtimeDir: 'F:\\WindBot',
     });
 
-    const encoded = Buffer.from('bedcbef8b7c3cecaa1a3', 'hex');
+    const encoded = process.platform === 'win32'
+        ? Buffer.from('bedcbef8b7c3cecaa1a3', 'hex')
+        : Buffer.from('\u62d2\u7edd\u8bbf\u95ee\u3002', 'utf8');
     child.stderr.write(encoded.subarray(0, 1));
     child.stderr.write(encoded.subarray(1));
 

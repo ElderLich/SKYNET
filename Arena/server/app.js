@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const { validateAndMergeArenaSettings } = require('./arena-settings');
+const { createWorkshop } = require('./deck-workshop');
 
 const STATE_HEARTBEAT_MS = 5000;
 
@@ -14,6 +15,19 @@ function createApp(config, database, arenaService, shutdownSignal) {
     app.use('/api', (request, response, next) => {
         response.set('Cache-Control', 'no-store');
         next();
+    });
+
+    // Workshop reads fixed workspace snapshots and returns downloads. It never
+    // writes executor source, executes Lua, compiles code or starts duel clients.
+    const workshop = createWorkshop();
+    app.get('/api/workshop/status', (request, response, next) => {
+        try { response.json(workshop.status()); } catch (error) { next(error); }
+    });
+    app.post('/api/workshop/analyze', (request, response, next) => {
+        try { response.json(workshop.analyze(request.body)); } catch (error) { next(error); }
+    });
+    app.post('/api/workshop/generate', (request, response, next) => {
+        try { response.json(workshop.generate(request.body)); } catch (error) { next(error); }
     });
 
     app.get('/api/system', (request, response) => {

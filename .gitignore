@@ -10,6 +10,8 @@
 
 WindBot.exe
 cards.cdb
+!DeckWorkshop/Data/standard/cards.cdb
+!DeckWorkshop/Data/rush/cards.cdb
 .log.*
 mono_crash.*.json
 
