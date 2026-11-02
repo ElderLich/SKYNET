@@ -13,7 +13,14 @@ file. Upstream attribution remains applicable.
 
 ## Start
 
-Use Node.js 24 (validated), then:
+Install Node.js 24 (validated), then **double-click `Skynet Arena.cmd`**.
+It installs missing dependencies, builds the interface, starts Arena and opens
+your default browser. A second double-click reopens an existing default instance.
+Keep the console open while using Arena; press Ctrl+C to stop it. Internet access
+is needed when dependencies must be installed. The launcher leaves failures
+visible instead of closing immediately.
+
+Commands are optional. For a manual PowerShell start:
 
 ```powershell
 cd Arena
@@ -22,9 +29,16 @@ npm ci
 ```
 
 Open **http://127.0.0.1:3000**. The launcher builds the interface if necessary.
-After installing dependencies, `Skynet Arena.cmd` provides a double-click entry
-point. Keep its console open; Ctrl+C shuts down Arena and its owned processes.
 Use `-Build` after frontend changes, or `-Port 3137` for another port.
+
+In **Command Prompt**, run `"Skynet Arena.cmd"`; the `.ps1` command above is for
+**PowerShell**. `npm ci` is needed for installation or dependency updates, not
+every launch. Stop every Arena console using this checkout with **Ctrl+C** before
+running it. On Windows, a running server locks `better_sqlite3.node`, causing
+`EPERM: operation not permitted, unlink`. A failed install can leave other packages
+missing: after stopping those servers, rerun `npm ci`, then launch Arena again.
+There is no need to delete your SQLite database or run as Administrator for this
+file-lock problem.
 
 ```powershell
 .\Start-SkynetArena.ps1 -Build -Port 3137
