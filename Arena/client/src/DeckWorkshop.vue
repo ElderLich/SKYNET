@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { requestWorkshop as api } from './workshop-api.mjs';
 import './deck-workshop.css';
 
 const status = ref(null);
@@ -196,13 +197,6 @@ function inspectReferenceSource(edge) {
     const card = cards.value.find((item) => item.id === edge.cardId);
     if (card) selectCard(card);
     if (edge.line) showLine(edge.line);
-}
-
-async function api(url, body) {
-    const response = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : undefined);
-    const value = await response.json();
-    if (!response.ok) throw new Error(value.error || `Request failed (${response.status})`);
-    return value;
 }
 
 async function analyze() {

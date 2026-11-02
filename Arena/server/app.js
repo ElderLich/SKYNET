@@ -233,6 +233,14 @@ function createApp(config, database, arenaService, shutdownSignal) {
         request.on('close', cleanup);
     });
 
+    // Unknown API routes must not become HTML errors or a successful SPA page.
+    // This also makes a mismatched frontend/backend build actionable to clients.
+    app.use('/api', (request, response) => {
+        response.status(404).json({
+            error: 'This Arena server does not expose the requested API route. Restart Arena after updating, then reload the page.',
+        });
+    });
+
     const clientDist = path.join(config.rootDir, 'dist');
     if (config.clientDevUrl) {
         app.use((request, response, next) => {

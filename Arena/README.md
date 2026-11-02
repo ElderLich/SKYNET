@@ -49,6 +49,13 @@ disabled. The generated Standard model starts disabled and its registration is
 `Test`. See [Deck Workshop instructions](../DeckWorkshop/README.md) for source
 provenance, refresh commands, generation and analysis limits.
 
+After updating Arena, stop and restart the running Node server, then reload the
+browser. Rebuilding the frontend alone does not reload backend routes. If Workshop
+reports an HTML/non-JSON API response, an older backend or a static-only frontend
+server may be serving the page. Use the Arena server's URL, or the configured Vite
+development proxy. On Windows, restart with `.\Start-SkynetArena.ps1 -Build`
+(retain your existing `-Port` and `-Database` options when set).
+
 On Linux, install the Mono/compiler/SQLite prerequisites in
 [WindBot's README](../WindBot/README.md#build-and-check-on-windows-or-linux), then
 use `npm ci`, `npm run build`, and `npm start` here. Local normal-WindBot mode

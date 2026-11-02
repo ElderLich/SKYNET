@@ -61,6 +61,22 @@ test('development backend redirects page requests to the Vite server', async (co
     assert.equal(response.headers.get('location'), 'http://127.0.0.1:5173/history?page=2');
 });
 
+test('unknown API routes return JSON in production and development', async (context) => {
+    for (const clientDevUrl of [undefined, 'http://127.0.0.1:5173']) {
+        const app = createApp({ rootDir: path.resolve(__dirname, '..'), clientDevUrl }, {}, {});
+        const server = createServer(app);
+        await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+        context.after(() => new Promise((resolve) => server.close(resolve)));
+        for (const method of ['GET', 'POST']) {
+            const response = await fetch(`http://127.0.0.1:${server.address().port}/api/missing-route`, { method });
+            assert.equal(response.status, 404);
+            assert.match(response.headers.get('content-type'), /application\/json/);
+            assert.equal(response.headers.get('cache-control'), 'no-store');
+            assert.match((await response.json()).error, /Restart Arena/);
+        }
+    }
+});
+
 test('settings, room, WindBot and run APIs return service data', async (context) => {
     let savedSettings;
     let refreshedDecks = false;
