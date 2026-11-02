@@ -87527,24 +87527,25 @@
       ]
     }
   },
-  "legacyCompiler": {
+  "compilerReference": {
     "source": "D:\\Modding\\Private Workshop\\Deck Compiler",
     "files": [
       {
-        "path": "LegacyCompiler/Pull.py",
+        "path": "Pull.py",
         "bytes": 13472,
         "sha256": "cc3ede8e6a70b8ad3f464ff4f98393e2d9500e1b327c3e1f337fbd761e550317"
       },
       {
-        "path": "LegacyCompiler/Deck.txt",
+        "path": "Deck.txt",
         "bytes": 2292,
         "sha256": "f55474bbfd8e3d1e39aa3f4d1225f843f9c5495522379be264a0af23f5755b64"
       },
       {
-        "path": "LegacyCompiler/Deck - MF.txt",
+        "path": "Deck - MF.txt",
         "bytes": 2598,
         "sha256": "c78e66f4d0201bc4c0e6688bcc1da56c8f0ae13fb92af596c361cbf25024e871"
       }
-    ]
+    ],
+    "bundled": false
   }
 }

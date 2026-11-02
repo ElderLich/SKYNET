@@ -65,11 +65,12 @@ database paths. Edison is excluded. Archive licenses and metadata are retained;
 `script/` archive members appear under each snapshot's `scripts/` directory.
 The data remains subject to its original attribution and licenses.
 
-`LegacyCompiler/` preserves the original `Pull.py`, `Deck.txt` and `Deck - MF.txt`
-from `D:/Modding/Private Workshop/Deck Compiler`. They are reference inputs, not
-runtime dependencies; the old machine-specific translation paths, generated
-report and duplicate/pre-release scripts are not used. The new report reads the
-selected CDB and matching script snapshot directly.
+The original `Pull.py` and deck inputs in
+`D:/Modding/Private Workshop/Deck Compiler` informed the combined-report workflow.
+Their reference hashes are retained in `data-provenance.json`, but the legacy
+compiler is not bundled. The new report reads the selected CDB and matching Lua
+snapshot directly; it does not use the old machine-specific translation paths,
+generated report or duplicate/pre-release scripts.
 
 `data-provenance.json` records source archive/database hashes and every imported
 file's hash. `.gitattributes` preserves their original bytes and line endings.
@@ -83,9 +84,10 @@ To review a future refresh, import into a new directory; the importer refuses
 to overwrite an existing snapshot:
 
 ```powershell
-python DeckWorkshop/import_data.py import --data-root 'D:/Programs/GitHub/MDPro4_Data/Data' --compiler-root 'D:/Modding/Private Workshop/Deck Compiler' --output Artifacts/workshop-refresh
+python DeckWorkshop/import_data.py import --data-root 'D:/Programs/GitHub/MDPro4_Data/Data' --output Artifacts/workshop-refresh
 ```
 
+Optional `--compiler-root` records reference hashes without copying that compiler.
 Compare the files and provenance before replacing the tracked snapshots. Restart
 Arena after refreshing data and rebuild the related indexes using the command below.
 Runtime lookup stays inside these workspace snapshots, never external game paths.
@@ -129,7 +131,7 @@ inventories are bounded. Rush supports analysis, relationships and reports;
 executor generation is disabled because this WindBot runtime has not been
 validated for Rush rules.
 
-Validated on Windows on 2026-11-02: byte verification of all 17,503 imported
+Validated on Windows on 2026-11-02: byte verification of all 17,500 imported
 files; ten RelatedCards fixtures; Arena backend tests and production build;
 WindBot Debug/Release; two generated starters compiled together as C# 6;
 runtime SQLite/deck/registry checks; RDA 14/14, Voiceless 39/39 and Metalmorph

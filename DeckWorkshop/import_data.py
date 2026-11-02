@@ -63,12 +63,16 @@ def extract_archive(source, target):
 
 def import_snapshots(data_root, compiler_root, output):
     output.mkdir(parents=True, exist_ok=True)
-    owned = ("Data", "LegacyCompiler", "data-provenance.json")
+    owned = ("Data", "data-provenance.json")
     if any((output / name).exists() for name in owned):
         raise ValueError("Snapshot already exists. Verify it, or import to a new --output directory for review.")
     provenance = {"schemaVersion": 1, "locale": "en-US", "excluded": ["edison.cdb"],
                   "method": "Byte-preserving local import; Lua is never executed.",
-                  "formats": {}, "legacyCompiler": {"source": str(compiler_root), "files": []}}
+                  "formats": {}}
+    if compiler_root:
+        provenance["compilerReference"] = {"source": str(compiler_root),
+                                          "files": [record(compiler_root / name, compiler_root) for name in COMPILER_FILES],
+                                          "bundled": False}
     # Build a complete snapshot before publishing any imported directory.
     with tempfile.TemporaryDirectory(prefix=".import-", dir=output) as temporary:
         stage = Path(temporary)
@@ -90,11 +94,6 @@ def import_snapshots(data_root, compiler_root, output):
                 "cardCount": count, "luaCount": sum(item["path"].endswith(".lua") for item in files),
                 "files": files,
             }
-        legacy = stage / "LegacyCompiler"
-        legacy.mkdir()
-        for name in COMPILER_FILES:
-            shutil.copyfile(compiler_root / name, legacy / name)
-            provenance["legacyCompiler"]["files"].append(record(legacy / name, stage))
         (stage / "data-provenance.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
         for name in owned:
             # Create published files under the destination's permissions. On Windows,
@@ -109,8 +108,7 @@ def import_snapshots(data_root, compiler_root, output):
 
 def verify(output):
     provenance = json.loads((output / "data-provenance.json").read_text(encoding="utf-8"))
-    files = provenance["legacyCompiler"]["files"] + [
-        item for dataset in provenance["formats"].values() for item in dataset["files"]]
+    files = [item for dataset in provenance["formats"].values() for item in dataset["files"]]
     errors = []
     expected = set()
     for item in files:
@@ -120,7 +118,7 @@ def verify(output):
         expected.add(path.resolve())
         if not path.is_file() or path.stat().st_size != item["bytes"] or sha256(path) != item["sha256"]:
             errors.append(item["path"])
-    actual = {item.resolve() for folder in ("Data", "LegacyCompiler")
+    actual = {item.resolve() for folder in ("Data",)
               for item in (output / folder).rglob("*") if item.is_file()}
     errors.extend(str(item.relative_to(output.resolve())) + " (unrecorded)" for item in actual - expected)
     if errors:
@@ -133,16 +131,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("import", "verify"))
     parser.add_argument("--data-root", type=Path, help="Explicit MDPro4_Data/Data directory")
-    parser.add_argument("--compiler-root", type=Path, help="Explicit original Deck Compiler directory")
+    parser.add_argument("--compiler-root", type=Path, help="Optional original Deck Compiler directory; record reference hashes without copying it")
     parser.add_argument("--output", type=Path, default=ROOT)
     args = parser.parse_args()
     try:
         if args.command == "verify":
             provenance = verify(args.output.resolve())
         else:
-            if not args.data_root or not args.compiler_root:
-                parser.error("import requires --data-root and --compiler-root")
-            provenance = import_snapshots(args.data_root.resolve(), args.compiler_root.resolve(), args.output.resolve())
+            if not args.data_root:
+                parser.error("import requires --data-root")
+            provenance = import_snapshots(args.data_root.resolve(), args.compiler_root.resolve() if args.compiler_root else None, args.output.resolve())
         for key, value in provenance["formats"].items():
             print("{}: {} cards, {} Lua scripts".format(key, value["cardCount"], value["luaCount"]))
     except (OSError, ValueError, sqlite3.Error, zipfile.BadZipFile) as error:
