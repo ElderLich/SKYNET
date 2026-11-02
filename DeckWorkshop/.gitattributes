@@ -1,2 +1,3 @@
 # Imported snapshots are byte-preserved; do not normalize their original newlines.
 Data/** -text
+Expansions/** -text

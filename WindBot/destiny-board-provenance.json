@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 1,
+  "deck": "DestinyBoard",
+  "registration": "AI_DestinyBoard",
+  "rules": "Unrestricted/custom; Master Rule 2020; prerelease support selected by the user",
+  "mainCards": 40,
+  "extraCards": 15,
+  "sources": {
+    "strategyGuide": "https://www.masterduelmeta.com/articles/guides/dboard-ybakura",
+    "frameworkGuide": "WindBot/Guides/ExecutorAuthoring.md",
+    "frameworkTemplate": "WindBot/Templates/RdaPlannerExecutor.cs.template",
+    "baselineRevision": "7b1c1f253b86b8e9c5ce11276da29e69300a2ad9",
+    "standardSnapshot": "DeckWorkshop/data-provenance.json",
+    "prerelease": "DeckWorkshop/Expansions/bakura-prerelease/provenance.json"
+  },
+  "validation": {
+    "status": "Completed; observed routes and bounded matchup evidence, not competitive-strength certification",
+    "recordedAt": "2026-11-02T23:19:16.199416+00:00",
+    "builds": {
+      "debug": "passed",
+      "release": "passed",
+      "csharp6": "passed",
+      "receipt": "Artifacts/destiny-board-implementation-20261102/build-v8-receipt.json",
+      "existingWarnings": "Five existing warnings in SirokamiDarkMagician/RaiseMoon/Odion; no new executor warning."
+    },
+    "versions": {
+      "binarySha256": "d0fe45b2d106c741b62189aa652e024715403a3ca4c6660911e3ca9d2f9f9924",
+      "releaseSha256": "765c50192a48d135dfaff76fa7ac3136270a4f7c2b8ef2c1879bf34fb3218964",
+      "files": {
+        "WindBot/Game/AI/Decks/DestinyBoardExecutor.cs": "a86db66fbea96dbe1f990a49d8f09cdf476f59ce34075082218c3e2263c00b6d",
+        "WindBot/Tools/DestinyBoardChecks.cs": "b3ac266ede0491faf2c7e6dc8588f235b8a1e705ace1c3d76822d1983eff43e3",
+        "WindBot/Decks/AI_DestinyBoard.ydk": "4c1d7ce856e7b1bf1a0bf76e514623f53d94bbd07fa37ccc44e0a41bfe7e6fd6",
+        "WindBot/App.config": "1faf60e66faedba913a4932971de75e8a1ee3696c23bf13190aecb8b364ba454",
+        "WindBot/Tools/destiny_board_native_checks.py": "a7bf3d0584c348b9a31cb4c784c1374030068a452d641106fa714cc880ce8903"
+      }
+    },
+    "runtimeChecks": {
+      "debug": "passed",
+      "release": "passed",
+      "registeredDeck": "DestinyBoard",
+      "cardCopies": 55,
+      "receipts": [
+        "Artifacts/destiny-board-implementation-20261102/checks-v8-debug/report.json",
+        "Artifacts/destiny-board-implementation-20261102/checks-v8-release/report.json"
+      ]
+    },
+    "focusedChecks": {
+      "passed": 63,
+      "failed": 0,
+      "evidence": "Synthetic dispatcher and callback cases; no Lua execution or duel strength claim.",
+      "receipt": "Artifacts/destiny-board-implementation-20261102/review/v8-final/report.json"
+    },
+    "nativeChecks": {
+      "scenariosPassed": 10,
+      "assertionsPassed": 66,
+      "receipt": "Artifacts/destiny-board-implementation-20261102/validation/native-v8/result.json",
+      "noShuffle": true,
+      "noDeckCheck": true,
+      "coreSeed": null,
+      "routes": [
+        "tour-guide-ruler",
+        "zorc-rhino-ruler",
+        "board-natural-win",
+        "sentence-accelerated-win",
+        "ash-two-starters",
+        "veiler-two-starters",
+        "imperm-two-starters",
+        "droll-two-starters",
+        "darius-machinex",
+        "ruler-destroy-control-burn"
+      ],
+      "platform": "Windows",
+      "linuxExecutionVerified": false,
+      "serverSha256": "283cc04f3b9504d9b4b587ebfff8b575e1adc4c29d0126808d8939574f9fc45e",
+      "databaseSha256": "6ed73e62e865042a975a0fccb0c2d129fa15b483fee819f80babfb77465a27d0",
+      "scriptsSha256": "577e5c2c26cec6ff1bf04d1139c185907d92124530fa8d0012420d3f4500dbe0"
+    },
+    "arena": {
+      "scoreUnit": "SRVPro best-of-three matches, not individual duels",
+      "experiment": "One bounded v8 policy change: retain interaction using recoverable late letters and preserve live Ruler against speculative Phoenix removal; same 40/15 deck.",
+      "training": false,
+      "rdaMemory": "off",
+      "coreSeed": null,
+      "pairedDraws": false,
+      "opponents": "Frozen pre-change Debug binaries and deck files",
+      "runs": {
+        "initialV7": {
+          "runId": "335b246d-cb42-4d3a-a9eb-a401b0724a98",
+          "receipt": "Artifacts/destiny-board-implementation-20261102/validation/arena-summary-335b246d-cb42-4d3a-a9eb-a401b0724a98.json",
+          "binarySha256": "e0ca894e845b7e3067d36fa62dce62e59f0884712b6cd8f338668afa5a5bde69",
+          "completedBestOfThreeMatches": 80,
+          "matchResults": [
+            {
+              "opponent": "TheCrimsonKing",
+              "wins": 0,
+              "losses": 20,
+              "flees": 0,
+              "observedMatches": 20,
+              "plannedMatches": 20,
+              "winRate95WilsonPercent": [
+                -0.0,
+                16.1
+              ]
+            },
+            {
+              "opponent": "Swordsoul",
+              "wins": 0,
+              "losses": 20,
+              "flees": 0,
+              "observedMatches": 20,
+              "plannedMatches": 20,
+              "winRate95WilsonPercent": [
+                -0.0,
+                16.1
+              ]
+            },
+            {
+              "opponent": "Odion",
+              "wins": 3,
+              "losses": 17,
+              "flees": 0,
+              "observedMatches": 20,
+              "plannedMatches": 20,
+              "winRate95WilsonPercent": [
+                5.2,
+                36.0
+              ]
+            },
+            {
+              "opponent": "Metalmorph",
+              "wins": 0,
+              "losses": 20,
+              "flees": 0,
+              "observedMatches": 20,
+              "plannedMatches": 20,
+              "winRate95WilsonPercent": [
+                -0.0,
+                16.1
+              ]
+            }
+          ],
+          "observedFirstPlayerDistribution": {
+            "first": 122,
+            "second": 52
+          },
+          "individualDuelsDiagnosticOnly": {
+            "Win": 19,
+            "Lose": 155,
+            "Draw": 0
+          },
+          "clientProcesses": 160,
+          "clientErrors": 0,
+          "nonzeroExits": 0,
+          "forcedCleanup": 0,
+          "rdaMemoryDisabledChecks": 20,
+          "allRuntimeInputsUnchanged": true
+        },
+        "finalV8": {
+          "runId": "714b43f2-6f87-46c5-906e-fa972bfa4e24",
+          "receipt": "Artifacts/destiny-board-implementation-20261102/validation/arena-summary-714b43f2-6f87-46c5-906e-fa972bfa4e24.json",
+          "binarySha256": "d0fe45b2d106c741b62189aa652e024715403a3ca4c6660911e3ca9d2f9f9924",
+          "completedBestOfThreeMatches": 80,
+          "matchResults": [
+            {
+              "opponent": "TheCrimsonKing",
+              "wins": 0,
+              "losses": 20,
+              "flees": 0,
+              "observedMatches": 20,
+              "plannedMatches": 20,
+              "winRate95WilsonPercent": [
+                -0.0,
+                16.1
+              ]
+            },
+            {
+              "opponent": "Swordsoul",
+              "wins": 0,
+              "losses": 20,
+              "flees": 0,
+              "observedMatches": 20,
+              "plannedMatches": 20,
+              "winRate95WilsonPercent": [
+                -0.0,
+                16.1
+              ]
+            },
+            {
+              "opponent": "Odion",
+              "wins": 2,
+              "losses": 18,
+              "flees": 0,
+              "observedMatches": 20,
+              "plannedMatches": 20,
+              "winRate95WilsonPercent": [
+                2.8,
+                30.1
+              ]
+            },
+            {
+              "opponent": "Metalmorph",
+              "wins": 2,
+              "losses": 18,
+              "flees": 0,
+              "observedMatches": 20,
+              "plannedMatches": 20,
+              "winRate95WilsonPercent": [
+                2.8,
+                30.1
+              ]
+            }
+          ],
+          "observedFirstPlayerDistribution": {
+            "first": 121,
+            "second": 66
+          },
+          "individualDuelsDiagnosticOnly": {
+            "Win": 32,
+            "Lose": 155,
+            "Draw": 0
+          },
+          "clientProcesses": 160,
+          "clientErrors": 0,
+          "nonzeroExits": 0,
+          "forcedCleanup": 0,
+          "rdaMemoryDisabledChecks": 20,
+          "allRuntimeInputsUnchanged": true
+        }
+      },
+      "excludedPilots": [
+        {
+          "runId": "aaff5c6f-a253-4791-96bb-98af3a3534a9",
+          "status": "Stopped after 3/4 matches; Dharc material loop diagnosed and fixed; exact owned client cleanup recorded"
+        },
+        {
+          "runId": "bf8dff99-016e-40c4-82ba-984e9e556072",
+          "status": "v4 clean 4-match completion pilot"
+        },
+        {
+          "runId": "5fe6aca6-1fe0-4424-b858-539c6267ff6a",
+          "status": "v7 clean 8-match completion pilot"
+        },
+        {
+          "runId": "c46833a1-b4d3-458e-9913-bd80dcec942f",
+          "status": "v8 clean 4-match completion pilot"
+        }
+      ]
+    },
+    "limits": [
+      "The themed deck remains weak against these frozen opponents; samples of 20 matches do not prove reliable improvement.",
+      "Unknown core RNG, unpaired shuffled draws, and unequal observed first-player counts preclude a controlled seeded comparison.",
+      "Synthetic focused decisions, fixed-hand real-script scenarios, builds, and shuffled Arena outcomes are separate evidence.",
+      "Native tests use fixed fixture decks rather than the full production deck order; Arena uses the unchanged 40/15 production list.",
+      "Linux requires Mono and a compatible platform-native duel host; Linux execution was not performed.",
+      "Prerelease Ruler is pinned local support; future official card or script revisions require revalidation."
+    ]
+  }
+}

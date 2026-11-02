@@ -65,6 +65,32 @@ database paths. Edison is excluded. Archive licenses and metadata are retained;
 `script/` archive members appear under each snapshot's `scripts/` directory.
 The data remains subject to its original attribution and licenses.
 
+The optional `Expansions/bakura-prerelease/` snapshot contains only the selected
+**Dark Necrofear, the Ruler of Demise** (`100268007`) database rows and unchanged
+Lua from `D:/Games/MDPro4/Expansions/ygopro-super-pre.ypk`. Its provenance records
+the source archive, source database and imported hashes. Evil Lord - Zorc
+(`73320394`) and Spirit Shield (`8324284`) already belong to Standard. This
+overlay does not replace the released Standard/Rush snapshots or their relation
+indexes. Workshop's Standard catalog therefore remains the released snapshot.
+
+Prepare matching bot/duel-host inputs on Windows or Linux (use `python3` on Linux):
+
+```sh
+python DeckWorkshop/prepare_runtime.py --expansion DeckWorkshop/Expansions/bakura-prerelease --output Artifacts/bakura-data
+```
+
+Run this from the workspace root and choose a new output directory each time.
+The result contains `locales/en-US/cards.cdb`, `script.zip`, and a hash receipt.
+Point WindBot at that CDB and the duel host at the same CDB and script archive.
+No external installation is modified. Shared Lua helpers stay at the Standard
+snapshot; unrelated prerelease cards are excluded. The exporter rejects changed
+overlay hashes and collisions with released IDs, so a future released Necrofear
+requires an explicit ID/data migration. Omit `--expansion` for Standard alone.
+
+```sh
+python -m unittest discover -s DeckWorkshop -p test_prepare_runtime.py -v
+```
+
 The original `Pull.py` and deck inputs in
 `D:/Modding/Private Workshop/Deck Compiler` informed the combined-report workflow.
 Their reference hashes are retained in `data-provenance.json`, but the legacy

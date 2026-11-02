@@ -53,6 +53,8 @@ required; no Python packages are needed.
   packages. The imported executor collection already contains C# 7 constructs;
   new workshop source and harnesses remain C# 6. `App.config` maps `sqlite3` to
   the Linux shared library through [Mono's dllmap mechanism](https://www.mono-project.com/docs/advanced/pinvoke/dllmap/).
+  Its `configSections` declaration makes Windows .NET ignore the Mono-only mapping;
+  keep both when copying the configuration to a runtime or check harness.
   The modern `dotnet` runtime alone is insufficient for this classic project.
 
 Run these from the workspace root. On Linux use `python3` instead of `python`:
@@ -146,7 +148,7 @@ No external game files are changed by this workspace setup.
 
 ## Executors and RDA-first authoring
 
-These additional executors are included in the normal bot. All four are
+These additional executors are included in the normal bot. They are
 listed in `BotWrapper/bot.conf` with `Dialog=Universal.EN`; their original executor
 registrations are preserved. Difficulty flags are left unassigned until measured.
 
@@ -156,6 +158,7 @@ registrations are preserved. Difficulty flags are left unassigned until measured
 | Raise Moon | `RaiseMoon` | [PR #297](https://github.com/IceYGO/windbot/pull/297), pinned `12a1d1b` |
 | Metalmorph | `Metalmorph` | Supplied personal source and deck |
 | Odion | `Odion` | Supplied personal source and deck |
+| Bakura - Destiny Board | `DestinyBoard` | Workspace implementation; unrestricted, selected prerelease Necrofear |
 
 The pinned upstream revisions were unreviewed at import. The
 [upstream receipt](executor-provenance.json) records exact revisions, script
@@ -466,3 +469,133 @@ The [WindBot template generator](https://mercury233.me/windbot/gen.html) creates
 ### WindBot Arena
 
 [WindBot Arena](https://github.com/mercury233/windbot-arena) is a self-hosted automated duel experimentation console for running regression tests, deck challenges, smoke tests, and win-rate rankings with WindBot.
+
+
+## Bakura / Destiny Board
+
+`Deck=DestinyBoard` loads `Decks/AI_DestinyBoard.ydk`: the selected Bakura-focused
+40-card Main / 15-card Extra Deck, using unrestricted/custom rules. It includes
+three Pot of Greed and Graceful Charity, two Evil Lord - Zorc (`73320394`), and
+two prerelease Dark Necrofear, the Ruler of Demise (`100268007`). This list is not
+legal under ordinary tournament banlists. The original Necrofear, Curse, both
+Dark Spirits, Spirit Shield and full Board package retain the Bakura theme.
+
+Prepare the selected prerelease data without changing your installed game:
+
+```sh
+python DeckWorkshop/prepare_runtime.py --expansion DeckWorkshop/Expansions/bakura-prerelease --output Artifacts/bakura-data
+python WindBot/Tools/bot_tool.py build
+python WindBot/Tools/bot_tool.py check --suite runtime --database Artifacts/bakura-data/locales/en-US/cards.cdb --deck WindBot/Decks/AI_DestinyBoard.ydk --registration DestinyBoard --output Artifacts/bakura-runtime-check
+python WindBot/Tools/bot_tool.py check --suite destiny-board --database Artifacts/bakura-data/locales/en-US/cards.cdb --deck WindBot/Decks/AI_DestinyBoard.ydk --output Artifacts/bakura-decision-check
+```
+
+Use `python3` on Linux and follow the Mono prerequisites above. Output directories
+must be new. The bot and duel host must load the same prepared CDB; the host must
+also load the prepared `script.zip`. The base Workshop catalog remains released
+Standard; the optional prerelease snapshot and its provenance are under
+`DeckWorkshop/Expansions/bakura-prerelease/`. The exporter refuses future ID
+collisions rather than silently replacing a released card.
+
+For an explicitly configured compatible duel server, replace host/port/version
+with its actual settings:
+
+```sh
+python WindBot/Tools/bot_tool.py run --database Artifacts/bakura-data/locales/en-US/cards.cdb --deck DestinyBoard --host 127.0.0.1 --port 7911 --debug
+```
+
+The deck uses a small synchronous RDA-style boundary between observations,
+material/board evaluation, and the server's legal offers. It does not execute Lua
+inside the client or predict a favorable die roll. Extra Deck evaluations share
+a bounded deadline; each decision is reconsidered after actual moves and chains.
+
+Opening and recovery routes include:
+
+- Tour Guide recruits Doomdog Octhros, then Cherubini sends Rhino. Octhros finds
+  Ruler and Rhino sends another Fiend, establishing the three-Fiend GY threshold.
+- Zorc discards itself and Rhino, searches Ruler, then Rhino supplies the third
+  Fiend. Ruler's own summon counts these cards without banishing them.
+- Dark Spirits and Muckraker revive legal Fiends. Original Necrofear cannot be
+  revived before its proper summon; the new Ruler has a different restriction.
+- Sentence advances missing later letters without consuming the naturally due
+  I/N. Board's progress belongs to each Board instance, survives turn changes,
+  and resets when that card leaves or is reset.
+- Zorc's adverse die roll can destroy Ruler for its return/control/burn sequence,
+  or select an immune Sanctuary message. Ruler needs an eligible opposing monster;
+  Rhino and Cherubini protection can prevent intentional destruction.
+
+The Extra Deck has purposes beyond simply summoning the largest available card:
+
+| Card | Intended timing / role |
+| --- | --- |
+| Cherubini (2) | Early graveyard setup; use its mill before spending it as material. |
+| Muckraker (2) | Revival with expendable discard; account for its Fiend-only lock and prohibition on Link material during its Link Summon turn. |
+| Darius → Deus Machinex | Alternate two-Level-3 Fiend route; preserve Darius's battle opportunity when useful, then overlay. Machinex absorbs a monster; it does not negate that activation. |
+| Dingirsu | Rank-8 non-targeting removal and destruction protection for Board. |
+| Hope Harbinger | Rank-8 Spell interaction when holding bodies is less useful. |
+| Dharc | Exploit an eligible opposing DARK monster in the GY. |
+| Phoenix / Unicorn | Backrow destruction / broader shuffling with a worthwhile discard. |
+| S:P Little Knight | Removal and temporary banishing; preserve useful direct attacks when its summon effect would forbid them. |
+| Unchained Soul Rage Abominator | Opposing-turn disruption, potentially destroying Ruler for its follow-up trigger. |
+| Unchained Abomination | Repeat destruction when the field presents useful targets. |
+| Underworld Goddess | Remove an opposing monster through its legal material procedure when sufficient expendable effect monsters exist. |
+
+Spirit Messages are protected from ordinary material, tribute, discard and
+replacement preferences. Backrow/monster capacity, imminent Board wins, graveyard
+fuel and retained interaction affect whether another summon is worthwhile.
+A late A/L may be discarded to retain protection when Board remains accessible
+and a retained Sentence or Mastery supplies a recovery route. The naturally due
+letter and the fourth missing letter of an imminent win remain protected; the
+choice also accounts for known negation and banishment effects. Phoenix keeps a
+live Ruler recovery plan when its only payoff is probing unknown backrow.
+Because the client does not observe the engine's pending-destruction flags,
+Muckraker deliberately declines optional destruction replacement while message
+monsters exist; Cherubini declines it while any Board/message exists. This avoids
+accepting a replacement whose later mandatory payment might sacrifice the win
+condition. Dingirsu's overlay-based destruction protection remains available.
+Unrelated archetype branches with no supporting cards (such as Darius's Dark
+Contract effect or Machinex's Pendulum setup) are intentionally declined.
+
+Run reproducible native scenarios against the explicitly selected native host
+using Debug builds (movement assertions need debug traces):
+
+```sh
+python WindBot/Tools/destiny_board_native_checks.py --bot-exe WindBot/bin/Debug/WindBot.exe --opponent-exe /path/to/frozen/WindBot.exe --data-root Artifacts/bakura-data --server /path/to/ygoserver.dll --deck WindBot/Decks/AI_DestinyBoard.ydk --output-dir Artifacts/bakura-native
+```
+
+On Linux, supply a compatible Linux native duel library in `--server` and Mono
+on PATH (or pass `--mono /path/to/mono`). A Windows `ygoserver.dll` cannot run on
+Linux. The recorded native scenarios were executed on Windows; the Mono launch
+path has not been exercised in this workspace.
+
+The native tool uses no-shuffle/no-deck-check fixture decks and records actual
+opening hands and intermediate moves. Its core RNG seed is unknown. Focused
+checks establish specified decisions, native scenarios establish those observed
+routes, and Arena results measure only the recorded matchups. Exact validation
+and source identities are recorded in `destiny-board-provenance.json`.
+
+Validated the final executor with Debug/Release and C# 6 builds, 63 focused
+checks, and 10 real-script native scenarios containing 66 assertions. These
+include actual natural/accelerated Board wins, Muckraker revival and Fiend lock,
+Darius into Machinex, four interruption cases, and Ruler control plus 1000 burn.
+Windows runtime checks loaded the database, all 55 deck copies and registration.
+
+The frozen Arena comparison completed 20 best-of-three matches per opponent
+for each version. Scores below are match wins-losses:
+
+| Frozen opponent | Initial v7 | Final v8 |
+| --- | --- | --- |
+| TheCrimsonKing | 0-20 | 0-20 |
+| Swordsoul | 0-20 | 0-20 |
+| Odion | 3-17 | 2-18 |
+| Metalmorph | 0-20 | 2-18 |
+
+Both 80-match runs completed with zero client errors, nonzero exits, forced
+cleanup or flees; all frozen runtime hashes remained unchanged. The final v8
+policy retains protection when a late letter is recoverable and preserves a
+live Ruler against speculative Phoenix removal; the 40/15 list is unchanged.
+These results still show a weak matchup profile for this thematic deck. Unknown
+core RNG, unpaired draws and only 20 matches per opponent do not establish a
+reliable improvement or tournament strength. Pilot runs are excluded. Exact
+inputs, observed first-player counts and separate evidence are in
+[Destiny Board provenance](destiny-board-provenance.json); detailed local logs
+remain under `Artifacts/destiny-board-implementation-20261102/`.

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "name": "Bakura prerelease support",
+  "status": "Prerelease ID and script; refresh requires review and ID migration when released",
+  "source": {
+    "path": "D:\\Games\\MDPro4\\Expansions\\ygopro-super-pre.ypk",
+    "sha256": "76b225e24222c6671f83b57ac76a8779f7a34e12e196ae7a07f12599dc05e54e",
+    "bytes": 31036057
+  },
+  "sourceDatabase": {
+    "member": "test-release.cdb",
+    "sha256": "84e561b2bffede43f46eb2935efa4df8f568a6ce5249c61bbaac668505d738f0"
+  },
+  "method": "Only datas/texts rows for the selected card copied unchanged; Lua byte-preserved. Shared helpers and all unrelated prerelease cards excluded.",
+  "cardIds": [
+    100268007
+  ],
+  "cards": {
+    "100268007": "Dark Necrofear, the Ruler of Demise"
+  },
+  "databaseSha256": "78da44a206821e75ddbd9655baece572f431806a48604ca30f5bc690b93e9fc5",
+  "scripts": {
+    "c100268007.lua": "accfd75531e7b6d3cdab403e05df11178342f5d145999b1416381703672b074a"
+  },
+  "existingStandardSupport": {
+    "73320394": "Evil Lord - Zorc",
+    "8324284": "Spirit Shield"
+  }
+}

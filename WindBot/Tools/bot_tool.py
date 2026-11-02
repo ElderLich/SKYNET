@@ -20,6 +20,7 @@ SUITES = {
     "rda": "RdaPlannerChecks.cs",
     "voiceless": "VoicelessChecks.cs",
     "metalmorph": "MetalmorphChecks.cs",
+    "destiny-board": "DestinyBoardChecks.cs",
 }
 
 
