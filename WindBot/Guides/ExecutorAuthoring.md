@@ -1,15 +1,22 @@
 # Writing and improving WindBot executors
 
-This is the maintained guide for the normal `WindBot/` project. The source files
-linked below define the current contracts. SKYNET has a separate policy and
-training lifecycle; adding an executor here does not teach SKYNET that deck.
+[WindBot quick start](../README.md) · [Deck reference](DeckReference.md) · [Deck Workshop](../../DeckWorkshop/README.md)
+
+A WindBot executor decides which offered action to take and answers the prompts that follow it. Start with one opening, interruption or failed decision you can reproduce. The sections below follow that decision from the card script to a duel.
+
+| Stage | What to do |
+| --- | --- |
+| **1 · Establish the expected play** | Match the deck list, card text and host Lua. Record one outcome and one counterexample. [Start with one observable behavior](#start-with-one-observable-behavior) |
+| **2 · Implement the decision** | Use the [RDA scaffold](../Templates/RdaPlannerExecutor.cs.template) for a new deck. Trace who accepts the offer, answers each prompt and resets the state. [Dispatcher](#keep-the-dispatcher-contract-intact) · [Prompt stages](#route-each-prompt-at-its-actual-stage) |
+| **3 · Package the deck** | Keep the deck's runtime logic in its registered executor file and its checks under `Tools/Executors/<deck>/`. [Registration and packaging](#register-and-package-the-whole-executor) |
+| **4 · Check the outcome** | Build, run focused checks, observe the host's actual prompts, then compare frozen builds. [Testing and match evidence](#test-correctness-before-comparing-strength) |
 
 ## Copyable starter prompt
 
-Paste the following into a new chat opened in this workspace. Replace the bracketed
-inputs; combo notes and reference sources are optional. Use `Improve` for an
-existing executor. The three-agent split is a suggested task assignment, not a
-requirement to create three separate implementations.
+Use this template when asking someone to build or improve a deck. Replace the bracketed inputs with the actual list and format. The optional three-person split assigns implementation, card review and testing to different people.
+
+<details>
+<summary>Show the copyable request and the variation for an existing executor</summary>
 
 ```text
 Create a new normal WindBot executor for [DECK NAME] in this workspace.
@@ -112,6 +119,8 @@ Improve the existing [DECK NAME] executor at [SOURCE PATH]. Preserve its names
 and deck list. Investigate [failed replay/decision, missing cards or new combos],
 and compare the changes against its current working version.
 ```
+
+</details>
 
 ## Use the RDA structure for new executors
 
