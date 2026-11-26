@@ -1693,7 +1693,7 @@ namespace WindBot.Game
             int count = packet.ReadByte();
             uint field = ~packet.ReadUInt32();
 
-            uint selected = func(_select_hint, count, field);
+            uint selected = func(_select_hint, count, field) & field & 0xff7fff7fu;
             _select_hint = 0;
 
             byte[] resp = new byte[Math.Max(1, count) * 3];
@@ -1720,6 +1720,9 @@ namespace WindBot.Game
                     resp[responseIndex++] = (byte)(sequence - 8);
                 }
             }
+
+            if (responseIndex != resp.Length)
+                throw new InvalidDataException("SelectPlace has fewer legal zones than requested.");
 
             BinaryWriter reply = GamePacketFactory.Create(CtosMessage.Response);
             reply.Write(resp);
@@ -1889,6 +1892,29 @@ namespace WindBot.Game
             Connection.Send(CtosMessage.Response, reply);
         }
 
+        private static bool IsDeclarableCard(NamedCard card)
+        {
+            // Match the installed server's alias normalization followed by the core's
+            // is_declarable guards. Artwork aliases remain aliases; rule-name aliases
+            // become rule_code and only the core's five double-name exceptions pass.
+            bool token = card.HasType(CardType.Token);
+            if (card.Alias != 0 && card.Id != 5405695
+                && (token || NamedCard.IsAltartAlias(card.Id, card.Alias)))
+                return false;
+
+            switch (card.Id)
+            {
+                case 78734254: // Elemental HERO Marine Dolphin
+                case 13857930: // Elemental HERO Twinkle Moss
+                case 1784686:  // The Eye of Timaeus
+                case 11082056: // The Fang of Critias
+                case 46232525: // The Claw of Hermos
+                    return true;
+                default:
+                    return card.Alias == 0 && !token;
+            }
+        }
+
         private void OnAnnounceCard(BinaryReader packet)
         {
             IList<int> opcodes = new List<int>();
@@ -1901,7 +1927,7 @@ namespace WindBot.Game
             IList<NamedCard> all = NamedCardsManager.GetAllCards();
             foreach (NamedCard card in all)
             {
-                if (card.HasType(CardType.Token) || NamedCard.IsAltartAlias(card.Id, card.Alias)) continue;
+                if (!IsDeclarableCard(card)) continue;
                 Stack<int> stack = new Stack<int>();
                 for (int i = 0; i < opcodes.Count; i++)
                 {
