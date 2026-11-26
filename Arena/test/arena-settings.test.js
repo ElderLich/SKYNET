@@ -60,10 +60,15 @@ test('local WindBot trace capture is opt-in and requires an explicit absolute di
         /trace directory must be an explicit absolute non-root directory/,
     );
 
-    settings.windbots.current.traceDirectory = 'D:\\Arena-Traces';
+    const traceDirectory = require('node:path').resolve('Arena-Traces');
+    settings.windbots.current.traceDirectory = traceDirectory;
     const result = validateAndMergeArenaSettings(settings, settings);
     assert.equal(result.windbots.current.traceEnabled, true);
-    assert.equal(result.windbots.current.traceDirectory, 'D:\\Arena-Traces');
+    assert.equal(result.windbots.current.traceDirectory, traceDirectory);
+    const olderClient = structuredClone(settings);
+    delete olderClient.windbots.current.traceDirectory;
+    delete olderClient.windbots.current.traceEnabled;
+    assert.deepEqual(validateAndMergeArenaSettings(olderClient, settings).windbots.current, result.windbots.current);
 });
 
 test('public settings never expose SRVPro secrets', () => {

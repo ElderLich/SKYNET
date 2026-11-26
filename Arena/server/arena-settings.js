@@ -70,13 +70,14 @@ function readWindBot(input, existing, label) {
         result.botConfPath = String(source.botConfPath || '').trim();
         result.runtimeDir = String(source.runtimeDir || '').trim();
         result.traceEnabled = source.traceEnabled ?? existing.traceEnabled ?? false;
-        result.traceDirectory = String(source.traceDirectory || '').trim();
+        result.traceDirectory = String(source.traceDirectory ?? existing.traceDirectory ?? '').trim();
         if (typeof result.traceEnabled !== 'boolean') {
             throw new Error(`${label}trace enabled must be a boolean`);
         }
         if (result.traceDirectory && (
             !path.isAbsolute(result.traceDirectory)
-            || path.parse(result.traceDirectory).root === path.resolve(result.traceDirectory)
+            || (process.platform === 'win32' && !/^(?:[a-z]:[\\/]|[\\/]{2}[^\\/]+[\\/][^\\/]+)/i.test(result.traceDirectory))
+            || path.parse(path.resolve(result.traceDirectory)).root === path.resolve(result.traceDirectory)
             || result.traceDirectory.length > 4000
             || /[\x00-\x1f]/.test(result.traceDirectory)
         )) {
