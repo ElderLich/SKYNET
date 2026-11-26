@@ -9,7 +9,7 @@ using System;
 namespace WindBot.Game.AI.Decks
 {
     [Deck("Excutie", "AI_Excutie")]
-    public class ExcutieExecutor : DefaultExecutor
+    public class ExcutieExecutor : RushExecutor
     {
         public class CardId
         {
@@ -85,7 +85,7 @@ namespace WindBot.Game.AI.Decks
             //AddExecutor(ExecutorType.Activate, DefaultDontChainMyself);
             AddExecutor(ExecutorType.Repos, DefaultMonsterRepos);
 
-            AddExecutor(ExecutorType.Repos, CardId.救火女, 反转Repos);;
+            AddExecutor(ExecutorType.Repos, CardId.救火女, 反转Repos);
             AddExecutor(ExecutorType.Repos, CardId.光天女, 反转Repos);
             AddExecutor(ExecutorType.Repos, CardId.夜魔女, 反转Repos);
             AddExecutor(ExecutorType.Repos, CardId.花草女, 圣防Repos);
@@ -102,128 +102,129 @@ namespace WindBot.Game.AI.Decks
 
    
 
-        bool atkup = false;
+        private bool flameResolved;
+
         public override void OnNewTurn()
         {
-            atkup = false;
             base.OnNewTurn();
+            flameResolved = false;
+        }
+
+        public override void OnChainSolved(int chainIndex)
+        {
+            base.OnChainSolved(chainIndex);
+            if (chainIndex <= 0 || chainIndex > Duel.CurrentChainInfo.Count || Duel.NegatedChainIndexList.Contains(chainIndex))
+                return;
+            ChainInfo link = Duel.CurrentChainInfo[chainIndex - 1];
+            if (link.ActivatePlayer == 0 && link.IsActivateCode(CardId.救火女))
+                flameResolved = true;
         }
 
         public override BattlePhaseAction OnSelectAttackTarget(ClientCard attacker, IList<ClientCard> defenders)
         {
-            int minAttack = 1450;
+            ClientCard weakest = null;
             foreach (ClientCard defender in defenders)
             {
-                if (defender.IsAttack() && defender.Attack < minAttack)
-                    minAttack = defender.Attack;
+                if (defender.IsFaceup() && defender.IsAttack() && defender.Attack <= 1450
+                    && (weakest == null || defender.Attack < weakest.Attack))
+                    weakest = defender;
             }
-            foreach (ClientCard defenderCard in defenders)
-                if (defenderCard.IsAttack() && defenderCard.Attack == minAttack)
-                {
-                    return AI.Attack(attacker, defenderCard);
-                }
+            if (weakest != null)
+            {
+                attacker.RealPower = attacker.GetAttackPower();
+                weakest.RealPower = weakest.GetDefensePower();
+                if (OnPreBattleBetween(attacker, weakest) && (attacker.RealPower > weakest.RealPower
+                    || (attacker.IsLastAttacker && attacker.RealPower == weakest.RealPower)))
+                    return AI.Attack(attacker, weakest);
+            }
             return base.OnSelectAttackTarget(attacker, defenders);
         }
 
-        private IList<int> targets = new[] {
+        private static readonly int[] targets = new[] {
                 CardId.夜魔女, CardId.光天女, CardId.细剑女, CardId.救火女, CardId.浮游女,CardId.遥控女, CardId.主存女, CardId.花草女};
 
-        private IList<int> tar = new[] {
+        private static readonly int[] tar = new[] {
                 CardId.花草女, CardId.主存女, CardId.遥控女, CardId.救火女, CardId.浮游女,CardId.光天女,CardId.细剑女};
 
-        private IList<int> tar2 = new[] {
+        private static readonly int[] tar2 = new[] {
                 CardId.花草女, CardId.主存女, CardId.遥控女, CardId.浮游女};
+        private int FlameAttack(bool summoning)
+        {
+            int count = Bot.MonsterZone.Count(c => c != null && c.IsFaceup() && c.Level >= 6)
+                + Enemy.MonsterZone.Count(c => c != null && c.IsFaceup() && c.Level >= 6);
+            return (summoning ? Card.Data.Attack : Card.Attack) + 600 * (count + (summoning ? 1 : 0));
+        }
+
         private bool 救火女Sp()
         {
-            int topattack = (Bot.MonsterZone.GetMatchingCardsCount(card => card.Level == 6) + Enemy.MonsterZone.GetMatchingCardsCount(card => card.Level == 6)) * 600 + 1700;
-            if (Util.IsOneEnemyBetter() && !atkup && Util.GetBestAttack(Enemy) < topattack)
-                return true;
-            return false;
+            return !flameResolved && Util.IsOneEnemyBetter() && Util.GetBestAttack(Enemy) < FlameAttack(true);
         }
+
+        private static readonly int[] TributePriorities = { CardId.花草女, CardId.细剑女, CardId.救火女, CardId.夜魔女 };
+
         private bool 超可爱summon3()
         {
-            int tributecount = 1;
-            IList<int> ssmon = new[] {
-                CardId.花草女, CardId.细剑女, CardId.救火女, CardId.夜魔女};
-            if ((Bot.MonsterZone.GetMonsters().Count <= 2) && (Bot.HasInMonstersZoneOrInGraveyard(ssmon)))
-            for (int j = 0; j < 7; ++j)
-            {
-                ClientCard tributeCard = Bot.MonsterZone[j];
-                if (tributeCard == null) continue;
-                if (tributeCard.IsCode(ssmon))
-                    tributecount--;
-            }
-            return tributecount <= 0;
+            return Bot.GetMonsterCount() <= 2 && Bot.HasInMonstersZone(TributePriorities);
         }
 
         private bool 超可爱summon2()
         {
-            int tributecount = 1;
-            for (int j = 0; j < 7; ++j)
-            {
-                ClientCard tributeCard = Bot.MonsterZone[j];
-                if (tributeCard == null) continue;
-                if (tributeCard.GetDefensePower() < 1500)
-                    tributecount--;
-            }
-            return tributecount <= 0;
+            return Bot.MonsterZone.Any(c => c != null && c.GetDefensePower() < 1500);
         }
 
         private bool 超可爱summon()
         {
-            int tributecount = 1;
-            for (int j = 0; j < 7; ++j)
-            {
-                ClientCard tributeCard = Bot.MonsterZone[j];
-                if (tributeCard == null) continue;
-                if (tributeCard.GetDefensePower() < 1550)
-                    tributecount--;
-            }
-            return tributecount <= 0;
+            return Bot.MonsterZone.Any(c => c != null && c.GetDefensePower() < 1550);
         }
+
         private bool 救火女Effect1()
         {
-            int topattack = (Bot.MonsterZone.GetMatchingCardsCount(card => card.Level == 6) + Enemy.MonsterZone.GetMatchingCardsCount(card => card.Level == 6)) * 600 + 1700;
-            if ((Util.IsOneEnemyBetter() && !atkup && Util.GetBestAttack(Enemy) < topattack)
-                || (Enemy.HasAttackingMonster() && Enemy.GetMonsters().Any(card => card?.Data == null))
-                )
-            { 
-                foreach (ClientCard m in Bot.Hand)
-                    AI.SelectCard(m);
-                atkup = true;
-                return true;
-            }
-           
-            return false;
+            return Bot.Hand.Count > 0 && !flameResolved && Util.IsOneEnemyBetter()
+                && Util.GetBestAttack(Enemy) < FlameAttack(false);
         }
+
         private bool 救火女Effect2()
         {
-            int topattack = (Bot.MonsterZone.GetMatchingCardsCount(card => card.Level == 6) + Enemy.MonsterZone.GetMatchingCardsCount(card => card.Level == 6)) * 600 + 1700;
-            ClientCard enemymon = Enemy.GetMonsters().GetLowestAttackMonster();
-            if (enemymon != null && !atkup && Enemy.HasAttackingMonster() && !Util.IsOneEnemyBetter())
-            {             
-                    if (Util.GetTotalAttackingMonsterAttack(0) + 100 <= topattack ||  Enemy.LifePoints + enemymon.Attack <= topattack)
-                    {
-                   foreach (ClientCard m in Bot.Hand)
-                        AI.SelectCard(m);
-                    atkup = true;                
-                    return true;
-                    }
+            if (Bot.Hand.Count == 0 || flameResolved || Util.IsOneEnemyBetter())
                 return false;
-            }
-            return false;
+            ClientCard enemy = Enemy.MonsterZone.Where(c => c != null && c.IsAttack()).OrderBy(c => c.Attack).FirstOrDefault();
+            if (enemy == null)
+                return false;
+            int power = FlameAttack(false);
+            return Util.GetTotalAttackingMonsterAttack(0) + 100 <= power || Enemy.LifePoints + enemy.Attack <= power;
         }
+
         private bool 光天女Effect()
         {
-            ClientCard mon = Enemy.MonsterZone.GetMatchingCards(card => card.Level == 7 || card.Level == 8).OrderByDescending(card => card.Attack).FirstOrDefault();
-            if (mon != null)
-            {
-                AI.SelectCard(tar);
-                AI.SelectCard(mon);
-                return true;
-            }
-            return false;
+            return Enemy.MonsterZone.Any(c => c != null && c.IsFaceup() && (c.Level == 7 || c.Level == 8));
         }
+
+        public override IList<ClientCard> OnSelectCard(IList<ClientCard> cards, int min, int max, int hint, bool cancelable)
+        {
+            ChainInfo link = Duel.GetCurrentSolvingChainInfo();
+            if (link != null && link.ActivatePlayer == 0)
+            {
+                if (link.IsActivateCode(CardId.光天女) && hint == HintMsg.ToDeck)
+                {
+                    // The two controllers can be offered together or in successive group prompts.
+                    var enemy = cards.Where(c => c.Controller == 1).OrderByDescending(c => c.Attack).FirstOrDefault();
+                    var own = cards.Where(c => c.Controller == 0).OrderBy(c => c.Attack).FirstOrDefault();
+                    var pair = new List<ClientCard>(2);
+                    if (enemy != null) pair.Add(enemy);
+                    if (own != null) pair.Add(own);
+                    return Util.CheckSelectCount(pair, cards, min, max);
+                }
+                if (link.IsActivateCode(CardId.劈裂史莱姆))
+                {
+                    if (hint == Util.GetStringId(CardId.劈裂史莱姆, 1))
+                        return cards.OrderByDescending(c => c.Attack).Take(max).ToList();
+                    if (hint == HintMsg.SpSummon)
+                        return new CardSelector(_CardId.幻影之龙).Select(cards, min, max);
+                }
+            }
+            return base.OnSelectCard(cards, min, max, hint, cancelable);
+        }
+
         private bool 主存女Effect()
         {
                 AI.SelectCard(tar);
@@ -249,64 +250,60 @@ namespace WindBot.Game.AI.Decks
 
         private bool 遥控女Effect1()
         {
-            ClientCard mon = Util.GetOneEnemyBetterThanValue(1800);
-            if(mon != null && mon.Defense < Util.GetBestBotMonster().Attack && Bot.HasInGraveyard(targets))
-                AI.SelectCard(targets);
-            AI.SelectNextCard(mon);
+            ClientCard best = Util.GetBestBotMonster();
+            if (best == null) return false;
+            ClientCard enemy = Enemy.MonsterZone.Where(c => c != null && c.IsFaceup() && c.IsAttack()
+                && c.Attack > 1800 && c.Defense < best.Attack).OrderByDescending(c => c.Attack).FirstOrDefault();
+            if (enemy == null || !Bot.HasInGraveyard(targets))
+                return false;
+            AI.SelectCard(targets);
+            AI.SelectNextCard(enemy);
             return true;
         }
- 
+
         private bool 紧急出动Effect()
         {
-            if(Bot.HasInGraveyard(targets)|| (Bot.GetMonsterCount() == 0 && Bot.HasInHandOrInGraveyard(targets)))
-                AI.SelectCard(targets);
+            if (!Bot.HasInGraveyard(targets) && (Bot.GetMonsterCount() != 0 || !Bot.HasInHand(targets)))
+                return false;
+            AI.SelectCard(targets);
             return true;
         }
+
         private bool 捕获Effect()
         {
-            foreach (ClientCard mon in Duel.LastSummonedCards)
-                if (mon.Level >= 6 && mon.Level >= Enemy.MonsterZone.GetHighestLevelMonster().Level && mon.Attack > 1700 && Bot.HasInMonstersZone(targets))
-                    AI.SelectCard(mon);
+            ClientCard enemy = Enemy.MonsterZone.Where(c => c != null && c.IsFaceup() && c.Level <= 8)
+                .OrderByDescending(c => c.Attack).FirstOrDefault();
+            if (enemy == null)
+                return false;
+            AI.SelectCard(enemy);
             return true;
         }
+
         private bool 紧急出动Effect2()
         {
-            if (Bot.HasInHand(targets))
-                AI.SelectCard(CardId.夜魔女, CardId.光天女, CardId.细剑女);
+            if (!Bot.HasInHand(targets))
+                return false;
+            AI.SelectCard(CardId.夜魔女, CardId.光天女, CardId.细剑女);
             return true;
         }
+
         private bool 劈裂史莱姆Effect()
         {
-            ClientCard mon = Enemy.GetMonsters().GetHighestAttackMonster();
-            ClientCard m = Bot.GetMonsters().GetHighestAttackMonster();
-            if (mon != null && m != null && mon.Attack <= m.Attack + 1000 && mon.Attack > m.Attack)
-            {          
-                   AI.SelectCard(tar);
-                    AI.SelectNextCard(mon);
-                if (Bot.HasInGraveyard(_CardId.幻影之龙))
-                { AI.SelectYesNo(true);
-                  AI.SelectThirdCard(_CardId.幻影之龙);
-                }
-                return true;
-            }
-            if (mon != null && m != null && (Bot.HasInMonstersZone(CardId.花草女) || Bot.HasInMonstersZone(CardId.主存女)) && Bot.HasInGraveyard(_CardId.幻影之龙))
-            {
-                AI.SelectCard(CardId.花草女,CardId.主存女);
-                AI.SelectNextCard(mon);
-                AI.SelectYesNo(true);
-                AI.SelectThirdCard(_CardId.幻影之龙);
-                return true;
-            }
-            if (mon != null && Bot.HasInMonstersZone(_CardId.幻影之龙))
-            {
+            ClientCard enemy = Enemy.MonsterZone.Where(c => c != null && c.IsFaceup()).OrderByDescending(c => c.Attack).FirstOrDefault();
+            ClientCard own = Bot.MonsterZone.GetHighestAttackMonster();
+            if (enemy == null || own == null)
+                return false;
+            if (enemy.Attack > own.Attack && enemy.Attack <= own.Attack + 1000)
+                AI.SelectCard(tar);
+            else if ((Bot.HasInMonstersZone(CardId.花草女) || Bot.HasInMonstersZone(CardId.主存女)) && Bot.HasInGraveyard(_CardId.幻影之龙))
+                AI.SelectCard(CardId.花草女, CardId.主存女);
+            else if (Bot.HasInMonstersZone(_CardId.幻影之龙))
                 AI.SelectCard(_CardId.幻影之龙);
-                AI.SelectNextCard(mon);
-                AI.SelectYesNo(true);
-                AI.SelectThirdCard(_CardId.幻影之龙);
-                return true;
-            }
-            return false;
+            else
+                return false;
+            return true;
         }
+
         private bool 结界像set()
         {
             return Util.IsOneEnemyBetter();
@@ -328,176 +325,6 @@ namespace WindBot.Game.AI.Decks
             return false;
         }
 
-        private List<int> HintMsgForEnemy = new List<int>
-        {
-            HintMsg.Release, HintMsg.Destroy, HintMsg.Remove, HintMsg.ToGrave, HintMsg.ReturnToHand, HintMsg.ToDeck,
-            HintMsg.FusionMaterial, HintMsg.SynchroMaterial, HintMsg.XyzMaterial, HintMsg.LinkMaterial, HintMsg.Disable
-        };
-
-        private List<int> HintMsgForDeck = new List<int>
-        {
-            HintMsg.SpSummon, HintMsg.ToGrave, HintMsg.Remove, HintMsg.AddToHand, HintMsg.FusionMaterial
-        };
-        private List<int> HintMsgForExtra = new List<int>
-        {
-            HintMsg.SpSummon, HintMsg.ToGrave, HintMsg.Remove, HintMsg.AddToHand, HintMsg.FusionMaterial
-        };
-        private List<int> HintMsgForSelf = new List<int>
-        {
-            HintMsg.Equip
-        };
-
-        private List<int> HintMsgForMaterial = new List<int>
-        {
-            HintMsg.FusionMaterial, HintMsg.SynchroMaterial, HintMsg.XyzMaterial, HintMsg.LinkMaterial, HintMsg.Release
-        };
-
-        private List<int> HintMsgForMaxSelect = new List<int>
-        {
-            HintMsg.SpSummon, HintMsg.ToGrave, HintMsg.AddToHand, HintMsg.FusionMaterial, HintMsg.Destroy, HintMsg.Equip ,HintMsg.Confirm
-        };
-
-
-        public override IList<ClientCard> OnSelectCard(IList<ClientCard> _cards, int min, int max, int hint, bool cancelable)
-        {
-            if (Duel.Phase == DuelPhase.BattleStart)
-                return null;
-            if (AI.HaveSelectedCards())
-                return null;
-
-            IList<ClientCard> selected = new List<ClientCard>();
-            IList<ClientCard> cards = new List<ClientCard>(_cards);
-            if (max > cards.Count)
-                max = cards.Count;
-
-            if (HintMsgForEnemy.Contains(hint))
-            {
-                IList<ClientCard> enemyCards = cards.Where(card => card.Controller == 1).ToList();
-
-                // select enemy's card first
-                while (enemyCards.Count > 0 && selected.Count < max)
-                {
-                    ClientCard card = enemyCards[Program.Rand.Next(enemyCards.Count)];
-                    selected.Add(card);
-                    enemyCards.Remove(card);
-                    cards.Remove(card);
-                }
-            }
-
-            if (HintMsgForDeck.Contains(hint))
-            {
-                IList<ClientCard> deckCards = cards.Where(card => card.Location == CardLocation.Deck).ToList();
-
-                // select deck's card first
-                while (deckCards.Count > 0 && selected.Count < max)
-                {
-                    ClientCard card = deckCards[Program.Rand.Next(deckCards.Count)];
-                    selected.Add(card);
-                    deckCards.Remove(card);
-                    cards.Remove(card);
-                }
-            }
-            if (HintMsgForExtra.Contains(hint))
-            {
-                IList<ClientCard> ExtraCards = cards.Where(card => card.Location == CardLocation.Extra).ToList();
-
-                // select extra's card first
-                while (ExtraCards.Count > 0 && selected.Count < max)
-                {
-                    ClientCard card = ExtraCards[Program.Rand.Next(ExtraCards.Count)];
-                    selected.Add(card);
-                    ExtraCards.Remove(card);
-                    cards.Remove(card);
-                }
-            }
-
-            if (HintMsgForSelf.Contains(hint))
-            {
-                IList<ClientCard> botCards = cards.Where(card => card.Controller == 0).ToList();
-
-                // select bot's card first
-                while (botCards.Count > 0 && selected.Count < max)
-                {
-                    ClientCard card = botCards[Program.Rand.Next(botCards.Count)];
-                    selected.Add(card);
-                    botCards.Remove(card);
-                    cards.Remove(card);
-                }
-            }
-
-            if (HintMsgForMaterial.Contains(hint))
-            {
-                IList<ClientCard> materials = cards.OrderBy(card => card.Attack).ToList();
-
-                // select low attack first
-                while (materials.Count > 0 && selected.Count < min)
-                {
-                    ClientCard card = materials[0];
-                    selected.Add(card);
-                    materials.Remove(card);
-                    cards.Remove(card);
-                }
-            }
-
-            // select random cards
-            while (selected.Count < min)
-            {
-                ClientCard card = cards[Program.Rand.Next(cards.Count)];
-                selected.Add(card);
-                cards.Remove(card);
-            }
-
-            if (HintMsgForMaxSelect.Contains(hint))
-            {
-                // select max cards
-                while (selected.Count < max)
-                {
-                    ClientCard card = cards[Program.Rand.Next(cards.Count)];
-                    selected.Add(card);
-                    cards.Remove(card);
-                }
-            }
-
-            return selected;
-        }
-
-        public override int OnSelectOption(IList<int> options)
-        {
-            return Program.Rand.Next(options.Count);
-        }
-
-        public override CardPosition OnSelectPosition(int cardId, IList<CardPosition> positions)
-        {
-            YGOSharp.OCGWrapper.NamedCard cardData = YGOSharp.OCGWrapper.NamedCard.Get(cardId);
-            if (cardData != null)
-            {
-                if (cardData.Attack < 0)
-                    return CardPosition.FaceUpAttack;
-                if (cardData.Attack <= 1000)
-                    return CardPosition.FaceUpDefence;
-            }
-            return 0;
-        }
-
-        public override bool OnSelectHand()
-        {
-            // go first
-            return true;
-        }
-
-        public void RandomSort(List<ClientCard> list)
-        {
-
-            int n = list.Count;
-            while (n-- > 1)
-            {
-                int index = Program.Rand.Next(n + 1);
-                ClientCard temp = list[index];
-                list[index] = list[n];
-                list[n] = temp;
-            }
-        }
-      
         private bool ImFeelingLazy()
         {
             if (Executors.Any(exec => (exec.Type == ExecutorType.SummonOrSet || exec.Type == ExecutorType.Summon || exec.Type == ExecutorType.MonsterSet) && exec.CardId == Card.Id))
