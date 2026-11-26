@@ -6430,8 +6430,8 @@ namespace WindBot.Game.AI.Decks
         // =====================================================================================================
         // PARTE 3 - PLANEJADOR
         //
-        // Porta para C# do planejador validado em handbook/planner/rda_planner.py (mesmas notas nos cenários
-        // dos replays: Soul 324, Bone 328, Power Vice 302, Branded 01 295).
+        // Porta para C# do planejador validado em handbook/planner/rda_planner.py (mesmas notas nos testes
+        // com Soul 324, Bone 328, Power Vice 302 e Branded 01 295).
         //
         //   RdaCards     dados das cartas (nível, atributo, tipo, tuner...) e grupos usados pelas regras
         //   RdaState     estado do nosso lado (mão, deck, GY, banidas, Extra, campo, efeitos usados...)
@@ -9032,7 +9032,7 @@ namespace WindBot.Game.AI.Decks
         /// <summary>Busca em feixe sobre as regras do modelo.</summary>
         private static class RdaPlanner
         {
-            // Livro de rotas: sequências de Synchro dos combos do jogador (replays Soul, Bone e Power Vice).
+            // Sequências de Synchro para as aberturas com Soul, Bone e Power Vice.
             // O bônus só evita que essas rotas saiam do feixe cedo demais; a busca continua livre para sair delas.
             private static readonly int[][] RouteBook =
             {
@@ -9330,7 +9330,7 @@ namespace WindBot.Game.AI.Decks
 
             private static readonly SearchOptions StarterAlternativeSearch = new SearchOptions
             {
-                // Largura 700 / 2,5 s: nas 3 mãos de teste de starter (Soul+PV sem Bone, Soul+Bone+PV, replay do PV) a escolha
+                // Largura 700 / 2,5 s: nas 3 mãos de teste de starter (Soul+PV sem Bone, Soul+Bone+PV, abertura com PV) a escolha
                 // de abertura foi a mesma que com 1000 / 4 s, gastando menos. Com 1500 / 6 s a decisão chegava a 34 s.
                 Name = "alternative_opening", Width = 700, PerRoute = 20, BookWeight = 15, TimeLimitMs = 2500, ForbidUnprotectedNova = true
             };
@@ -9986,7 +9986,7 @@ namespace WindBot.Game.AI.Decks
             }
 
             // =================================================================================================
-            // Rotas de referência (jogador, 2026-09-15): os 3 combos dos replays (Soul, Bone Archfiend, Power Vice) como guias.
+            // Rotas de referência para as aberturas com Soul, Bone Archfiend e Power Vice.
             // Cada passo é um trecho do texto da ação do planejador: alternativas separadas por " | ", trechos obrigatórios
             // por " & ", "?" no começo = passo opcional (a mão pode já ter a carta ou a rota pode seguir sem ele).
             // O encaixe usa as regras do planejador (só jogadas legais), aceita até RouteMaxSkips passos que a mão não permite e
@@ -10047,7 +10047,7 @@ namespace WindBot.Game.AI.Decks
 
             private static readonly RouteGuide[] RouteGuides =
             {
-                // Replay "RDA Soul Combo": Hypernova (Vision, Synkron, Zalen e Darkness no nível 1 + King) e Quetzacoatl.
+                // Soul: Hypernova (Vision, Synkron, Zalen e Darkness no nível 1 + King) e Quetzacoatl.
                 new RouteGuide("Soul",
                     // Foolish Burial manda o Vision para buscar a Crimson Gaia, que busca o Soul (jogador, 2026-09-15).
                     "?Foolish Burial sends Vision Resonator to the GY",
@@ -10089,7 +10089,7 @@ namespace WindBot.Game.AI.Decks
                     "Vision summons itself from the hand",
                     "Synchro Summon Crimson Dragon Quetzacoatl & Bystial Dis Pater & Vision Resonator",
                     "Quetzacoatl revives"),
-                // Replay "RDA Bone Archfiend Combo": Supernova (só 3 Tuners) e Quetzacoatl revivendo Dis Pater, Blade, Abyss e King.
+                // Bone Archfiend: Supernova (só 3 Tuners) e Quetzacoatl revivendo Dis Pater, Blade, Abyss e King.
                 new RouteGuide("Bone",
                     "Normal Summon Bone Archfiend",
                     "Bone sends Vision Resonator & raises the Level of Bone Archfiend",
@@ -10126,7 +10126,7 @@ namespace WindBot.Game.AI.Decks
                     "Vision summons itself from the hand",
                     "Synchro Summon Crimson Dragon Quetzacoatl & Bystial Dis Pater & Vision Resonator",
                     "Quetzacoatl revives"),
-                // Replay "RDA Power Vice Dragon Combo": Hypernova (Darkness, Soul, Chain e Vision + Blade) e Quetzacoatl.
+                // Power Vice Dragon: Hypernova (Darkness, Soul, Chain e Vision + Blade) e Quetzacoatl.
                 new RouteGuide("Power Vice",
                     "?Foolish Burial sends Vision Resonator to the GY",
                     "?Vision (GY) searches Crimson Gaia",

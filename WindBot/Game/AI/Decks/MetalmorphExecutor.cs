@@ -11,9 +11,6 @@ namespace WindBot.Game.AI.Decks
     [Deck("Metalmorph", "AI_Metalmorph")]
     class MetalmorphExecutor : DefaultExecutor
     {
-        // ============================================================
-        // Card IDs (source of truth: compiled_deck_cards.txt)
-        // ============================================================
         public class CardId
         {
             // Main Deck
@@ -125,7 +122,6 @@ namespace WindBot.Game.AI.Decks
         private int _pendingEnemyImpermMirrorColumn = -1;
         private bool _pendingEnemyImpermFromHand = false;
 
-        // Generic helper baselines from recent golden executors.
         private readonly List<int> NotToNegateIdList = new List<int>
         {
             58699500, 20343502, 25451383, 19403423
