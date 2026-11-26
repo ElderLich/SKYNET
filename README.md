@@ -56,3 +56,9 @@ python WindBot/Tools/bot_tool.py check --configuration Release --database DeckWo
 | Local results | Put logs and validation receipts in ignored `Artifacts/`. Arena saves settings and history in `Arena/data/` by default. |
 
 Contributor instructions are available for the [workspace](AGENTS.md), [WindBot](WindBot/AGENTS.md), [SKYNET](SKYNET/AGENTS.md), and [Arena](Arena/AGENTS.md). WindBot and SKYNET retain the original WindBot/YGOSharp attribution. [License](LICENSE)
+
+## Following a pull request
+
+Open **Checks** on a pull request to `main` to follow the Windows builds and offline tests, Arena tests, legacy Mono builds, and macOS Solo dialog check. Pushing another commit replaces that PR's older run. Open the workflow run's **Summary** for the tested revision, each result and a link to its job log. Successful Windows builds also attach WindBot and SKYNET packages. [Validation runs](https://github.com/ElderLich/SKYNET/actions/workflows/test-build.yml)
+
+From the PR branch, run `gh pr checks --watch` to follow the checks live. For another contributor's PR, supply its number, for example `gh pr checks 42 --watch`. [GitHub CLI reference](https://cli.github.com/manual/gh_pr_checks)
