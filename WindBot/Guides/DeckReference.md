@@ -50,14 +50,12 @@ MDPro4's Solo launcher can run its own embedded WindBot on a thread inside the g
 
 ## Executor origins
 
-These additional executors are included in the normal bot. They are
-listed in `BotWrapper/bot.conf` with `Dialog=Universal.EN`; their original executor
-registrations are preserved. Difficulty flags are left unassigned until measured.
+These imports use the English `Universal.EN` dialog. Dark Magician the Dragon Knight takes its name from card `41721210`. The deck runs three copies and the executor lists it first among its usual Fusion targets. The import receipt uses its upstream name, Sirokami Dark Magician.
 
 | Roster name | `Deck=` | Source |
 | --- | --- | --- |
-| Sirokami Dark Magician | `SirokamiDarkMagician` | [PR #296](https://github.com/IceYGO/windbot/pull/296), pinned `12d5270` |
-| Raise Moon | `RaiseMoon` | [PR #297](https://github.com/IceYGO/windbot/pull/297), pinned `12a1d1b` |
+| Dark Magician the Dragon Knight | `DarkMagicianTheDragonKnight` | [PR #296](https://github.com/IceYGO/windbot/pull/296), pinned `12d5270` |
+| Raise Moon (development only) | `RaiseMoon` | [PR #297](https://github.com/IceYGO/windbot/pull/297), pinned `12a1d1b` |
 | Metalmorph | `Metalmorph` | Supplied personal source and deck |
 | Odion | `Odion` | Supplied personal source and deck |
 | Bakura - Destiny Board | `DestinyBoard` | Workspace implementation; unrestricted, selected prerelease Necrofear |

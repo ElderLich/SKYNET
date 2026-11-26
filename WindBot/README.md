@@ -116,6 +116,8 @@ For checkouts elsewhere, pass `--game-root "D:/path/to/MDPro_3" --data-root "D:/
 
 To withhold an unfinished bot, register it as `NotFinished`, add its ID and reason to `SOLO_EXCLUSIONS`, and remove its entries from every roster. Sync removes previously published entries for those IDs. Raise Moon is currently withheld and remains available to developers through `Deck=RaiseMoon`. [Solo roster exclusions](Tools/Sync/rosters.py)
 
+The sync also migrates published deck renames. For Dark Magician the Dragon Knight, it carries the original Unity GUID to the renamed executor and removes the superseded deck file from both checkouts. If you edited either retired file locally, the preview identifies the file to reconcile before publishing.
+
 Bakura's Destiny Board list uses unrestricted rules and prerelease card `100268007`. The game checkout's `Expansions/ygopro-super-pre.ypk` supplies its card data and script. A standalone host needs compatible data as well. [Bakura setup](Guides/DeckReference.md#bakura--destiny-board)
 
 ## BotWrapper

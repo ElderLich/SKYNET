@@ -59,7 +59,7 @@ def _meta(relative, folder):
             "  userData:\n  assetBundleName:\n  assetBundleVariant:\n").encode("ascii")
 
 
-def plan_unity_sources(windbot: Path, unity_windbot: Path, originals=None):
+def plan_unity_sources(windbot: Path, unity_windbot: Path, originals=None, former_paths=None):
     """Yield (absolute target, bytes) for compiled C#, its bridge and missing Unity metadata."""
     relatives = _game_sources(windbot) + [Path("WindBotInfo.cs"), Path("Program.cs")]
     folders = set()
@@ -84,7 +84,15 @@ def plan_unity_sources(windbot: Path, unity_windbot: Path, originals=None):
         if not meta.exists():
             if originals is not None:
                 originals[meta] = None
-            yield meta, _meta(relative, False)
+            former = (former_paths or {}).get(relative, relative)
+            former_meta = (unity_windbot / former).with_suffix(".cs.meta")
+            if former != relative and former_meta.is_file():
+                former_bytes = former_meta.read_bytes()
+                if originals is not None:
+                    originals[former_meta] = former_bytes
+                yield meta, former_bytes
+            else:
+                yield meta, _meta(former, False)
         folders.update(p for p in relative.parents if p != Path("."))
     for relative in sorted(folders):
         target = unity_windbot / relative

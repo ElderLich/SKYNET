@@ -4,13 +4,14 @@
 import argparse
 import codecs
 from dataclasses import dataclass
+import hashlib
 import os
 from pathlib import Path
 import sys
 import tempfile
 from typing import Optional
 
-from Sync.rosters import plan_rosters
+from Sync.rosters import RENAMED_DECKS, plan_rosters
 from Sync.unity_source import plan_unity_sources
 
 
@@ -22,7 +23,7 @@ CHECKOUTS = WINDBOT.parent.parent
 class Change:
     path: Path
     before: Optional[bytes]
-    after: bytes
+    after: Optional[bytes]
 
 
 def require_folder(path):
@@ -56,6 +57,40 @@ def resource_files(windbot, data_roots):
                 yield data / "Windbot" / folder / file.relative_to(source), content
 
 
+def executor_file(name):
+    return Path("Game/AI/Decks") / (name + "Executor.cs")
+
+
+def retired_files(windbot, unity, data_roots, originals):
+    for old, rename in RENAMED_DECKS.items():
+        source = unity / executor_file(old)
+        old_deck = Path("Decks") / ("AI_" + old + ".ydk")
+        new_deck = Path("Decks") / ("AI_" + rename.new_name + ".ydk")
+        paths = [(source, (rename.old_executor_hash,))]
+        paths.extend((root / "Windbot" / old_deck, rename.old_deck_hashes) for root in data_roots)
+        for path, hashes in paths:
+            content = file_content(path)
+            if content is None:
+                continue
+            if not (windbot / new_deck).is_file() or not (windbot / executor_file(rename.new_name)).is_file():
+                raise ValueError("Missing replacement for retired executor " + old)
+            if hashlib.sha256(comparable_text(content)).hexdigest() not in hashes:
+                raise ValueError("Locally modified retired file; reconcile it before syncing: " + str(path))
+            originals[path] = content
+            yield path, None
+        meta = source.with_suffix(".cs.meta")
+        new_meta = (unity / executor_file(rename.new_name)).with_suffix(".cs.meta")
+        old_content = originals.get(meta) if meta in originals else file_content(meta)
+        if old_content is not None:
+            if not (windbot / executor_file(rename.new_name)).is_file():
+                raise ValueError("Missing replacement for retired Unity asset " + old)
+            existing = file_content(new_meta)
+            if existing is not None and comparable_text(existing) != comparable_text(old_content):
+                raise ValueError("Conflicting metadata for renamed Unity asset: " + str(new_meta))
+            originals[meta] = old_content
+            yield meta, None
+
+
 def plan_sync(windbot, game, companion):
     game, companion = game.resolve(), companion.resolve()
     if game == companion:
@@ -70,9 +105,11 @@ def plan_sync(windbot, game, companion):
         allowed.append(data / "locales")
 
     originals = {}
-    outputs = list(plan_unity_sources(windbot, unity, originals=originals))
+    former_paths = {executor_file(rename.new_name): executor_file(old) for old, rename in RENAMED_DECKS.items()}
+    outputs = list(plan_unity_sources(windbot, unity, originals=originals, former_paths=former_paths))
     outputs.extend(resource_files(windbot, data_roots))
     outputs.extend(plan_rosters(windbot, data_roots, originals=originals).items())
+    outputs.extend(retired_files(windbot, unity, data_roots, originals))
     changes = []
     seen = set()
     for path, content in outputs:
@@ -85,13 +122,16 @@ def plan_sync(windbot, game, companion):
         if before == content:
             continue
         # Game-owned files can already contain the same text with another BOM or line ending.
-        if before is not None and comparable_text(before) == comparable_text(content):
+        if before is not None and content is not None and comparable_text(before) == comparable_text(content):
             continue
         changes.append(Change(path, before, content))
-    return sorted(changes, key=lambda change: str(change.path)), sum(path.suffix != ".meta" for path in seen)
+    return sorted(changes, key=lambda change: (change.after is None, str(change.path))), sum(path.suffix != ".meta" for path in seen)
 
 
 def replace_file(path, content):
+    if content is None:
+        path.unlink()
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = None
     try:
@@ -119,10 +159,7 @@ def apply_changes(changes):
             try:
                 if file_content(change.path) != change.after:
                     raise RuntimeError("changed since writing")
-                if change.before is None:
-                    change.path.unlink()
-                else:
-                    replace_file(change.path, change.before)
+                replace_file(change.path, change.before)
             except (OSError, RuntimeError) as exc:
                 failures.append(str(change.path) + " (" + str(exc) + ")")
         if failures:
@@ -143,7 +180,8 @@ def main(argv=None):
     try:
         changes, total = plan_sync(WINDBOT, args.game_root, args.data_root)
         for change in changes:
-            print(("ADD    " if change.before is None else "UPDATE ") + str(change.path))
+            action = "REMOVE" if change.after is None else "ADD" if change.before is None else "UPDATE"
+            print(f"{action:7}{change.path}")
         if args.check or args.dry_run:
             print(f"{len(changes)} pending changes. Checked {total} source, resource and roster files.")
             return int(args.check and bool(changes))

@@ -9,6 +9,7 @@
       "merged_at_import": false,
       "submitted_reviews_at_import": 0,
       "deck_registration": "SirokamiDarkMagician",
+      "current_registration": "DarkMagicianTheDragonKnight",
       "dialog": "Universal.EN",
       "deck_counts": {
         "main": 40,
@@ -18,11 +19,13 @@
       "files": [
         {
           "path": "Game/AI/Decks/SirokamiDarkMagicianExecutor.cs",
+          "current_path": "Game/AI/Decks/DarkMagicianTheDragonKnightExecutor.cs",
           "upstream_sha256": "9024e12437a081261f1e243682675cfdeb86b792b45ea3ac59691a266b28653b",
           "imported_sha256": "b6f94d9079d6e0219e6c639dc43eae62aef0ad5a49364491dd12d04a8f896185"
         },
         {
           "path": "Decks/AI_SirokamiDarkMagician.ydk",
+          "current_path": "Decks/AI_DarkMagicianTheDragonKnight.ydk",
           "upstream_sha256": "d2c9fcf02a7d7f53127e7242294d20a3070db08bbc0b160306fb7d4b1222ef60",
           "imported_sha256": "d2c9fcf02a7d7f53127e7242294d20a3070db08bbc0b160306fb7d4b1222ef60"
         }

@@ -24,8 +24,8 @@ namespace WindBot.Game.AI.Decks
     /// The upstream code retains optional custom-card handlers. The supplied PR deck
     /// uses the configured MDPro4 card database and does not require those custom IDs.
     /// </summary>
-    [Deck("SirokamiDarkMagician", "AI_SirokamiDarkMagician", "Normal")]
-    public class SirokamiDarkMagicianExecutor : DarkMagicianExecutor
+    [Deck("DarkMagicianTheDragonKnight", "AI_DarkMagicianTheDragonKnight", "Normal")]
+    public class DarkMagicianTheDragonKnightExecutor : DarkMagicianExecutor
     {
         public new class CardId
         {
@@ -165,7 +165,7 @@ namespace WindBot.Game.AI.Decks
         private int _illusionStage;
         private int _illusionSearchId;
 
-        public SirokamiDarkMagicianExecutor(GameAI ai, Duel duel)
+        public DarkMagicianTheDragonKnightExecutor(GameAI ai, Duel duel)
             : base(ai, duel)
         {
             int baseCount = Executors.Count;   // 基类已注册的条数
@@ -458,7 +458,7 @@ AddExecutor(ExecutorType.Summon, CardId.MagiciansRod, () => true);
         private void Trace(string message)
         {
             if (AI.Game != null && AI.Game.Debug)
-                Logger.WriteLine("[SirokamiDarkMagician] " + message);
+                Logger.WriteLine("[DarkMagicianTheDragonKnight] " + message);
         }
 
         // =====================================================================

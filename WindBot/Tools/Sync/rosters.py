@@ -17,6 +17,23 @@ DECK_ATTRIBUTE = re.compile(
 SOLO_EXCLUSIONS = {"RaiseMoon": "Unfinished executor"}
 
 
+@dataclass(frozen=True)
+class DeckRename:
+    new_name: str
+    old_executor_hash: str
+    old_deck_hashes: tuple
+
+
+# SHA-256 of the published UTF-8 text with LF endings. Both deck header revisions shipped.
+RENAMED_DECKS = {
+    "SirokamiDarkMagician": DeckRename(
+        "DarkMagicianTheDragonKnight",
+        "9cbd50dae2562a7ea3422a940a8c1516a622a19819513c302aac74740b24afc5",
+        ("c4dc78a9aef4ca220180a78f25cf8551ce0b76e396c77a788a4d663d483894fb",
+         "6e5ad85fdfb75978c636041fb3aa0357483e9c534656160f314989c18a7f095d")),
+}
+
+
 @dataclass
 class Entry:
     before: list
@@ -126,6 +143,8 @@ def validate_rosters(windbot_root):
     if not english.entries:
         raise ValueError(f"{english.path}: empty roster")
     for name, (_, level) in registrations.items():
+        if name in RENAMED_DECKS:
+            raise ValueError(f"{name}: use renamed registration {RENAMED_DECKS[name].new_name}")
         if name in SOLO_EXCLUSIONS and level.lower() != "notfinished":
             raise ValueError(f"{name}: an excluded executor must be registered as NotFinished")
         if level.lower() not in ("test", "notfinished", "manual") and not any(
@@ -181,7 +200,7 @@ def _merge(source, destination):
         if key in source.entries:
             extras[key] = pending
             pending = []
-        elif entry.arguments.get("deck") not in SOLO_EXCLUSIONS:
+        elif entry.arguments.get("deck") not in SOLO_EXCLUSIONS and entry.arguments.get("deck") not in RENAMED_DECKS:
             pending.extend(entry.lines)
             pending.append("")
     keep_notes(destination.tail)
