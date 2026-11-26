@@ -127,9 +127,8 @@ and compare the changes against its current working version.
 Start new work from the maintained
 [RDA planner scaffold](../Templates/RdaPlannerExecutor.cs.template). The live
 [TheCrimsonKingExecutor](../Game/AI/Decks/TheCrimsonKingExecutor.cs) is the complete
-RDA reference and is newer than the supplied desktop template. Use its separation
-of observed state, a deck-specific model/search, and execution of current legal
-offers. Fill in the new deck's card semantics and callback lifecycle explicitly;
+RDA reference. It separates observed state, deck-specific planning, and the
+execution of legal offers. Fill in the new deck's card semantics and callback lifecycle explicitly;
 copying RDA's cards, target priorities or simulated scores does not implement
 another deck. The scaffold has no `[Deck]` registration or card model and is not
 compiled into the bot until it is deliberately completed and integrated.
@@ -158,11 +157,10 @@ evidence, not proof that all of its branches are correct.
 Search the numeric card ID in [DefaultExecutor](../Game/AI/DefaultExecutor.cs),
 then in a relevant [deck executor](../Game/AI/Decks). Reuse the complete behavior:
 registration order, handler, targets/materials/options, fields, and lifecycle
-resets. Do not copy a large helper family without its callers. Historical
-"golden executor" lists are discovery hints, not an authoritative ranking.
+resets. Do not copy a large helper family without its callers.
 
 Use the configured `cards.cdb` and the scripts actually loaded by the test host.
-Card text and old compiled text dumps cannot establish prompt order or legality.
+Check prompt order and legality against the matching Lua script.
 `Util.GetStringId(cardId, offset)` encodes a prompt-string offset; it is not a
 printed effect number. Verify the script call using that value, and the matching
 `texts.str{offset + 1}` when needed. A description of `-1` is unknown context,
@@ -313,21 +311,3 @@ individual-duel totals. A successful process exit is not a win.
 Report exactly what ran, which fixtures passed, and which behaviors remain
 unverified. Do not promote a checkpoint or claim a stronger executor from a
 build or protocol smoke test alone.
-
-## Retiring the old desktop guides
-
-The former `GPT Guide` handbook and prompts are superseded for current API
-guidance. Their deck notes, source variants and three RDA replay files remain
-historical evidence. [The inventory](legacy-guide-inventory.json) records every
-file and hash. A verified local archive preserves them before any desktop cleanup.
-
-This guide replaces obsolete hidden-deck scans, candidate-context callback
-fallbacks, hard-coded "golden" rankings and mandatory large audit scaffolds.
-It retains the useful ideas: complete behavior reuse, prompt/script evidence,
-observed combo milestones, lifecycle hygiene and binary/test provenance. Keep the
-small [executor skill](../Skills/windbot-executor-builder/SKILL.md) as an entry point
-to this guide. Its maintained source, metadata and lexical helper script live in
-`WindBot/Skills/windbot-executor-builder/`; install that folder as
-`%USERPROFILE%/.codex/skills/windbot-executor-builder` after backing up an existing
-installation. Unrelated MDPro3 skills
-still serve different subsystems and are not replaced by it.
