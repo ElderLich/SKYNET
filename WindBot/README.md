@@ -94,6 +94,28 @@ http://127.0.0.1:2399/?name=WindBot&deck=TheCrimsonKing&host=127.0.0.1&port=7911
 
 Required query parameters are `name`, `host` and `port`. Optional parameters include `deck`, `dialog`, `version`, `password`, `hand`, `chat` and `debug`. Local trace launches also accept `tracedata`, `traceroom` and `traceorder`. The duel host must already be running. [Arena participant setup](../Arena/README.md#participant-modes)
 
+## Sync the MDPro4 Solo bots
+
+Run from the workspace root with Python 3.8 or later. By default the script uses sibling checkouts named `MDPro_3` and `MDPro4_Data`.
+
+```powershell
+python WindBot/Tools/sync_mdpro4.py --dry-run
+python WindBot/Tools/sync_mdpro4.py
+python WindBot/Tools/sync_mdpro4.py --check
+```
+
+| Source in WindBot | Destination |
+| --- | --- |
+| Compiled `Game/` sources and the session settings they use | `MDPro_3/Assets/Scripts/Windbot/`. The embedded launcher retains its Unity database and expansion loading. Existing Unity asset GUIDs are preserved. |
+| `Decks/*.ydk` and `Dialogs/*.json` | `Data/Windbot/Decks/` and `Data/Windbot/Dialogs/` in **both** checkouts. |
+| `BotWrapper/bot.conf` (English) and `BotWrapper/locales/<locale>/bot.conf` (other languages) | `Data/locales/<locale>/bot.conf` in **both** checkouts. Destination-only menu entries and comments are retained. |
+
+For checkouts elsewhere, pass `--game-root "D:/path/to/MDPro_3" --data-root "D:/path/to/MDPro4_Data"`. Both arguments take the repository root. Preview lists pending files. Apply updates them in place. Check exits with `0` when both destinations match, `1` for pending updates and `2` for an error. The sync leaves destination-only assets in place and treats equivalent UTF-8 BOMs and line endings as the same text.
+
+**When adding a playable bot**, add its English entry and a translated entry in every maintained locale. Keep the exact executor name, gameplay options and mode flags in each entry. Use an existing dialog filename with its exact capitalization. Validation reports the missing locale or resource before publishing. To check your changes without either companion checkout, run `python -m unittest discover -s WindBot/Tools/Sync`. [English roster](BotWrapper/bot.conf) · [Localized rosters](BotWrapper/locales/) · [Sync script](Tools/sync_mdpro4.py)
+
+Bakura's Destiny Board list uses unrestricted rules and prerelease card `100268007`. The game checkout's `Expansions/ygopro-super-pre.ypk` supplies its card data and script. A standalone host needs compatible data as well. [Bakura setup](Guides/DeckReference.md#bakura--destiny-board)
+
 ## BotWrapper
 
 `Bot.exe` integrates with the game's normal bot menu. Deploy `bot.conf` beside it, with `WindBot.exe`, its DLLs, configuration, decks and dialogs in a sibling `WindBot/` subdirectory. A solution build leaves the two executable outputs separate. [BotWrapper source](BotWrapper/) · [English roster](BotWrapper/bot.conf)

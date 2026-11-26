@@ -38,8 +38,11 @@ executors remain supported and do not need wholesale rewrites for narrow fixes.
 - Use `Tools/Executors/TheCrimsonKing/Invoke-RdaPlannerChecks.ps1` for RDA scheduling and model regressions.
   Preserve a baseline runtime before changing planner policy; compare actual
   script-backed duels separately from model replay and Arena match rankings.
-- Dialogs and `BotWrapper/bot.conf` are supplied resource snapshots; preserve
-  their provenance and intentional names. Never overwrite the external sources.
+- Maintain the English `BotWrapper/bot.conf` and `BotWrapper/locales/<locale>/bot.conf`
+  together. Add every new playable bot to each language with translated display text,
+  matching gameplay flags and an installed dialog. Preserve resource provenance and
+  intentional names. Use [the sync workflow](README.md#sync-the-mdpro4-solo-bots)
+  when publishing to the game and companion Data checkouts.
 - Keep build, connection and launch instructions in [the README](README.md).
   Update the [deck reference](Guides/DeckReference.md) for deck-specific commands,
   reviewed decisions and dated results. Put reusable authoring contracts in the
@@ -165,8 +168,8 @@ duplicate preselection queued can contaminate a later effect.
 Keep `[Deck("ExternalName", "AI_FileName", "Level")]` unique and paired with
 `Decks/AI_FileName.ydk`. Only `Level == "Normal"` enters the default random pool;
 `Easy`, `NotFinished` and `Test` registrations are explicit choices. Update the
-roster/dialog when requested, using this workspace's selected resource sources
-and provenance; do not overwrite the external MDPro4_Data copies.
+localized rosters and dialogs with the completed executor, keeping the original
+resource provenance. Run the roster checks before publishing.
 
 Deck, enum, `.ydk` and dialog globs already exist. Other new core source requires
 explicit project inclusion. Read registration order, overrides and relevant

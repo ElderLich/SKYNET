@@ -36,8 +36,10 @@ The user selected dialogs from
 `D:\Programs\GitHub\MDPro4_Data\Data\Windbot\Dialogs` and the English bot roster
 from `D:\Programs\GitHub\MDPro4_Data\Data\locales\en-US\bot.conf`.
 Both projects contain versioned dialog copies; `default.json` aliases the supplied
-`Universal.EN.json`. The roster belongs to `WindBot/BotWrapper/bot.conf` and normal
-WindBot/Arena integration. It is not a SKYNET `Key=Value` configuration file.
+`Universal.EN.json`. The maintained English Solo roster lives in
+`WindBot/BotWrapper/bot.conf` and other languages in `WindBot/BotWrapper/locales/`.
+Add new playable bots to every language and publish through the
+[WindBot sync workflow](WindBot/README.md#sync-the-mdpro4-solo-bots).
 Preserve original names and record provenance when refreshing these copies.
 
 Use explicitly configured card databases and duel servers. Never inspect hidden

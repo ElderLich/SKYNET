@@ -76,8 +76,9 @@ Coordinate file ownership and review their work together before accepting it.
 6. Keep the registered executor and all its deck-specific runtime code together
    in Game/AI/Decks/<Name>Executor.cs. Put deck-specific checks and launchers
    in Tools/Executors/<deck>/ using the exact registration name.
-   Package the completed executor with its .ydk and BotWrapper/bot.conf entry
-   using Dialog=Universal.EN. Preserve existing names. For a completed new
+   Package the completed executor with its .ydk, an English BotWrapper/bot.conf
+   entry and a translated entry under BotWrapper/locales for each other language.
+   Select an existing dialog in that language. Preserve existing names. For a completed new
    executor use [Deck("NAME", "AI_NAME")], which defaults to Normal; verify the
    compiled registration and resources. Normal is a registration category, not
    evidence that all effects or matchups have been tested.
@@ -252,11 +253,11 @@ deck-specific planner, state and callback code together in its registered file.
 fixture inputs and launchers in `Tools/Executors/<deck>/` and write generated
 receipts to `Artifacts/`. Preserve existing registration and deck names.
 
-The roster lives in [BotWrapper/bot.conf](../BotWrapper/bot.conf). An entry selects
-the exact registered `Deck` and an existing dialog stem, for example
-`Dialog=Universal.EN`. Keep custom authoring and source provenance separate from
-the original resource snapshot hashes. An experimental executor can be listed
-explicitly without marking its registration `Normal`.
+Maintain the English roster and every localized roster together. Each entry selects
+the exact registered `Deck` and an existing dialog stem such as `Universal.EN`.
+Translate the heading and description and retain the same gameplay flags across languages.
+An experimental executor can be listed explicitly without marking its registration `Normal`.
+[English roster](../BotWrapper/bot.conf) · [Localized rosters](../BotWrapper/locales/) · [Sync and validation commands](../README.md#sync-the-mdpro4-solo-bots)
 
 Build from the workspace root with Visual Studio/MSBuild:
 
