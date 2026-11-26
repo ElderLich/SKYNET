@@ -454,7 +454,7 @@ namespace WindBot.Game.AI.Decks
 //       （＝最弱的那只），本来就是低攻先上 → 这里**不能重排**，重排反而会把 8300 顶到末尾。
 //   与 v5.31 的诱饵（连接栗子球）/ allWeak 不冲突：那两条要求对方有**表侧**怪，这条要求**没有**表侧怪。
 // ============================================================================
-[Deck("RaiseMoon", "AI_RaiseMoon")]
+[Deck("RaiseMoon", "AI_RaiseMoon", "NotFinished")]
 public class RaiseMoonExecutor : DefaultExecutor
 {
     public class CardId

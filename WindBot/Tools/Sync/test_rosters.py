@@ -98,6 +98,17 @@ class RosterSyncTests(unittest.TestCase):
         rosters = validate_rosters(self.root)
         self.assertEqual({"random:AI_LV1", "deck:Bakura", "custom:Bakura"}, set(rosters["fr-FR"].entries))
 
+    def test_exclusion_removes_stale_entries_and_requires_hidden_registration(self):
+        extra = self.root / "Game/AI/Decks/RaiseMoonExecutor.cs"
+        extra.write_text('[Deck("RaiseMoon", "AI_RaiseMoon")]', encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "excluded executor must be registered as NotFinished"):
+            validate_rosters(self.root)
+        extra.write_text('[Deck("RaiseMoon", "AI_RaiseMoon", "NotFinished")]', encoding="utf-8")
+        target = self.game / "locales/fr-FR/bot.conf"
+        stale = entry("Old", "Deck=RaiseMoon", "Old") + entry("Custom", "Deck=RaiseMoon", "Old", "SELECT_DECKFILE")
+        target.write_bytes(self.french.read_bytes() + stale.encode())
+        self.assertNotIn(b"RaiseMoon", plan_rosters(self.root, [self.game])[target])
+
     def test_duplicate_key_or_incomplete_entry_is_rejected_before_writes(self):
         target = self.game / "locales/fr-FR/bot.conf"
         target.write_bytes((self.bakufr + self.bakufr).encode())

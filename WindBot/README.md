@@ -114,6 +114,8 @@ For checkouts elsewhere, pass `--game-root "D:/path/to/MDPro_3" --data-root "D:/
 
 **When adding a playable bot**, add its English entry and a translated entry in every maintained locale. Keep the exact executor name, gameplay options and mode flags in each entry. Use an existing dialog filename with its exact capitalization. Validation reports the missing locale or resource before publishing. To check your changes without either companion checkout, run `python -m unittest discover -s WindBot/Tools/Sync`. [English roster](BotWrapper/bot.conf) · [Localized rosters](BotWrapper/locales/) · [Sync script](Tools/sync_mdpro4.py)
 
+To withhold an unfinished bot, register it as `NotFinished`, add its ID and reason to `SOLO_EXCLUSIONS`, and remove its entries from every roster. Sync removes previously published entries for those IDs. Raise Moon is currently withheld and remains available to developers through `Deck=RaiseMoon`. [Solo roster exclusions](Tools/Sync/rosters.py)
+
 Bakura's Destiny Board list uses unrestricted rules and prerelease card `100268007`. The game checkout's `Expansions/ygopro-super-pre.ypk` supplies its card data and script. A standalone host needs compatible data as well. [Bakura setup](Guides/DeckReference.md#bakura--destiny-board)
 
 ## BotWrapper

@@ -13,6 +13,9 @@ DECK_ATTRIBUTE = re.compile(
     r'(?:\s*,\s*"([^"]+)")?\s*\)\s*\]', re.MULTILINE
 )
 
+# Unfinished executors may still be launched by developers using an explicit Deck=.
+SOLO_EXCLUSIONS = {"RaiseMoon": "Unfinished executor"}
+
 
 @dataclass
 class Entry:
@@ -123,6 +126,8 @@ def validate_rosters(windbot_root):
     if not english.entries:
         raise ValueError(f"{english.path}: empty roster")
     for name, (_, level) in registrations.items():
+        if name in SOLO_EXCLUSIONS and level.lower() != "notfinished":
+            raise ValueError(f"{name}: an excluded executor must be registered as NotFinished")
         if level.lower() not in ("test", "notfinished", "manual") and not any(
                 key in english.entries for key in ("deck:" + name, "custom:" + name)):
             raise ValueError(f"{english.path}: playable executor {name} needs an English entry and translations")
@@ -143,6 +148,8 @@ def validate_rosters(windbot_root):
             if key.startswith("random:"):
                 continue
             name = entry.arguments["deck"]
+            if name in SOLO_EXCLUSIONS:
+                raise ValueError(f"{roster.path}: excluded Solo executor {name}")
             if name not in registrations:
                 raise ValueError(f"{roster.path}: unknown executor {name} (names are case-sensitive)")
             deck_file = registrations[name][0] + ".ydk"
@@ -174,7 +181,7 @@ def _merge(source, destination):
         if key in source.entries:
             extras[key] = pending
             pending = []
-        else:
+        elif entry.arguments.get("deck") not in SOLO_EXCLUSIONS:
             pending.extend(entry.lines)
             pending.append("")
     keep_notes(destination.tail)
