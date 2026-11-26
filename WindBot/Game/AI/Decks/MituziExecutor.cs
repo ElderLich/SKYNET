@@ -45,13 +45,13 @@ namespace WindBot.Game.AI.Decks
         public MituziExecutor(GameAI ai, Duel duel)
             : base(ai, duel)
         {
-            AddExecutor(ExecutorType.Activate, _CardId.黑洞, 黑洞Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.黑洞, 黑洞Effect);
             AddExecutor(ExecutorType.SpSummon);
-            AddExecutor(ExecutorType.Activate, _CardId.魔法筒, 魔法筒Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.炸甲, 炸甲Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.落穴, 落穴Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.激流葬, 激流葬Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.圣防, 圣防Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.魔法筒, 魔法筒Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.炸甲, 炸甲Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.落穴, 落穴Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.激流葬, 激流葬Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.圣防, 圣防Effect);
             AddExecutor(ExecutorType.Activate, CardId.幻坏奥义, 奥义Effect);
             AddExecutor(ExecutorType.Activate, CardId.阴阳封阵, 阴阳封阵Effect);
             AddExecutor(ExecutorType.SpellSet, CardId.阴阳封阵);
@@ -66,7 +66,7 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.Activate, CardId.建造龙, 建造龙Effect);
             AddExecutor(ExecutorType.Activate, CardId.镐头龙, 镐头龙Effect);
             AddExecutor(ExecutorType.Summon, CardId.幻煌, RushMonsterSummon);
-            AddExecutor(ExecutorType.Summon, _CardId.伟大魔兽, 伟大魔兽Summon);
+            AddExecutor(ExecutorType.Summon, RushCardId.伟大魔兽, 伟大魔兽Summon);
             AddExecutor(ExecutorType.Summon, 幻刃急攻Summon);
 
             AddExecutor(ExecutorType.Summon, CardId.镐头龙, 镐头龙Summon);
@@ -79,9 +79,9 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.Activate, CardId.幻刃封锁, 幻刃封锁Effect);
             AddExecutor(ExecutorType.Activate, CardId.幻刃急攻, 幻刃急攻Effect);
             AddExecutor(ExecutorType.Activate, CardId.透幻乡险峻);
-            AddExecutor(ExecutorType.Activate, _CardId.破灭之龙魔导士, 破灭之龙魔导士Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.星战骑佩流安, 星战骑佩流安Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.加百列热茶, 加百列热茶Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.破灭之龙魔导士, 破灭之龙魔导士Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.星战骑佩流安, 星战骑佩流安Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.加百列热茶, 加百列热茶Effect);
             AddExecutor(ExecutorType.Activate, DefaultDontChainMyself);
             AddExecutor(ExecutorType.Repos, DefaultMonsterRepos);
             AddExecutor(ExecutorType.Repos, CardId.幻煌,反转Repos);

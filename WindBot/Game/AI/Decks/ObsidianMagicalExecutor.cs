@@ -36,12 +36,12 @@ namespace WindBot.Game.AI.Decks
         public ObsidianMagicalExecutor(GameAI ai, Duel duel)
             : base(ai, duel)
         {
-            AddExecutor(ExecutorType.Activate, _CardId.魔法筒, 魔法筒Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.魔法筒, 魔法筒Effect);
             AddExecutor(ExecutorType.Activate, CardId.DMA, DMAEffect);
             AddExecutor(ExecutorType.Activate, CardId.幽灵旋风);
             AddExecutor(ExecutorType.Activate, CardId.水流);
             AddExecutor(ExecutorType.Activate, CardId.三猫, 三猫Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.黑洞, 黑洞Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.黑洞, 黑洞Effect);
                         
             AddExecutor(ExecutorType.Activate, CardId.魔导书弃却);
             AddExecutor(ExecutorType.Activate, CardId.七宝船, 七宝船Effect);
@@ -82,10 +82,10 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.SpellSet, CardId.水流, speset);           
             AddExecutor(ExecutorType.SpellSet, CardId.天惠枪, speset);
             AddExecutor(ExecutorType.SpellSet, CardId.三猫, speset);            
-            AddExecutor(ExecutorType.SpellSet, _CardId.魔法筒);
+            AddExecutor(ExecutorType.SpellSet, RushCardId.魔法筒);
             AddExecutor(ExecutorType.SpellSet, CardId.魔术的幕帘);
             AddExecutor(ExecutorType.SpellSet, CardId.宝石);              
-            AddExecutor(ExecutorType.SpellSet, _CardId.黑洞);
+            AddExecutor(ExecutorType.SpellSet, RushCardId.黑洞);
             AddExecutor(ExecutorType.SpellSet, CardId.DMA);
 
             AddExecutor(ExecutorType.Summon, CardId.DMG, DMGsummon);
@@ -94,9 +94,9 @@ namespace WindBot.Game.AI.Decks
             //AddExecutor(ExecutorType.Activate, DefaultDontChainMyself);          
             
             AddExecutor(ExecutorType.Repos, CardId.黑曜, 反转Repos);
-            AddExecutor(ExecutorType.Repos, _CardId.黑魔术师, 反转Repos);
+            AddExecutor(ExecutorType.Repos, RushCardId.黑魔术师, 反转Repos);
             AddExecutor(ExecutorType.Repos, CardId.遂行者, 反转Repos);
-            AddExecutor(ExecutorType.Repos, _CardId.黑魔术师, 圣防Repos);
+            AddExecutor(ExecutorType.Repos, RushCardId.黑魔术师, 圣防Repos);
             AddExecutor(ExecutorType.Repos, CardId.遂行者, 圣防Repos);
             AddExecutor(ExecutorType.Repos, CardId.DMG, 圣防Repos);
             AddExecutor(ExecutorType.Repos, DefaultMonsterRepos);
@@ -126,24 +126,24 @@ namespace WindBot.Game.AI.Decks
         }
 
         private static readonly int[] over3 = new[] {
-                _CardId.黑洞, CardId.DMA, CardId.宝石, CardId.二重加速, CardId.DMB, CardId.魔力抽出, CardId.幽灵旋风, CardId.水流, CardId.魔导书弃却, CardId.天惠枪, CardId.魔术的幕帘, CardId.七宝船, CardId.采掘, CardId.三猫};
+                RushCardId.黑洞, CardId.DMA, CardId.宝石, CardId.二重加速, CardId.DMB, CardId.魔力抽出, CardId.幽灵旋风, CardId.水流, CardId.魔导书弃却, CardId.天惠枪, CardId.魔术的幕帘, CardId.七宝船, CardId.采掘, CardId.三猫};
 
         private static readonly int[] target = new[] {
-                CardId.三猫, CardId.宝石, _CardId.黑洞, CardId.DMB, CardId.魔导书弃却, CardId.幽灵旋风,CardId.魔术的幕帘,  CardId.水流,CardId.天惠枪, CardId.二重加速, CardId.七宝船, CardId.魔力抽出, CardId.DMA, CardId.采掘};
+                CardId.三猫, CardId.宝石, RushCardId.黑洞, CardId.DMB, CardId.魔导书弃却, CardId.幽灵旋风,CardId.魔术的幕帘,  CardId.水流,CardId.天惠枪, CardId.二重加速, CardId.七宝船, CardId.魔力抽出, CardId.DMA, CardId.采掘};
 
         private static readonly int[] cost2 = new[] {
 
-                CardId.三猫, CardId.幽灵旋风,CardId.水流, CardId.DMB, CardId.二重加速, CardId.采掘,CardId.魔术的幕帘, CardId.七宝船, CardId.魔导书弃却, CardId.天惠枪, CardId.魔力抽出, CardId.宝石,CardId.DMA, _CardId.黑洞 };
+                CardId.三猫, CardId.幽灵旋风,CardId.水流, CardId.DMB, CardId.二重加速, CardId.采掘,CardId.魔术的幕帘, CardId.七宝船, CardId.魔导书弃却, CardId.天惠枪, CardId.魔力抽出, CardId.宝石,CardId.DMA, RushCardId.黑洞 };
 
         private static readonly int[] mon = new[] {
 
-                _CardId.黑魔术师, CardId.遂行者, CardId.黑曜, CardId.剑黎};
+                RushCardId.黑魔术师, CardId.遂行者, CardId.黑曜, CardId.剑黎};
 
         private static readonly int[] mon2 = new[] {
-                CardId.黑曜,  CardId.遂行者, CardId.剑黎 ,_CardId.黑魔术师};
+                CardId.黑曜,  CardId.遂行者, CardId.剑黎 ,RushCardId.黑魔术师};
 
         private static readonly int[] mon3 = new[] {
-                CardId.黑曜,  CardId.遂行者, CardId.剑黎 ,_CardId.黑魔术师 ,CardId.DMG};
+                CardId.黑曜,  CardId.遂行者, CardId.剑黎 ,RushCardId.黑魔术师 ,CardId.DMG};
 
         private bool speset()
         {
@@ -176,8 +176,8 @@ namespace WindBot.Game.AI.Decks
         {
             int tributecount = 1;
             IList<int> ssmon = new[] {
-                CardId.DMG, _CardId.黑魔术师, CardId.剑黎, CardId.遂行者};
-            if ((Bot.GetHandCount() <= 4) && (Bot.HasInMonstersZone(ssmon)) && (Bot.HasInMonstersZoneOrInGraveyard(_CardId.黑魔术师)))
+                CardId.DMG, RushCardId.黑魔术师, CardId.剑黎, CardId.遂行者};
+            if ((Bot.GetHandCount() <= 4) && (Bot.HasInMonstersZone(ssmon)) && (Bot.HasInMonstersZoneOrInGraveyard(RushCardId.黑魔术师)))
             for (int j = 0; j < 7; ++j)
             {
                 ClientCard tributeCard = Bot.MonsterZone[j];
@@ -246,7 +246,7 @@ namespace WindBot.Game.AI.Decks
             if (Bot.GetMonsterCount() == 0 && Bot.HasInHand(mon3) && !Bot.HasInHandOrInSpellZoneOrInGraveyard(CardId.宝石)
                 && cards.Any(c => c.IsCode(CardId.魔术的幕帘)))
                 return CardId.魔术的幕帘;
-            if (Enemy.GetSpellCount() > 2 && (Bot.HasInMonstersZone(_CardId.黑魔术师) || Bot.HasInMonstersZone(CardId.遂行者))
+            if (Enemy.GetSpellCount() > 2 && (Bot.HasInMonstersZone(RushCardId.黑魔术师) || Bot.HasInMonstersZone(CardId.遂行者))
                 && cards.Any(c => c.IsCode(CardId.DMA)))
                 return CardId.DMA;
             if (!Enemy.HasAttackingMonster() && (Bot.HasInMonstersZone(CardId.黑曜) || Bot.HasInHandOrInSpellZone(CardId.宝石))
@@ -258,10 +258,10 @@ namespace WindBot.Game.AI.Decks
         private bool DMAEffect()
         {
             if (Enemy.GetSpellCount() >= 2 
-                && (Bot.HasInMonstersZone(_CardId.黑魔术师) || Bot.HasInMonstersZone(CardId.遂行者)))
+                && (Bot.HasInMonstersZone(RushCardId.黑魔术师) || Bot.HasInMonstersZone(CardId.遂行者)))
                 return true;
             if (Enemy.GetSpellCount() == 1 
-                && (Bot.HasInMonstersZone(_CardId.黑魔术师) || Bot.HasInMonstersZone(CardId.遂行者))
+                && (Bot.HasInMonstersZone(RushCardId.黑魔术师) || Bot.HasInMonstersZone(CardId.遂行者))
                 && Bot.MonsterZone.GetMatchingCardsCount(card => card.IsAttack() && card.Attack >= Enemy.LifePoints) >= 2)
                 return true;
             return false;
@@ -303,9 +303,9 @@ namespace WindBot.Game.AI.Decks
         {
             if (Bot.LifePoints > 1000)
             {
-                if (Bot.HasInHandOrInSpellZone(CardId.DMA) && (Bot.HasInHand(CardId.遂行者) || Bot.HasInHand(_CardId.黑魔术师)) && Enemy.GetSpellCount() >= 2)
+                if (Bot.HasInHandOrInSpellZone(CardId.DMA) && (Bot.HasInHand(CardId.遂行者) || Bot.HasInHand(RushCardId.黑魔术师)) && Enemy.GetSpellCount() >= 2)
                 {
-                    AI.SelectCard(CardId.遂行者, _CardId.黑魔术师);
+                    AI.SelectCard(CardId.遂行者, RushCardId.黑魔术师);
                     return true;
                 }
                 if (Bot.HasInHand(CardId.黑曜) && Bot.GetGraveyardSpells().Count >= 5)
@@ -336,9 +336,9 @@ namespace WindBot.Game.AI.Decks
                 AI.SelectCard(CardId.遂行者);
                 return true;
             }
-            if (Bot.HasInMonstersZone(_CardId.黑魔术师))
+            if (Bot.HasInMonstersZone(RushCardId.黑魔术师))
             {
-                AI.SelectCard(_CardId.黑魔术师);
+                AI.SelectCard(RushCardId.黑魔术师);
                 return true;
             }
             if (Bot.HasInMonstersZone(CardId.剑黎))
@@ -377,10 +377,10 @@ namespace WindBot.Game.AI.Decks
 
         private bool 采掘Effect()
         {
-            if (HasStrongerFaceupEnemy() && Util.GetTotalAttackingMonsterAttack(1) >= 3500 && !Enemy.HasInMonstersZone(_CardId.终焰魔神, faceUp: true) && Bot.HasInGraveyard(_CardId.黑洞))
+            if (HasStrongerFaceupEnemy() && Util.GetTotalAttackingMonsterAttack(1) >= 3500 && !Enemy.HasInMonstersZone(RushCardId.终焰魔神, faceUp: true) && Bot.HasInGraveyard(RushCardId.黑洞))
             {
                 AI.SelectCard(cost2);
-                AI.SelectNextCard(_CardId.黑洞);
+                AI.SelectNextCard(RushCardId.黑洞);
                 return true;
             }
             if (Enemy.GetMonsterCount() >0 && Bot.GetGraveyardMonsters().Count < 3 && Bot.HasInGraveyard(CardId.三猫) )
@@ -412,7 +412,7 @@ namespace WindBot.Game.AI.Decks
         }
         private bool 采掘Effect2()
         {
-            if (Enemy.GetSpellCount() >= 2 && (Bot.HasInMonstersZone(_CardId.黑魔术师) || Bot.HasInMonstersZone(CardId.遂行者)) && Bot.HasInGraveyard(CardId.DMA))
+            if (Enemy.GetSpellCount() >= 2 && (Bot.HasInMonstersZone(RushCardId.黑魔术师) || Bot.HasInMonstersZone(CardId.遂行者)) && Bot.HasInGraveyard(CardId.DMA))
             {
                 AI.SelectCard(cost2);
                 AI.SelectNextCard(CardId.DMA);

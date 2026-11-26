@@ -37,8 +37,8 @@ namespace WindBot.Game.AI.Decks
         public RushDragonDragearsExecutor(GameAI ai, Duel duel)
             : base(ai, duel)
         {
-            AddExecutor(ExecutorType.Activate, _CardId.黑洞, 黑洞Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.强欲之壶);
+            AddExecutor(ExecutorType.Activate, RushCardId.黑洞, 黑洞Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.强欲之壶);
             AddExecutor(ExecutorType.SpSummon);
             AddExecutor(ExecutorType.Repos, DefaultMonsterRepos);
             AddExecutor(ExecutorType.Activate, CardId.侏儒兔);
@@ -59,11 +59,11 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.SpellSet, CardId.暗黑释放);
             AddExecutor(ExecutorType.SpellSet, CardId.落穴);
             AddExecutor(ExecutorType.Activate, CardId.暗黑释放, 圣防Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.魔法筒, 魔法筒Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.炸甲, 炸甲Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.魔法筒, 魔法筒Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.炸甲, 炸甲Effect);
             AddExecutor(ExecutorType.Activate, CardId.落穴, 落穴Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.激流葬, 激流葬Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.圣防, 圣防Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.激流葬, 激流葬Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.圣防, 圣防Effect);
             AddExecutor(ExecutorType.Activate, CardId.对死者的供奉, 死供Effect);
             AddExecutor(ExecutorType.SpellSet, CardId.对死者的供奉);
             AddExecutor(ExecutorType.Activate, CardId.凤凰龙);
@@ -74,7 +74,7 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.MonsterSet, CardId.七星道法师, Monsterset);
             AddExecutor(ExecutorType.MonsterSet, CardId.耳语妖精, Monsterset);
             AddExecutor(ExecutorType.Summon, CardId.七星道法师);
-            AddExecutor(ExecutorType.Summon, _CardId.结界像);
+            AddExecutor(ExecutorType.Summon, RushCardId.结界像);
 
             AddExecutor(ExecutorType.SummonOrSet, RushMonsterSummon);
             AddExecutor(ExecutorType.Activate, CardId.七魔导枪, 七魔导枪Effect);
@@ -85,12 +85,12 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.Activate, CardId.连击龙);
             AddExecutor(ExecutorType.Activate, CardId.七星道魔术师);
             AddExecutor(ExecutorType.Activate, CardId.斗牛士, 斗牛士Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.破灭之龙魔导士, 破灭之龙魔导士Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.星战骑佩流安, 星战骑佩流安Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.加百列热茶, 加百列热茶Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.破灭之龙魔导士, 破灭之龙魔导士Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.星战骑佩流安, 星战骑佩流安Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.加百列热茶, 加百列热茶Effect);
             AddExecutor(ExecutorType.Activate, DefaultDontChainMyself);
             AddExecutor(ExecutorType.Repos, CardId.破坏之剑士, 反转Repos);
-            AddExecutor(ExecutorType.Repos, _CardId.结界像, 反转Repos);
+            AddExecutor(ExecutorType.Repos, RushCardId.结界像, 反转Repos);
             AddExecutor(ExecutorType.Repos, CardId.连击龙, 反转Repos);
             AddExecutor(ExecutorType.Repos, CardId.七星道魔术师, 反转Repos);
             AddExecutor(ExecutorType.Repos, CardId.青眼白龙, 圣防Repos);

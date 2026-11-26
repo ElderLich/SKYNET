@@ -62,7 +62,7 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.SummonOrSet, CardId.荒野盗龙, RushMonsterSummon);
             AddExecutor(ExecutorType.SummonOrSet, CardId.名流雷龙, RushMonsterSummon);
 
-            AddExecutor(ExecutorType.MonsterSet, _CardId.千年盾, RushMonsterSummon);
+            AddExecutor(ExecutorType.MonsterSet, RushCardId.千年盾, RushMonsterSummon);
             AddExecutor(ExecutorType.MonsterSet, CardId.大恐龙驾L, MAXLset);
             AddExecutor(ExecutorType.MonsterSet, CardId.大恐龙驾R, MAXRset);
             AddExecutor(ExecutorType.MonsterSet, CardId.抑龙);
@@ -70,8 +70,8 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.MonsterSet, CardId.名流雷龙, monsterset);
             AddExecutor(ExecutorType.Activate, CardId.侏罗纪世界);
             AddExecutor(ExecutorType.Activate, CardId.凶怒甲龙);
-            AddExecutor(ExecutorType.Activate, _CardId.圣防, 圣防Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.魔法筒, 魔法筒Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.圣防, 圣防Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.魔法筒, 魔法筒Effect);
             AddExecutor(ExecutorType.Activate, CardId.恐力重压);
             AddExecutor(ExecutorType.Activate, CardId.超越进化, 超越进化Effect);
             AddExecutor(ExecutorType.SpellSet);

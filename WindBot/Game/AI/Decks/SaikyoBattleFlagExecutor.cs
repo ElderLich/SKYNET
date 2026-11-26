@@ -41,7 +41,7 @@ namespace WindBot.Game.AI.Decks
         public SaikyoBattleFlagExecutor(GameAI ai, Duel duel)
             : base(ai, duel)
         {
-            AddExecutor(ExecutorType.Activate, _CardId.黑洞, 黑洞Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.黑洞, 黑洞Effect);
             AddExecutor(ExecutorType.SpSummon);
             AddExecutor(ExecutorType.Activate, CardId.铁之重击);           
             AddExecutor(ExecutorType.Activate, CardId.成金恐龙王);
@@ -51,12 +51,12 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.Activate, CardId.突击坦克);
             AddExecutor(ExecutorType.Activate, CardId.瞄准鹰, 瞄准鹰Effect);
             AddExecutor(ExecutorType.Activate, CardId.双角兽, 双角兽Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.手枪龙, 手枪龙Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.手枪龙, 手枪龙Effect);
             AddExecutor(ExecutorType.Repos, CardId.双角兽, 双角兽summon);
             AddExecutor(ExecutorType.Repos, CardId.瞄准鹰, 瞄准鹰summon);
             AddExecutor(ExecutorType.Repos, CardId.最强战旗, DefaultMonsterRepos);
             AddExecutor(ExecutorType.Repos, CardId.钢机神, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, _CardId.手枪龙, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Repos, RushCardId.手枪龙, DefaultMonsterRepos);
             AddExecutor(ExecutorType.Repos, CardId.恶德, DefaultMonsterRepos);
             AddExecutor(ExecutorType.Summon, CardId.最强战旗, DefaultDoubleSummon);
             AddExecutor(ExecutorType.Summon, CardId.钢机神, DefaultDoubleSummon);
@@ -72,7 +72,7 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.Summon, CardId.瞄准鹰, 瞄准鹰summon2);
             AddExecutor(ExecutorType.Summon, CardId.瞄准鹰, 瞄准鹰summon3);
 
-            AddExecutor(ExecutorType.Summon, _CardId.手枪龙, RushMonsterSummon);
+            AddExecutor(ExecutorType.Summon, RushCardId.手枪龙, RushMonsterSummon);
             AddExecutor(ExecutorType.Summon, CardId.最强战旗, RushMonsterSummon);
             AddExecutor(ExecutorType.Summon, CardId.钢机神, RushMonsterSummon);
             AddExecutor(ExecutorType.Summon, CardId.恶德, RushMonsterSummon);
@@ -107,11 +107,11 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.Activate, CardId.左迁);
             AddExecutor(ExecutorType.Activate, CardId.兽之拳);
             AddExecutor(ExecutorType.Activate, CardId.冻结,冻结Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.魔法筒, 魔法筒Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.炸甲, 炸甲Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.落穴, 落穴Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.激流葬, 激流葬Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.圣防, 圣防Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.魔法筒, 魔法筒Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.炸甲, 炸甲Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.落穴, 落穴Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.激流葬, 激流葬Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.圣防, 圣防Effect);
 
             AddExecutor(ExecutorType.Activate, DefaultDontChainMyself);
             AddExecutor(ExecutorType.SummonOrSet, RushMonsterSummon);
@@ -202,7 +202,7 @@ namespace WindBot.Game.AI.Decks
 
         private static readonly int[] EagleSummonPriority =
         {
-            _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德, CardId.旗兽, CardId.社员
+            RushCardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德, CardId.旗兽, CardId.社员
         };
 
         public override IList<ClientCard> OnSelectCard(IList<ClientCard> cards, int min, int max, int hint, bool cancelable)
@@ -348,13 +348,13 @@ namespace WindBot.Game.AI.Decks
         }
         private bool 瞄准鹰坦克summon()
         {
-            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
+            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { RushCardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                 return true;
             return false;
         }
         private bool 瞄准鹰成金恐龙王summon()
         {
-            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
+            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { RushCardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                 return true;
             return false;
         }
@@ -362,7 +362,7 @@ namespace WindBot.Game.AI.Decks
         {           
           foreach (ClientCard m in Bot.GetMonsters())
                if (m.HasAttribute(CardAttribute.Light) && m.Level <= 4 && m.IsFaceup())
-              if (Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }))
+              if (Bot.HasInHand(new[] { RushCardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }))
              if (Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
               return true;           
             return false;
@@ -370,7 +370,7 @@ namespace WindBot.Game.AI.Decks
         private bool 瞄准鹰summon2()
         {
             if (Bot.Hand.GetCardCount(CardId.瞄准鹰) >= 2 )
-                if (Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }))
+                if (Bot.HasInHand(new[] { RushCardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }))
                   if (Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                              return true;           
             return false;
@@ -378,7 +378,7 @@ namespace WindBot.Game.AI.Decks
         private bool 瞄准鹰summon3()
         {
                      if (Bot.HasInHand(CardId.双角兽) || Bot.HasInHand(CardId.突击坦克) || Bot.HasInHand(CardId.成金恐龙王))
-                if (Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }))
+                if (Bot.HasInHand(new[] { RushCardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }))
                             if (Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                                 return true;
             return false;
@@ -397,7 +397,7 @@ namespace WindBot.Game.AI.Decks
             return true;
         }
 
-        private static readonly int[] SevenTreasuresPriority = { CardId.恶德, CardId.钢机神, CardId.最强战旗, _CardId.手枪龙 };
+        private static readonly int[] SevenTreasuresPriority = { CardId.恶德, CardId.钢机神, CardId.最强战旗, RushCardId.手枪龙 };
         private bool 无人机Effect()
         {
             int fodder = Bot.MonsterZone.GetMatchingCardsCount(c => c.Level < 5)
@@ -406,9 +406,9 @@ namespace WindBot.Game.AI.Decks
             {
                 int bosses = Bot.Hand.GetMatchingCardsCount(c => c.Level > 5);
                 if (bosses > 2)
-                    AI.SelectCard(CardId.最强战旗, CardId.钢机神, CardId.恶德, _CardId.手枪龙);
+                    AI.SelectCard(CardId.最强战旗, CardId.钢机神, CardId.恶德, RushCardId.手枪龙);
                 else if (bosses == 1 && fodder == 1)
-                    AI.SelectCard(CardId.最强战旗, CardId.钢机神, _CardId.手枪龙, CardId.恶德);
+                    AI.SelectCard(CardId.最强战旗, CardId.钢机神, RushCardId.手枪龙, CardId.恶德);
                 else
                     return false;
             }

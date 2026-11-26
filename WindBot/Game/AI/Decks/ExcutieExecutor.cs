@@ -33,12 +33,12 @@ namespace WindBot.Game.AI.Decks
         public ExcutieExecutor(GameAI ai, Duel duel)
             : base(ai, duel)
         {
-            AddExecutor(ExecutorType.Activate, _CardId.黑洞, 黑洞Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.傲慢之壶);
+            AddExecutor(ExecutorType.Activate, RushCardId.黑洞, 黑洞Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.傲慢之壶);
             AddExecutor(ExecutorType.Activate, CardId.天之选别);
-            AddExecutor(ExecutorType.Activate, _CardId.圣防, 圣防Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.捕获, 捕获Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.亚龙地狱, 亚龙地狱Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.圣防, 圣防Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.捕获, 捕获Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.亚龙地狱, 亚龙地狱Effect);
             AddExecutor(ExecutorType.Activate, CardId.紧急事态);
             AddExecutor(ExecutorType.Activate, CardId.幻影咆哮);
 
@@ -49,23 +49,23 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.SpSummon, CardId.救火女);
             AddExecutor(ExecutorType.SpSummon, CardId.花草女);
             AddExecutor(ExecutorType.Activate, CardId.紧急出动, 紧急出动Effect);
-            AddExecutor(ExecutorType.SpellSet, _CardId.黑洞);
-            AddExecutor(ExecutorType.SpellSet, _CardId.圣防);
-            AddExecutor(ExecutorType.SpellSet, _CardId.傲慢之壶);
+            AddExecutor(ExecutorType.SpellSet, RushCardId.黑洞);
+            AddExecutor(ExecutorType.SpellSet, RushCardId.圣防);
+            AddExecutor(ExecutorType.SpellSet, RushCardId.傲慢之壶);
 
             AddExecutor(ExecutorType.Activate, CardId.花草女);
             AddExecutor(ExecutorType.Activate, CardId.遥控女, 遥控女Effect1);
             AddExecutor(ExecutorType.Activate, CardId.浮游女, 浮游女Effect);
             AddExecutor(ExecutorType.Activate, CardId.光天女, 光天女Effect);
             AddExecutor(ExecutorType.Activate, CardId.主存女, 主存女Effect);
-            AddExecutor(ExecutorType.Activate, _CardId.海龙骑士, 海龙骑士Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.海龙骑士, 海龙骑士Effect);
             AddExecutor(ExecutorType.Activate, CardId.劈裂史莱姆, 劈裂史莱姆Effect);
 
             AddExecutor(ExecutorType.Summon, CardId.夜魔女, 超可爱summon);
             AddExecutor(ExecutorType.Summon, CardId.浮游女, 超可爱summon);
             AddExecutor(ExecutorType.Summon, CardId.浮游女, 超可爱summon3);
             AddExecutor(ExecutorType.Summon, CardId.光天女, 超可爱summon);
-            AddExecutor(ExecutorType.Summon, _CardId.幻影之龙);
+            AddExecutor(ExecutorType.Summon, RushCardId.幻影之龙);
             AddExecutor(ExecutorType.Summon, CardId.救火女, 超可爱summon);
             AddExecutor(ExecutorType.Summon, CardId.细剑女, 超可爱summon);
             AddExecutor(ExecutorType.Summon, CardId.遥控女, 超可爱summon2);
@@ -73,11 +73,11 @@ namespace WindBot.Game.AI.Decks
 
             AddExecutor(ExecutorType.Activate, CardId.紧急出动, 紧急出动Effect2);
             AddExecutor(ExecutorType.Activate, CardId.救火女, 救火女Effect1);
-            AddExecutor(ExecutorType.MonsterSet, _CardId.海龙骑士,海龙set);
-            AddExecutor(ExecutorType.MonsterSet, _CardId.结界像,结界像set);
+            AddExecutor(ExecutorType.MonsterSet, RushCardId.海龙骑士,海龙set);
+            AddExecutor(ExecutorType.MonsterSet, RushCardId.结界像,结界像set);
             AddExecutor(ExecutorType.MonsterSet, CardId.劈裂史莱姆, 史莱姆set);
-            AddExecutor(ExecutorType.Summon, _CardId.海龙骑士);
-            AddExecutor(ExecutorType.Summon, _CardId.结界像);
+            AddExecutor(ExecutorType.Summon, RushCardId.海龙骑士);
+            AddExecutor(ExecutorType.Summon, RushCardId.结界像);
             AddExecutor(ExecutorType.Summon, CardId.劈裂史莱姆);
 
             AddExecutor(ExecutorType.Activate, CardId.遥控女, 遥控女Effect2);
@@ -219,7 +219,7 @@ namespace WindBot.Game.AI.Decks
                     if (hint == Util.GetStringId(CardId.劈裂史莱姆, 1))
                         return cards.OrderByDescending(c => c.Attack).Take(max).ToList();
                     if (hint == HintMsg.SpSummon)
-                        return new CardSelector(_CardId.幻影之龙).Select(cards, min, max);
+                        return new CardSelector(RushCardId.幻影之龙).Select(cards, min, max);
                 }
             }
             return base.OnSelectCard(cards, min, max, hint, cancelable);
@@ -295,10 +295,10 @@ namespace WindBot.Game.AI.Decks
                 return false;
             if (enemy.Attack > own.Attack && enemy.Attack <= own.Attack + 1000)
                 AI.SelectCard(tar);
-            else if ((Bot.HasInMonstersZone(CardId.花草女) || Bot.HasInMonstersZone(CardId.主存女)) && Bot.HasInGraveyard(_CardId.幻影之龙))
+            else if ((Bot.HasInMonstersZone(CardId.花草女) || Bot.HasInMonstersZone(CardId.主存女)) && Bot.HasInGraveyard(RushCardId.幻影之龙))
                 AI.SelectCard(CardId.花草女, CardId.主存女);
-            else if (Bot.HasInMonstersZone(_CardId.幻影之龙))
-                AI.SelectCard(_CardId.幻影之龙);
+            else if (Bot.HasInMonstersZone(RushCardId.幻影之龙))
+                AI.SelectCard(RushCardId.幻影之龙);
             else
                 return false;
             return true;
