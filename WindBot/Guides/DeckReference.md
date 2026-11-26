@@ -149,7 +149,7 @@ origins, exact script hashes and before/after validation.
 
 ## Witchcraft 2026 executor
 
-`Deck=Witchcraft2026` adds a separate **Test** registration and
+`Deck=Witchcraft2026` uses a normal registration eligible for random selection and loads
 `Decks/AI_Witchcraft2026.ydk` (40 Main / 15 Extra / 7 Side). The original
 `Witchcraft` executor/deck remain unchanged. Imported from the selected deck and
 implementation at `DaruKani/SKYNET` revision `94a977b2`; no external game files

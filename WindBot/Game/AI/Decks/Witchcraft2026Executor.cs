@@ -10,7 +10,7 @@ using YGOSharp.OCGWrapper.Enums;
 
 namespace WindBot.Game.AI.Decks
 {
-    [Deck("Witchcraft2026", "AI_Witchcraft2026", "Test")]
+    [Deck("Witchcraft2026", "AI_Witchcraft2026")]
     public class Witchcraft2026Executor : DefaultExecutor
     {
         public class CardId

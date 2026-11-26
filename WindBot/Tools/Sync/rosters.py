@@ -123,7 +123,7 @@ def validate_rosters(windbot_root):
     if not english.entries:
         raise ValueError(f"{english.path}: empty roster")
     for name, (_, level) in registrations.items():
-        if level.lower() not in ("test", "notfinished") and not any(
+        if level.lower() not in ("test", "notfinished", "manual") and not any(
                 key in english.entries for key in ("deck:" + name, "custom:" + name)):
             raise ValueError(f"{english.path}: playable executor {name} needs an English entry and translations")
     for roster in sources.values():
