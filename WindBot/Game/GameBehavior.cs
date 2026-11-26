@@ -1444,7 +1444,11 @@ namespace WindBot.Game
             TraceRecord observation = _trace.PrepareSelection(
                 _duel, traceCandidates, selectionMin, 1, cancelable, _select_hint);
             if (observation != null)
+            {
                 observation.Prompt = "select_unselect";
+                if (count2 > 0)
+                    observation.Unsupported.Add("undo-candidates-not-captured");
+            }
             IList<ClientCard> selected = _ai.OnSelectCard(cards, selectionMin, 1, _select_hint, cancelable);
             SendCardSelectionResponse(cards, candidateIndexes, selected,
                 selectionMin, 1, cancelable, false, observation);
@@ -1481,11 +1485,8 @@ namespace WindBot.Game
                 int seq = packet.ReadByte();
                 int sseq = packet.ReadByte();
 
-                int desc = packet.ReadInt32();
-                if (desc == 221) // trigger effect
-                {
-                    desc = 0;
-                }
+                int wireDescription = packet.ReadInt32();
+                int desc = wireDescription == 221 ? 0 : wireDescription; // trigger effect
 
                 ClientCard card = _duel.GetCard(con, loc, seq, sseq);
                 if (card.Id == 0)
@@ -1496,7 +1497,7 @@ namespace WindBot.Game
                 if (traceCandidates != null && traceCandidates.Count > 0)
                 {
                     TraceSelectionCandidate candidate = traceCandidates[traceCandidates.Count - 1];
-                    candidate.Description = candidate.Known ? desc : -1;
+                    candidate.Description = candidate.Known ? wireDescription : -1;
                     candidate.Forced = forced;
                 }
 
@@ -1505,31 +1506,28 @@ namespace WindBot.Game
                 forces.Add(forced);
             }
 
-            if (cards.Count == 0)
-            {
-                Connection.Send(CtosMessage.Response, -1);
-                return;
-            }
-
             bool mustRespond = forces.Any(force => force);
             TraceRecord observation = _trace.PrepareSelection(
                 _duel, traceCandidates, mustRespond ? 1 : 0, 1, !mustRespond, hint1 | hint2);
             if (observation != null)
                 observation.Prompt = "select_chain";
 
+            if (cards.Count == 0)
+            {
+                Connection.Send(CtosMessage.Response, -1);
+                _trace.CommitChain(observation, -1, "no-candidates");
+                return;
+            }
             if (cards.Count == 1 && forces[0])
             {
-                _trace.CommitSelection(observation, new byte[] { 1, 0 }, false, "forced");
                 Connection.Send(CtosMessage.Response, 0);
+                _trace.CommitChain(observation, 0, "forced");
                 return;
             }
 
             int response = _ai.OnSelectChain(cards, descs, forces, hint1 | hint2);
-            if (response < 0)
-                _trace.CommitSelection(observation, new byte[] { 255, 255, 255, 255 }, true, "executor");
-            else
-                _trace.CommitSelection(observation, new byte[] { 1, (byte)response }, false, "executor");
             Connection.Send(CtosMessage.Response, response);
+            _trace.CommitChain(observation, response, "executor");
         }
 
         private void OnSelectCounter(BinaryReader packet)
@@ -1671,7 +1669,8 @@ namespace WindBot.Game
             TraceRecord observation = _trace.Prepare(_duel, traceOffers);
             int response = _ai.OnSelectIdleCmd(main).ToValue();
             Connection.Send(CtosMessage.Response, response);
-            _trace.Commit(observation, response, _ai.LastDecisionSource);
+            if (observation != null)
+                _trace.Commit(observation, response, _ai.LastDecisionSource);
         }
 
         private void OnSelectOption(BinaryReader packet)

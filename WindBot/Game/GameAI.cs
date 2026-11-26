@@ -16,7 +16,21 @@ namespace WindBot.Game
         public bool SelectingEffectYn { get; private set; }
         public Duel Duel { get; private set; }
         public Executor Executor { get; set; }
-        public string LastDecisionSource { get; private set; }
+        private CardExecutor _lastDecision;
+        private string _decisionFallback;
+        public string LastDecisionSource
+        {
+            get
+            {
+                if (_lastDecision == null)
+                    return _decisionFallback;
+                if (_lastDecision.Func == null)
+                    return _lastDecision.Type + ":registered-default";
+                var method = _lastDecision.Func.Method;
+                string owner = method.DeclaringType == null ? "unknown" : method.DeclaringType.Name;
+                return _lastDecision.Type + ":" + owner + "." + method.Name;
+            }
+        }
 
         private Dialogs _dialogs;
 
@@ -599,20 +613,21 @@ namespace WindBot.Game
         /// <returns>A new MainPhaseAction containing the action to do.</returns>
         public MainPhaseAction OnSelectIdleCmd(MainPhase main)
         {
-            LastDecisionSource = null;
+            _lastDecision = null;
+            _decisionFallback = null;
             _selectingPendulumSummon = false;
             CheckSurrender();
             foreach (CardExecutor exec in Executor.Executors)
             {
             	if (exec.Type == ExecutorType.GoToEndPhase && main.CanEndPhase && exec.Func()) // check if should enter end phase directly
                 {
-                    SetDecisionSource(exec);
+                    _lastDecision = exec;
                     _dialogs.SendEndTurn();
                     return new MainPhaseAction(MainPhaseAction.MainAction.ToEndPhase);
                 }
                 if (exec.Type==ExecutorType.GoToBattlePhase && main.CanBattlePhase && exec.Func()) // check if should enter battle phase directly
                 {
-                    SetDecisionSource(exec);
+                    _lastDecision = exec;
                     return new MainPhaseAction(MainPhaseAction.MainAction.ToBattlePhase);
                 }
                 // NOTICE: GoToBattlePhase and GoToEndPhase has no "card" can be accessed to ShouldExecute(), so instead use exec.Func() to check ...
@@ -623,7 +638,7 @@ namespace WindBot.Game
                     ClientCard card = main.ActivableCards[i];
                     if (ShouldExecute(exec, card, ExecutorType.Activate, main.ActivableDescs[i]))
                     {
-                        SetDecisionSource(exec);
+                        _lastDecision = exec;
                         _dialogs.SendActivate(card.Name);
                         return new MainPhaseAction(MainPhaseAction.MainAction.Activate, card.ActionActivateIndex[main.ActivableDescs[i]]);
                     }
@@ -632,7 +647,7 @@ namespace WindBot.Game
                 {
                     if (ShouldExecute(exec, card, ExecutorType.MonsterSet))
                     {
-                        SetDecisionSource(exec);
+                        _lastDecision = exec;
                         _dialogs.SendSetMonster();
                         return new MainPhaseAction(MainPhaseAction.MainAction.SetMonster, card.ActionIndex);
                     }
@@ -641,7 +656,7 @@ namespace WindBot.Game
                 {
                     if (ShouldExecute(exec, card, ExecutorType.Repos))
                     {
-                        SetDecisionSource(exec);
+                        _lastDecision = exec;
                         return new MainPhaseAction(MainPhaseAction.MainAction.Repos, card.ActionIndex);
                     }
                 }
@@ -649,7 +664,7 @@ namespace WindBot.Game
                 {
                     if (ShouldExecute(exec, card, ExecutorType.SpSummon))
                     {
-                        SetDecisionSource(exec);
+                        _lastDecision = exec;
                         ClientCard leftScale = Executor.Util.GetPZone(0, 0);
                         ClientCard rightScale = Executor.Util.GetPZone(0, 1);
                         _selectingPendulumSummon = card.HasType(CardType.Pendulum)
@@ -663,13 +678,13 @@ namespace WindBot.Game
                 {
                     if (ShouldExecute(exec, card, ExecutorType.Summon))
                     {
-                        SetDecisionSource(exec);
+                        _lastDecision = exec;
                         _dialogs.SendSummon(card.Name);
                         return new MainPhaseAction(MainPhaseAction.MainAction.Summon, card.ActionIndex);
                     }
                     if (ShouldExecute(exec, card, ExecutorType.SummonOrSet))
                     {
-                        SetDecisionSource(exec);
+                        _lastDecision = exec;
                         if (main.MonsterSetableCards.Contains(card) && Executor.OnSelectMonsterSummonOrSet(card))
                         {
                             _dialogs.SendSetMonster();
@@ -683,7 +698,7 @@ namespace WindBot.Game
                 {
                     if (ShouldExecute(exec, card, ExecutorType.SpellSet))
                     {
-                        SetDecisionSource(exec);
+                        _lastDecision = exec;
                         return new MainPhaseAction(MainPhaseAction.MainAction.SetSpell, card.ActionIndex);
                     }
                 }
@@ -691,11 +706,11 @@ namespace WindBot.Game
 
             if (main.CanBattlePhase && (Duel.Fields[0].HasAttackingMonster() || !main.CanEndPhase))
             {
-                LastDecisionSource = "fallback:main-phase-battle";
+                _decisionFallback = "fallback:main-phase-battle";
                 return new MainPhaseAction(MainPhaseAction.MainAction.ToBattlePhase);
             }
 
-            LastDecisionSource = "fallback:main-phase-end";
+            _decisionFallback = "fallback:main-phase-end";
             _dialogs.SendEndTurn();
             return new MainPhaseAction(MainPhaseAction.MainAction.ToEndPhase); 
         }
@@ -1640,18 +1655,6 @@ namespace WindBot.Game
                 }
             }
             return result;
-        }
-
-        private void SetDecisionSource(CardExecutor exec)
-        {
-            string handler = "registered-default";
-            if (exec != null && exec.Func != null && exec.Func.Method != null)
-            {
-                string owner = exec.Func.Method.DeclaringType == null
-                    ? "unknown" : exec.Func.Method.DeclaringType.Name;
-                handler = owner + "." + exec.Func.Method.Name;
-            }
-            LastDecisionSource = (exec == null ? "unknown" : exec.Type.ToString()) + ":" + handler;
         }
     }
 }

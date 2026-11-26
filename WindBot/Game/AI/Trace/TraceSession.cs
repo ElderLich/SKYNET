@@ -45,7 +45,8 @@ namespace WindBot.Game.AI.Trace
 
         public static string ResolveDirectory(string directory)
         {
-            if (!Path.IsPathRooted(directory))
+            if (!Path.IsPathRooted(directory)
+                || (Path.DirectorySeparatorChar == '\\' && Path.GetPathRoot(directory).Length < 3))
                 throw new ArgumentException("TraceData must be an explicitly selected absolute directory.");
             string fullPath = Path.GetFullPath(directory);
             string root = Path.GetPathRoot(fullPath);
@@ -102,7 +103,7 @@ namespace WindBot.Game.AI.Trace
                 && message != GameMessage.SelectCard
                 && message != GameMessage.SelectUnselect
                 && message != GameMessage.SelectChain)
-                || (value >= 140 && value <= 143))
+                || message == GameMessage.RockPaperScissors || (value >= 140 && value <= 143))
             {
                 Write(new TraceRecord
                 {
@@ -294,12 +295,14 @@ namespace WindBot.Game.AI.Trace
                     if (i >= MaximumCards)
                         throw new InvalidDataException("Chain limit.");
                     ChainInfo info = duel.CurrentChainInfo[i];
+                    bool visible = IdentityVisible(info.ActivateController, info.ActivateLocation,
+                        info.ActivatePosition);
                     record.Selection.Chain.Add(new TraceChainLink
                     {
                         Index = i + 1,
                         ActivatePlayer = info.ActivatePlayer,
-                        Code = Math.Max(0, info.ActivateId),
-                        Description = info.ActivateId > 0 ? info.ActivateDescription : -1,
+                        Code = visible ? Math.Max(0, info.ActivateId) : 0,
+                        Description = visible && info.ActivateId > 0 ? info.ActivateDescription : -1,
                         Activation = new TraceCardReference
                         {
                             Controller = info.ActivateController,
@@ -345,6 +348,29 @@ namespace WindBot.Game.AI.Trace
             }
         }
 
+        public void CommitChain(TraceRecord record, int response, string source)
+        {
+            if (!Enabled || record == null)
+                return;
+            record.SelectedWireResponse = response;
+            record.ResponseBytes = new[] { response & 255, (response >> 8) & 255,
+                (response >> 16) & 255, (response >> 24) & 255 };
+            record.Cancelled = response == -1;
+            record.ResponseSource = source;
+            record.SelectedCandidateIds = record.Cancelled ? new int[0] : new[] { response };
+            if (record.Cancelled ? !record.Selection.Cancelable
+                : !record.Selection.Candidates.Any(candidate => candidate.Id == response
+                    && (record.Selection.Cancelable || candidate.Forced)))
+                AddUnsupported(record, "invalid-chain-selection-response");
+            Write(record);
+        }
+
+        private static bool IdentityVisible(int controller, CardLocation location, int position)
+        {
+            return location != CardLocation.Deck && (controller == 0 || (location != CardLocation.Hand
+                && (location == CardLocation.Grave || (position & (int)CardPosition.FaceUp) != 0)));
+        }
+
         private void CaptureZone(TraceRecord record, IList<ClientCard> cards, int player, CardLocation location)
         {
             for (int sequence = 0; sequence < cards.Count; ++sequence)
@@ -354,10 +380,7 @@ namespace WindBot.Game.AI.Trace
                     continue;
                 if (record.Observation.Cards.Count >= MaximumCards)
                     throw new InvalidDataException("Card limit.");
-                bool faceup = card.IsFaceup();
-                bool known = card.Id > 0 && location != CardLocation.Deck
-                    && (player == 0 || (location != CardLocation.Hand
-                    && (location == CardLocation.Grave || faceup)));
+                bool known = IdentityVisible(player, location, card.Position) && card.Id > 0;
                 TraceCard snapshot = new TraceCard
                 {
                     Known = known,

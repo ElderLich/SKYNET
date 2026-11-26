@@ -99,7 +99,7 @@ namespace WindBot.Game.AI.Trace
         [DataMember(Name = "position")]
         public int Position;
         [DataMember(Name = "description", EmitDefaultValue = false)]
-        public int Description;
+        public int? Description;
         [DataMember(Name = "forced", EmitDefaultValue = false)]
         public bool Forced;
     }
