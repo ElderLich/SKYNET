@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $binary = (Resolve-Path -LiteralPath $BotExecutable).Path
 $database = (Resolve-Path -LiteralPath $CardDatabase).Path
-$output = [IO.Path]::GetFullPath($OutputDirectory)
+$output = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputDirectory)
 if (Test-Path -LiteralPath $output) { throw 'Use a new evidence directory.' }
 New-Item -ItemType Directory -Path $output | Out-Null
 Copy-Item -LiteralPath (Split-Path $binary) -Destination (Join-Path $output 'runtime') -Recurse

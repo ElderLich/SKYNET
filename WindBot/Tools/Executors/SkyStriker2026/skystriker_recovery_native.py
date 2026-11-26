@@ -20,9 +20,9 @@ def main():
     a = p.parse_args()
     root = a.output_dir.resolve()
     root.mkdir(parents=True, exist_ok=False)
-    repo = Path(__file__).resolve().parents[2]
+    repo = Path(__file__).resolve().parents[4]
     smoke = load_module('recovery_smoke', repo / 'SKYNET/Tools/Skynet/native_smoke.py')
-    decks = load_module('recovery_decks', Path(__file__).with_name('voiceless_native_checks.py'))
+    decks = load_module('recovery_decks', repo / 'WindBot/Tools/fixture_deck.py')
     binary = a.bot_exe.resolve(strict=True)
     shutil.copytree(binary.parent, root / 'runtime')
     setup = Path(__file__).with_name('skystriker_recovery_fixture.lua').read_text(encoding='utf-8')

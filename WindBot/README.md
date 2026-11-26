@@ -76,8 +76,9 @@ The default `check` suite loads the actual bot assembly and native SQLite,
 initializes the executor registry, checks every supplied deck ID against the
 selected CDB, and optionally verifies an exact compiled registration. It does not
 validate a banlist, card rules, behavior or server protocol. `--suite rda`,
-`--suite voiceless`, and `--suite metalmorph` run the existing deck-specific
-offline fixtures; use each suite's matching `.ydk`. They are not generic tests of
+`--suite voiceless`, `--suite metalmorph` and `--suite destiny-board` run the
+deck-specific offline fixtures. Use each suite's matching `.ydk` and CDB.
+They are not generic tests of
 a newly generated bot. Every check requires a fresh `--output` directory and
 retains hashes, results and logs. `--bot-exe` selects a frozen binary explicitly;
 otherwise checks use the Debug output. No checks start a duel server.
@@ -110,11 +111,11 @@ Tooling-only regressions: `python WindBot/Tools/test_bot_tool.py`.
 
 Open Arena's **Deck Workshop**, import or paste a `.ydk`, select Standard or Rush,
 and inspect card text, prompt strings and Lua references. The workshop exports
-the analysis text and a registered RDA starter plus its separate planner base.
+the analysis text and a registered RDA starter with its planner in the same file.
 See [Deck Workshop](../DeckWorkshop/README.md) for the imported data and limits.
 
-For a Standard starter, copy **both** generated `.cs` files to `Game/AI/Decks/`
-and its generated `AI_<Name>.ydk` to `Decks/` under this WindBot folder. Those
+For a Standard starter, copy `<Name>Executor.cs` to `Game/AI/Decks/`
+and `AI_<Name>.ydk` to `Decks/` under this WindBot folder. Those
 directories already use project wildcards. Preserve existing files and use a
 unique name; the generated registration is `Test`, outside the random normal
 bot pool. Rebuild with `bot_tool.py build`, then run the default `check` with the
@@ -147,6 +148,13 @@ does not read `bot.conf`; it uses `Deck=`, `Dialog=`, and the other options belo
 No external game files are changed by this workspace setup.
 
 ## Executors and RDA-first authoring
+
+Keep each deck's runtime implementation in its registered `Game/AI/Decks/*Executor.cs`.
+Its planner, tactical decisions and prompt callbacks compile together into `WindBot.exe`.
+Deck-specific launchers, regression checks and native fixtures live in
+[`Tools/Executors/<deck>/`](Tools/Executors/), grouped by the exact `Deck=` name.
+Use the shared `Tools/bot_tool.py` for portable builds and runtime checks.
+Write generated logs and test receipts under the workspace's ignored `Artifacts/`.
 
 These additional executors are included in the normal bot. They are
 listed in `BotWrapper/bot.conf` with `Dialog=Universal.EN`; their original executor
@@ -202,7 +210,7 @@ behavior change.
 Run the maintained checks from the workspace root with explicit inputs:
 
 ```powershell
-.\WindBot\Tools\Invoke-RdaPlannerChecks.ps1 `
+.\WindBot\Tools\Executors\TheCrimsonKing\Invoke-RdaPlannerChecks.ps1 `
   -BotExecutable WindBot/bin/Release/WindBot.exe `
   -Database 'D:/Programs/GitHub/MDPro4_Data/Data/locales/en-US/cards.cdb' `
   -Deck WindBot/Decks/AI_TheCrimsonKing.ydk `
@@ -248,7 +256,7 @@ the scripts' actual cost/target/resolution prompts without duplicate queues.
 Callback identity comes from accepted actions or immutable chain snapshots.
 
 ```powershell
-.\WindBot\Tools\Invoke-MetalmorphChecks.ps1 `
+.\WindBot\Tools\Executors\Metalmorph\Invoke-MetalmorphChecks.ps1 `
   -BotExecutable WindBot/bin/Debug/WindBot.exe `
   -Database 'D:/Programs/GitHub/MDPro4_Data/Data/locales/en-US/cards.cdb' `
   -Deck WindBot/Decks/AI_Metalmorph.ydk `
@@ -275,11 +283,10 @@ and 256 candidates per expansion. The guide uses Walpurgis, the low-Witch ladder
 Marka/Dragoon, Terracottan/Pupils/Rilliona, Vice and Edel revival. Fieldless
 Lacrima/Maid access and interrupted-route recovery are modeled separately.
 
-`OpponentAwareness.cs` records reviewed public effects and observed usage;
+The executor's `OpponentAwareness` helper records reviewed public effects and observed usage;
 unknown identities, costs and outcomes remain uncertain. Chain forecasts separate
 removal from negation, preserve paid costs and reselect actual resolution targets.
 They are bounded predictions, not a full opponent simulator or win probabilities.
-The `.csproj` includes this helper; other executors do not opt into it implicitly.
 
 GY handling covers the 15 applicable identities in this selected list: Seed,
 Pittore, Potterie, Schmietta, Genni, Marka, Distortion, Madame Rilliona,
@@ -299,22 +306,23 @@ and no guarantee of a globally optimal line. Pittore deliberately passes with a
 nonempty all-non-Witch hand. Draping copy evaluates one useful public S/T target.
 Unmodeled Link/Synchro routes and hidden opponent responses are not invented.
 
-Run from the workspace root with a compatible server already listening:
+Run these commands from the workspace root. The first joins a compatible room
+already listening on the specified host and port.
 
 ```powershell
-WindBot\Tools\Run-Witchcraft2026.bat 127.0.0.1 7911 "D:\Games\MDPro4\Data\locales\en-US\cards.cdb"
-WindBot\Tools\Run-Witchcraft2026.bat --build-only
-./WindBot/Tools/Invoke-Witchcraft2026PlannerChecks.ps1 -BotExecutable WindBot/bin/Debug/WindBot.exe -Database D:/Games/MDPro4/Data/locales/en-US/cards.cdb -OutputDirectory Artifacts/witch-planner
-./WindBot/Tools/Invoke-WitchcraftOpponentChecks.ps1 -BotExecutable WindBot/bin/Debug/WindBot.exe -Database D:/Games/MDPro4/Data/locales/en-US/cards.cdb -OutputDirectory Artifacts/witch-opponent
-./WindBot/Tools/Invoke-Witchcraft2026NativeChecks.ps1 -BotExecutable WindBot/bin/Debug/WindBot.exe -Python python -ServerLibrary D:/Games/MDPro4/MDPro4_Data/Plugins/x86_64/ygoserver.dll -DataRoot D:/Games/MDPro4/Data -OutputDirectory Artifacts/witch-guide -AllowVerifiedLethal
-python WindBot/Tools/witchcraft_grave_native.py --scenario seed --core D:/Games/MDPro4/MDPro4_Data/Plugins/x86_64/ocgcore.dll --database D:/Games/MDPro4/Data/locales/en-US/cards.cdb --scripts D:/Games/MDPro4/Data/script.zip --output Artifacts/witch-seed.json
+WindBot\Tools\Executors\Witchcraft2026\Run-Witchcraft2026.bat 127.0.0.1 7911 "D:\Games\MDPro4\Data\locales\en-US\cards.cdb"
+WindBot\Tools\Executors\Witchcraft2026\Run-Witchcraft2026.bat --build-only
+./WindBot/Tools/Executors/Witchcraft2026/Invoke-Witchcraft2026PlannerChecks.ps1 -BotExecutable WindBot/bin/Debug/WindBot.exe -Database D:/Games/MDPro4/Data/locales/en-US/cards.cdb -OutputDirectory Artifacts/witch-planner
+./WindBot/Tools/Executors/Witchcraft2026/Invoke-WitchcraftOpponentChecks.ps1 -BotExecutable WindBot/bin/Debug/WindBot.exe -Database D:/Games/MDPro4/Data/locales/en-US/cards.cdb -OutputDirectory Artifacts/witch-opponent
+./WindBot/Tools/Executors/Witchcraft2026/Invoke-Witchcraft2026NativeChecks.ps1 -BotExecutable WindBot/bin/Debug/WindBot.exe -Python python -ServerLibrary D:/Games/MDPro4/MDPro4_Data/Plugins/x86_64/ygoserver.dll -DataRoot D:/Games/MDPro4/Data -OutputDirectory Artifacts/witch-guide -AllowVerifiedLethal
+python WindBot/Tools/Executors/Witchcraft2026/witchcraft_grave_native.py --scenario seed --core D:/Games/MDPro4/MDPro4_Data/Plugins/x86_64/ocgcore.dll --database D:/Games/MDPro4/Data/locales/en-US/cards.cdb --scripts D:/Games/MDPro4/Data/script.zip --output Artifacts/witch-seed.json
 ```
 
-Use fresh receipt paths, Python 3.11+ and the explicitly selected installed
-scripts/CDB. The launcher uses Debug and opt-in `LogPath` to append timestamped
-logs beside the `.bat`; without `LogPath`, existing console behavior is retained.
-The same logging support accompanies the independent Sky Striker 2026 PR; neither
-executor depends on the other. Original dialog and roster entries are preserved.
+Use fresh receipt paths, Python 3.11+ and the installed scripts and CDB selected
+for the native host. Both 2026 Windows launchers build Debug, accept a CDB as
+their third argument and a room password as their fourth. With the CDB omitted
+they use the bundled `DeckWorkshop/Data/standard/cards.cdb`. Each launch writes a
+timestamped decision log under `Artifacts/executor-logs/`.
 
 Upstream-based branch validation (2026-11-15): Debug/Release builds; 90/90 planner,
 119/119 opponent/GY and 14/14 RDA regression assertions. Full-bot guide: two
@@ -364,7 +372,7 @@ exhaustive card, matchup or tag-duel coverage.
 Run focused dispatcher/prompt checks from the workspace root:
 
 ```powershell
-.\WindBot\Tools\Invoke-VoicelessChecks.ps1 `
+.\WindBot\Tools\Executors\Voiceless\Invoke-VoicelessChecks.ps1 `
   -BotExecutable WindBot/bin/Debug/WindBot.exe `
   -Database 'D:/Programs/GitHub/MDPro4_Data/Data/locales/en-US/cards.cdb' `
   -Deck WindBot/Decks/AI_Voiceless.ydk `
@@ -375,7 +383,7 @@ Run the five real-engine routes, Ash/Droll recovery, Veiler protection and a
 resolved-Veiler recovery on the next own turn (nine scenarios):
 
 ```powershell
-python WindBot/Tools/voiceless_native_checks.py `
+python WindBot/Tools/Executors/Voiceless/voiceless_native_checks.py `
   --bot-exe WindBot/bin/Debug/WindBot.exe `
   --opponent-exe Artifacts/voiceless-20261102/baseline/Debug/WindBot.exe `
   --data-root D:/Programs/GitHub/MDPro4_Data/Data `
@@ -425,14 +433,14 @@ compares conversion/timing value against a free normal Link or immediate battle.
 This remains a partial heuristic model, not universal effect coverage or an
 optimal-play guarantee. Side-card handlers do not imply automatic side decking.
 
-Run from the workspace root with a compatible server already listening:
+Run these commands from the workspace root. Only the first needs an open room.
 
 ```powershell
-WindBot\Tools\Run-SkyStriker2026.bat 127.0.0.1 7911 "D:\Games\MDPro4\Data\locales\en-US\cards.cdb"
-WindBot\Tools\Run-SkyStriker2026.bat --build-only
-./WindBot/Tools/Invoke-SkyStrikerPlannerChecks.ps1 -BotExecutable WindBot/bin/Debug/WindBot.exe -CardDatabase D:/Games/MDPro4/Data/locales/en-US/cards.cdb -OutputDirectory Artifacts/sky-planner
-./WindBot/Tools/Invoke-SkyStrikerRecoveryChecks.ps1 -BotExecutable WindBot/bin/Debug/WindBot.exe -CardDatabase D:/Games/MDPro4/Data/locales/en-US/cards.cdb -OutputDirectory Artifacts/sky-recovery
-./WindBot/Tools/Test-SkyStriker2026.ps1 -Python python -DataRoot D:/Games/MDPro4/Data -Server D:/Games/MDPro4/MDPro4_Data/Plugins/x86_64/ygoserver.dll -OutputDirectory Artifacts/sky-native -MirrorGames 2
+WindBot\Tools\Executors\SkyStriker2026\Run-SkyStriker2026.bat 127.0.0.1 7911 "D:\Games\MDPro4\Data\locales\en-US\cards.cdb"
+WindBot\Tools\Executors\SkyStriker2026\Run-SkyStriker2026.bat --build-only
+./WindBot/Tools/Executors/SkyStriker2026/Invoke-SkyStrikerPlannerChecks.ps1 -BotExecutable WindBot/bin/Debug/WindBot.exe -CardDatabase D:/Games/MDPro4/Data/locales/en-US/cards.cdb -OutputDirectory Artifacts/sky-planner
+./WindBot/Tools/Executors/SkyStriker2026/Invoke-SkyStrikerRecoveryChecks.ps1 -BotExecutable WindBot/bin/Debug/WindBot.exe -CardDatabase D:/Games/MDPro4/Data/locales/en-US/cards.cdb -OutputDirectory Artifacts/sky-recovery
+./WindBot/Tools/Executors/SkyStriker2026/Test-SkyStriker2026.ps1 -Python python -DataRoot D:/Games/MDPro4/Data -Server D:/Games/MDPro4/MDPro4_Data/Plugins/x86_64/ygoserver.dll -OutputDirectory Artifacts/sky-native -MirrorGames 2
 ```
 
 Use fresh receipt paths, Python 3.11+ and explicitly selected compatible CDB,
@@ -442,10 +450,7 @@ number of mirror games. Its seed controls fixture deck permutations, **not** the
 unknown core RNG. Runtime inputs, logs and result receipts stay under ignored
 `Artifacts/`; no external scripts or game settings are edited.
 
-The launcher uses Debug and opt-in `LogPath` for a timestamped log beside the
-`.bat`. Without that argument the existing console behavior is retained. The
-same logging change is included in the independent Witchcraft 2026 PR so either
-branch can build and launch on upstream without the other deck.
+The Windows launcher writes its Debug decision log under `Artifacts/executor-logs/`.
 
 Upstream-based branch validation (2026-11-15): Debug/Release builds and focused
 92/92 planner/policy plus 18/18 recovery assertions. Native scripted recovery
@@ -677,7 +682,7 @@ Run reproducible native scenarios against the explicitly selected native host
 using Debug builds (movement assertions need debug traces):
 
 ```sh
-python WindBot/Tools/destiny_board_native_checks.py --bot-exe WindBot/bin/Debug/WindBot.exe --opponent-exe /path/to/frozen/WindBot.exe --data-root Artifacts/bakura-data --server /path/to/ygoserver.dll --deck WindBot/Decks/AI_DestinyBoard.ydk --output-dir Artifacts/bakura-native
+python WindBot/Tools/Executors/DestinyBoard/destiny_board_native_checks.py --bot-exe WindBot/bin/Debug/WindBot.exe --opponent-exe /path/to/frozen/WindBot.exe --data-root Artifacts/bakura-data --server /path/to/ygoserver.dll --deck WindBot/Decks/AI_DestinyBoard.ydk --output-dir Artifacts/bakura-native
 ```
 
 On Linux, supply a compatible Linux native duel library in `--server` and Mono

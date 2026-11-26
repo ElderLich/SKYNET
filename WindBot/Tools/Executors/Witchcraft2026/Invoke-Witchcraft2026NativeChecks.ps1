@@ -5,7 +5,7 @@ param(
     [Parameter(Mandatory = $true)][string]$ServerLibrary,
     [Parameter(Mandatory = $true)][string]$DataRoot,
     [Parameter(Mandatory = $true)][string]$OutputDirectory,
-    [string]$Deck = (Join-Path $PSScriptRoot '../Decks/AI_Witchcraft2026.ydk'),
+    [string]$Deck = (Join-Path $PSScriptRoot '../../../Decks/AI_Witchcraft2026.ydk'),
     [ValidateSet('Guide', 'FieldAccess', 'FieldlessLacrima', 'FieldlessMaid', 'FieldlessControl')][string]$Scenario = 'Guide',
     [switch]$AllowVerifiedLethal,
     [string[]]$Opening = @('21522601', '6071005', '58139997', '57916305', '22623509')
@@ -13,11 +13,11 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $botPath = (Resolve-Path -LiteralPath $BotExecutable).Path
-$pythonPath = (Resolve-Path -LiteralPath $Python).Path
+$pythonPath = (Get-Command -Name $Python -CommandType Application -ErrorAction Stop | Select-Object -First 1).Path
 $serverPath = (Resolve-Path -LiteralPath $ServerLibrary).Path
 $dataPath = (Resolve-Path -LiteralPath $DataRoot).Path
 $deckPath = (Resolve-Path -LiteralPath $Deck).Path
-$outputPath = [IO.Path]::GetFullPath($OutputDirectory)
+$outputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputDirectory)
 if (Test-Path -LiteralPath $outputPath) { throw 'Use a fresh evidence directory.' }
 New-Item -ItemType Directory -Path $outputPath | Out-Null
 $main = [Collections.Generic.List[string]]::new()
@@ -40,7 +40,7 @@ if ($main.Remove($sixth)) { $main.Insert(0, $sixth) }
 $fixture = Join-Path $outputPath 'reported-hand.ydk'
 [IO.File]::WriteAllLines($fixture, @('#fixed opening; original card multiset', '#main') +
     $opening + $main.ToArray() + $tail.ToArray(), [Text.UTF8Encoding]::new($false))
-$native = Join-Path $PSScriptRoot '../../SKYNET/Tools/Skynet/native_smoke.py'
+$native = Join-Path $PSScriptRoot '../../../../SKYNET/Tools/Skynet/native_smoke.py'
 $duels = Join-Path $outputPath 'native'
 & $pythonPath $native --server $serverPath --data-root $dataPath --bot-exe $botPath `
     --policy Witchcraft2026 --opponent-policy Default --deck $fixture `

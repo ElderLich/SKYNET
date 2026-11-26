@@ -101,13 +101,18 @@ class CardData(C.Structure):
         (n, C.c_uint32) for n in ('lscale', 'rscale', 'link_marker')]
 
 
-def main(lua=LUA, expected_checks=16, responder=None):
+def probe_parser():
     p = argparse.ArgumentParser()
     p.add_argument('--core', type=Path, required=True)
     p.add_argument('--database', type=Path, required=True)
     p.add_argument('--scripts', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
-    args = p.parse_args()
+    return p
+
+
+def main(lua=LUA, expected_checks=16, responder=None, args=None):
+    if args is None:
+        args = probe_parser().parse_args()
     if args.output.exists():
         raise SystemExit('Use a fresh receipt path')
     db = sqlite3.connect(args.database.resolve().as_uri() + '?mode=ro', uri=True)
@@ -164,6 +169,7 @@ def main(lua=LUA, expected_checks=16, responder=None):
 
     core.set_script_reader(read_script); core.set_card_reader(read_card); core.set_message_handler(message)
     duel = core.create_duel(7)
+    loaded = None
     try:
         loaded = core.preload_script(duel, b'witchcraft_probe.lua')
         core.start_duel(duel, 0)

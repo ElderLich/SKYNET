@@ -11,6 +11,11 @@ the MDPro4 AI workspace the normal bot is under `WindBot/`; it is separate from
 complete behavior imports and the fixture/Arena validation workflow. In another
 checkout, verify the equivalent APIs directly rather than searching sibling repos.
 
+In MDPro4 AI, keep the registered executor and its deck-specific runtime code in
+one `Game/AI/Decks/*Executor.cs` file. Put maintained launchers, checks and
+fixtures for that registration in `Tools/Executors/<deck>/`. Send generated logs
+and receipts to ignored `Artifacts/`.
+
 For a new executor in this workspace, start with the maintained
 `WindBot/Templates/RdaPlannerExecutor.cs.template` and the live
 `TheCrimsonKingExecutor` reference. Preserve their observed-state/model/action

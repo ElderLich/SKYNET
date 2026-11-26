@@ -4,8 +4,7 @@ These are mechanics tests, not full WindBot games or a competitive evaluation.
 All setup stays inside this isolated duel; installed scripts remain read-only.
 """
 import struct
-import sys
-from witchcraft_outcome_native import main
+from witchcraft_outcome_native import main, probe_parser
 from witchcraft_coverage_native import respond as placement
 
 SCENARIOS = {
@@ -137,7 +136,7 @@ for spell_id in (57916305, 70226289, 35098357, 6958567, 56894757):
         "check('installed Witch Spell recovers during own End Phase',source:IsLocation(LOCATION_HAND) and Duel.GetCurrentPhase()==PHASE_END)\n"
         "check('recovery does not consume Witch monster',witch:IsLocation(LOCATION_MZONE))\n", [])
 
-def run(scenario):
+def run(scenario, args=None):
     source, setup, assertions, preferences = SCENARIOS[scenario]
     lua = '''
 Debug.ReloadFieldBegin(0)
@@ -220,10 +219,10 @@ Duel.RegisterEffect(send,0)
             if packet[2]: return -1
         return placement(packet) if code in (18, 143) else None
 
-    return main(lua, 3 if scenario == 'marka' else 2, respond)
+    return main(lua, 3 if scenario == 'marka' else 2, respond, args)
 
 if __name__ == '__main__':
-    index = sys.argv.index('--scenario')
-    scenario = sys.argv[index + 1]
-    del sys.argv[index:index + 2]
-    raise SystemExit(run(scenario))
+    parser = probe_parser()
+    parser.add_argument('--scenario', choices=sorted(SCENARIOS), required=True)
+    args = parser.parse_args()
+    raise SystemExit(run(args.scenario, args))

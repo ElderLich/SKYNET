@@ -17,7 +17,11 @@ from pathlib import Path
 import re
 import shutil
 import sqlite3
+import sys
 from types import SimpleNamespace
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+import fixture_deck
 
 GUIDE, RHINO, OCTHROS = 10802915, 81035362, 58616392
 RULER, ZORC, NECROFEAR = 100268007, 73320394, 31829185
@@ -58,24 +62,6 @@ def digest(path):
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             hasher.update(block)
     return hasher.hexdigest()
-
-
-def read_deck(path):
-    zones = {"main": [], "extra": [], "side": []}
-    section = "main"
-    for line in path.read_text(encoding="utf-8-sig").splitlines():
-        line = line.strip()
-        if line in ("#main", "#extra", "!side"):
-            section = line[1:]
-        elif line.isdigit():
-            zones[section].append(int(line))
-    return zones
-
-
-def write_deck(path, main, extra):
-    path.write_text("#created by Destiny Board native scenario\n#main\n"
-                    + "\n".join(map(str, main)) + "\n#extra\n"
-                    + "\n".join(map(str, extra)) + "\n!side\n", encoding="utf-8")
 
 
 def inspect_log(path, names, scenario):
@@ -223,7 +209,7 @@ def main():
     selected = args.scenarios.split(",") if args.scenarios else [scenario["name"] for scenario in SCENARIOS]
     if not selected or set(selected) - {scenario["name"] for scenario in SCENARIOS}:
         parser.error("Unknown scenario name")
-    root = Path(__file__).resolve().parents[2]
+    root = Path(__file__).resolve().parents[4]
     spec = importlib.util.spec_from_file_location("destiny_board_native_smoke", root / "SKYNET/Tools/Skynet/native_smoke.py")
     smoke = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(smoke)
@@ -240,13 +226,14 @@ def main():
     smoke.launch = launch_fixture
     out = args.output_dir.resolve()
     out.mkdir(parents=True, exist_ok=False)
-    deck = read_deck(args.deck)
+    deck = fixture_deck.read_deck(args.deck)
     database = args.data_root / "locales/en-US/cards.cdb"
     scripts = args.data_root / "script.zip"
     with closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)) as connection:
         names = dict(connection.execute("SELECT id,name FROM texts"))
     result = {"format": "destiny-board-native-checks-v1", "purpose": "Script-backed route milestones and completion, not strength",
               "harnessSha256": digest(Path(__file__).resolve()),
+              "fixtureDeckSha256": digest(Path(fixture_deck.__file__)),
               "nativeSmokeSha256": digest(root / "SKYNET/Tools/Skynet/native_smoke.py"),
               "botSha256": digest(args.bot_exe), "opponentSha256": digest(args.opponent_exe),
               "serverSha256": digest(args.server), "databaseSha256": digest(database),
@@ -268,7 +255,7 @@ def main():
         for code in opening:
             remaining.remove(code)
         target = inputs / "target.ydk"
-        write_deck(target, opening + remaining, deck["extra"])
+        fixture_deck.write_deck(target, opening + remaining, deck["extra"])
         interruption = scenario.get("interruption")
         if scenario.get("passive"):
             opponent_cards = [SWORDS] * 40
@@ -277,7 +264,7 @@ def main():
         else:
             opponent_cards = [scenario.get("opponent_card", SWORDS)] + [WARWOLF] * 39
         opponent = inputs / "opponent.ydk"
-        write_deck(opponent, opponent_cards, [])
+        fixture_deck.write_deck(opponent, opponent_cards, [])
         settings = SimpleNamespace(server=args.server, bot_exe=args.bot_exe, opponent_exe=args.opponent_exe,
             timeout=args.timeout, policy="DestinyBoard", opponent_policy="Voiceless" if interruption else "OldSchool",
             policy_seed=20261102, train=False, policy_group="destiny-board-fixture:" + scenario["name"],

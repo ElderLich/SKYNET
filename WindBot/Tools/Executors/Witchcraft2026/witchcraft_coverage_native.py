@@ -4,8 +4,7 @@ Not a full WindBot match: deterministic offered-action driver, real installed
 Lacrima/Ash/Bystreet/Celebration effects. Extra duplicate is a count-limit probe.
 """
 import struct
-import sys
-from witchcraft_outcome_native import main
+from witchcraft_outcome_native import main, probe_parser
 
 LUA = r'''
 Debug.ReloadFieldBegin(0)
@@ -157,7 +156,9 @@ def recover(packet):
     return respond(packet)
 
 if __name__ == '__main__':
-    if '--end-phase' in sys.argv:
-        sys.argv.remove('--end-phase')
-        raise SystemExit(main(RECOVERY_LUA, 2, recover))
-    raise SystemExit(main(LUA, 11, respond))
+    parser = probe_parser()
+    parser.add_argument('--end-phase', action='store_true', help='Check End Phase Bystreet recovery')
+    args = parser.parse_args()
+    if args.end_phase:
+        raise SystemExit(main(RECOVERY_LUA, 2, recover, args))
+    raise SystemExit(main(LUA, 11, respond, args))

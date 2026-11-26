@@ -173,9 +173,9 @@ def main():
     if set(chosen) - SCENARIOS.keys(): parser.error("unknown scenario")
     if args.mirror_games < 0 or args.mirror_games % 2: parser.error("mirror-games must be nonnegative and even")
     if not chosen and not args.mirror_games: parser.error("select at least one test")
-    repo = Path(__file__).resolve().parents[2]
+    repo = Path(__file__).resolve().parents[4]
     smoke = load_module("sky_native_smoke", repo / "SKYNET/Tools/Skynet/native_smoke.py")
-    deck_tools = load_module("sky_deck_tools", Path(__file__).with_name("voiceless_native_checks.py"))
+    deck_tools = load_module("sky_deck_tools", repo / "WindBot/Tools/fixture_deck.py")
     for attr in ("bot_exe", "data_root", "server", "deck"):
         setattr(args, attr, getattr(args, attr).resolve(strict=True))
     root = args.output_dir.resolve()
@@ -189,11 +189,12 @@ def main():
     with sqlite3.connect((inputs / "cards.cdb").as_uri() + "?mode=ro", uri=True) as db:
         names = dict(db.execute("select id,name from texts"))
     deck = deck_tools.read_deck(args.deck)
+    source_files = [Path(__file__).resolve(), Path(deck_tools.__file__), Path(smoke.__file__),
+                    repo / "WindBot/Game/AI/Decks/SkyStriker2026Executor.cs"]
     result = {"format": "skystriker-native-v1", "coreSeed": None, "noShuffle": True,
               "noDeckCheck": True, "binarySha256": smoke.digest(root / "runtime" / args.bot_exe.name),
               "deckPermutationSeed": args.seed,
-              "sourceHashes": {str(p.relative_to(repo)): smoke.digest(p) for p in
-                  [Path(__file__).resolve()] + sorted((repo / "WindBot/Game/AI/Decks").glob("SkyStriker2026*.cs"))},
+              "sourceHashes": {str(p.relative_to(repo)): smoke.digest(p) for p in source_files},
               "inputHashes": {p.name: smoke.digest(p) for p in inputs.iterdir()}, "scenarios": [], "mirror": []}
     original_launch = smoke.launch
     for name in chosen:

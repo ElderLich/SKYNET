@@ -66,7 +66,10 @@ Coordinate file ownership and review their work together before accepting it.
    predictions separate from client state and bound the complete search lifetime.
    Preserve C# 6 and the repository's formatting/project inclusion conventions.
 
-6. Package the completed executor with its .ydk and BotWrapper/bot.conf entry
+6. Keep the registered executor and all its deck-specific runtime code together
+   in Game/AI/Decks/<Name>Executor.cs. Put deck-specific checks and launchers
+   in Tools/Executors/<deck>/ using the exact registration name.
+   Package the completed executor with its .ydk and BotWrapper/bot.conf entry
    using Dialog=Universal.EN. Preserve existing names. For a completed new
    executor use [Deck("NAME", "AI_NAME")], which defaults to Normal; verify the
    compiled registration and resources. Normal is a registration category, not
@@ -129,7 +132,7 @@ Keep state immutable or isolated per search. Preserve short tactical handlers
 for decisions that do not need a planner. Existing imported executors remain
 available; convert them only as a bounded, measured change.
 
-[Invoke-RdaPlannerChecks.ps1](../Tools/Invoke-RdaPlannerChecks.ps1) runs fixed-hand
+[Invoke-RdaPlannerChecks.ps1](../Tools/Executors/TheCrimsonKing/Invoke-RdaPlannerChecks.ps1) runs fixed-hand
 model and scheduling checks with explicit binary, database and deck inputs and
 a unique output directory. Those checks establish behavior of the RDA model and
 its lifetime limits. They do not execute Lua or prove a stronger duel player.
@@ -236,9 +239,11 @@ WindBot predicates cannot be evaluated as if they were pure planner scores.
 ## Register and package the whole executor
 
 Add its unique `[Deck]` registration, `.ydk`, and requested roster entry together.
-`Game/AI/Decks/*.cs`, `Decks/*.ydk` and `Dialogs/*.json` already use project globs;
-new C# files in other directories need explicit project inclusion. Preserve
-existing executor and deck names when importing a source.
+`Game/AI/Decks/*Executor.cs` compiles automatically. Keep each executor's
+deck-specific planner, state and callback code together in its registered file.
+`Decks/*.ydk` and `Dialogs/*.json` copy to the output at build time. Place maintained checks,
+fixture inputs and launchers in `Tools/Executors/<deck>/` and write generated
+receipts to `Artifacts/`. Preserve existing registration and deck names.
 
 The roster lives in [BotWrapper/bot.conf](../BotWrapper/bot.conf). An entry selects
 the exact registered `Deck` and an existing dialog stem, for example
@@ -262,7 +267,7 @@ selected and reviewed import; a source inventory is not compilation approval.
 | Evidence | What it establishes | What it does not establish |
 | --- | --- | --- |
 | Debug/Release build and registration check | APIs, resources and names integrate. | Prompt correctness or strength. |
-| Focused C# fixture under ignored `Artifacts/` | A specified decision/prompt/reset produces the expected result. | Full Lua resolution or engine legality. |
+| Focused C# fixture in `Tools/Executors/<deck>/` | A specified decision/prompt/reset produces the expected result. | Full Lua resolution or engine legality. |
 | Controlled native duel with matching scripts/CDB | Actual offers and prompt sequence complete for that scenario. | General coverage or a reproducible core RNG seed. |
 | Frozen Arena comparison | Observed results against recorded opponents and settings. | Correctness of an individual combo or a universal win rate. |
 

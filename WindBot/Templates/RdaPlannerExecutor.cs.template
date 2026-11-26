@@ -15,14 +15,14 @@
 // Do not copy mutable AddExecutor predicates into Expand or Evaluate.
 // Mandatory prompts still need the normal executor's legal fallback.
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-
 namespace WindBot.Game.AI.Decks
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Threading;
+
     // Your concrete [Deck] executor implements these seams with deck-specific types.
     // Start synchronously; background planning is an optimization to add only after
     // correctness tests, state-retirement tests and measured scheduling evidence.

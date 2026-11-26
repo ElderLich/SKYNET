@@ -10,7 +10,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $botPath = (Resolve-Path -LiteralPath $BotExecutable).Path
 $compilerPath = (Resolve-Path -LiteralPath $Compiler).Path
-$outputPath = [IO.Path]::GetFullPath($OutputDirectory)
+$outputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputDirectory)
 if (Test-Path -LiteralPath $outputPath) {
     throw 'Use a new output directory; existing receipts are never overwritten.'
 }

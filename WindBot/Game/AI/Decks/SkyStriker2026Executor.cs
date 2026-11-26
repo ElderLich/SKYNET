@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using YGOSharp.OCGWrapper.Enums;
 using WindBot;
 using WindBot.Game;
@@ -9,7 +11,7 @@ using WindBot.Game.AI;
 namespace WindBot.Game.AI.Decks
 {
     [Deck("SkyStriker2026", "AI_SkyStriker2026")]
-    public partial class SkyStriker2026Executor : DefaultExecutor
+    public class SkyStriker2026Executor : DefaultExecutor
     {
         private const int UltimateSkyChainNegateThreshold = 3600;
 
@@ -5374,5 +5376,2101 @@ namespace WindBot.Game.AI.Decks
         {
             return GetSpellCountInGrave() >= 3;
         }
+
+        #region Response windows and selection context
+
+        private readonly List<ClientCard> ReactionOffers = new List<ClientCard>();
+        private string ReactionStateKey;
+        private ClientCard LemnisgateLinkMaterial;
+        private int LemnisgateLinkDestination;
+
+        // This is an observation of THIS response window, not a list of cards
+        // that happen to exist in hand/backrow. No selections are committed here.
+        public override void OnSelectChain(IList<ClientCard> cards)
+        {
+            ReactionOffers.Clear();
+            ReactionOffers.AddRange(cards);
+            ReactionStateKey = GetDecisionObservationKey();
+            Logger.DebugWriteLine("[SkyStriker2026:offers] turn=" + Duel.Turn +
+                " phase=" + Duel.Phase + " chain=" + Duel.CurrentChain.Count +
+                " cards=" + string.Join(",", cards.Select(c => c.Id + "@" + c.Location)));
+            base.OnSelectChain(cards);
+        }
+
+        private string GetDecisionObservationKey()
+        {
+            // Include public combat/negation changes, not just zone counts. Own
+            // deck identities are NEVER read from the hidden placeholder list.
+            return Duel.Turn + "/" + Duel.Player + "/" + Duel.Phase + "/" +
+                Bot.LifePoints + "/" + Enemy.LifePoints + "/" +
+                string.Join(";", Bot.Hand.Concat(Bot.Graveyard).Concat(Bot.GetMonsters())
+                    .Concat(Bot.GetSpells()).Concat(Bot.ExtraDeck)
+                    .Concat(Enemy.GetMonsters()).Concat(Enemy.GetSpells())
+                    .Concat(Enemy.Graveyard).Select(c => c.Controller + ":" + c.Id +
+                        ":" + c.Location + ":" + c.Sequence + ":" + c.Position +
+                        ":" + c.Attack + ":" + c.Defense + ":" + c.Disabled + ":" + c.Attacked)) +
+                "/" + Bot.Deck.Count + "/" + Enemy.Hand.Count + "/" +
+                string.Join(";", Duel.CurrentChainInfo.Select(c => c.ActivatePlayer + ":" +
+                    c.ActivateId + ":" + c.ActivateDescription + ":" + c.ActivateLocation +
+                    ":" + string.Join(",", c.Targets.Select(t => t.Controller + ":" + t.Id + ":" + t.Location))));
+        }
+
+        private sealed class EffectImpact
+        {
+            public bool Known;
+            public int PreventedValue;
+            public string Reason;
+        }
+
+        private EffectImpact AssessLiveEffect(ChainInfo chain)
+        {
+            var result = new EffectImpact { Reason = "unmodeled effect; conservative fallback" };
+            if (chain == null || chain.ActivatePlayer != 1)
+                return result;
+            int offset = chain.ActivateDescription - chain.ActivateId * 16;
+            ClientCard source = chain.RelatedCard;
+            if (source != null && (IsCurrentChainHandled(source) ||
+                chain.HasLocation(CardLocation.MonsterZone) && source.IsDisabled()))
+                return new EffectImpact { Known = true, Reason = "already negated/reserved" };
+
+            // Verified against the explicitly selected script.zip. An effect
+            // offset identifies a mode, not a general danger rating for its card.
+            if (chain.IsActivateCode(95503687) && chain.HasLocation(CardLocation.MonsterZone))
+            {
+                result.Known = true;
+                ClientCard revived = chain.Targets.FirstOrDefault(c => c.Controller == 1 &&
+                    c.Location == CardLocation.Grave && c.IsMonster());
+                result.PreventedValue = offset == 0 && revived != null
+                    ? 2300 + Math.Min(2000, Math.Max(0, revived.Attack)) : 0;
+                result.Reason = offset == 0 ? "stop targeted GY extension after discard" :
+                    "End Phase mill is not the revival effect";
+            }
+            else if (chain.IsActivateCode(4779823, 22624373) &&
+                chain.HasLocation(CardLocation.MonsterZone))
+            {
+                result.Known = true;
+                result.PreventedValue = offset == 0 ? chain.Targets
+                    .Where(c => c.Controller == 0 && c.IsOnField())
+                    .Sum(c => 1500 + Math.Max(1000, GetFieldResourceValue(c))) : 0;
+                result.Reason = offset == 0 ? "prevent removal of observed own target" :
+                    "not the field removal mode";
+            }
+            else if (chain.IsActivateCode(55623480) && chain.HasLocation(CardLocation.Grave))
+            {
+                result.Known = true;
+                result.PreventedValue = Bot.GetMonsterCount() > 0 ? 4500 : 3000;
+                result.Reason = "prevent paid Snow revival and face-down interruption";
+            }
+            else if (chain.IsActivateCode(57774843) && chain.HasLocation(CardLocation.MonsterZone))
+            {
+                result.Known = true;
+                result.PreventedValue = offset == 0 ? Bot.GetMonsters().Concat(Bot.GetSpells())
+                    .Sum(c => Math.Max(1000, GetFieldResourceValue(c))) : 0;
+                result.Reason = offset == 0 ? "prevent Judgment Dragon field wipe" : "End Phase mill";
+            }
+            return result;
+        }
+
+        private int GetNegationOutcomeValue(ClientCard target)
+        {
+            ChainInfo chain = Duel.CurrentChainInfo.LastOrDefault();
+            if (chain != null && chain.RelatedCard == target)
+            {
+                EffectImpact impact = AssessLiveEffect(chain);
+                if (impact.Known)
+                    return impact.PreventedValue;
+            }
+            return GetObservedThreatScore(target);
+        }
+
+        private bool IsThreatenedByPendingRemoval(ClientCard resource)
+        {
+            if (resource == null || resource.Controller != 0 || !resource.IsOnField())
+                return false;
+            foreach (ChainInfo chain in Duel.CurrentChainInfo)
+            {
+                if (chain.ActivatePlayer != 1 || IsCurrentChainHandled(chain.RelatedCard))
+                    continue;
+                int index = Duel.CurrentChainInfo.IndexOf(chain) + 1;
+                if (Duel.NegatedChainIndexList.Contains(index))
+                    continue;
+                if (chain.IsActivateCode(CardId.HarpiesFeatherDuster) && resource.IsSpell())
+                    return true;
+                if (chain.IsActivateCode(57774843) &&
+                    chain.ActivateDescription == Util.GetStringId(57774843, 0))
+                    return true;
+                if (chain.IsActivateCode(CardId.MysticalSpaceTyphoon, CardId.TwinTwisters,
+                    4779823, 22624373) && chain.Targets.Contains(resource))
+                    return true;
+            }
+            return false;
+        }
+
+        private int GetPublicGraveDisruptionValue(ClientCard target)
+        {
+            if (target == null || target.Controller != 1 || target.Location != CardLocation.Grave)
+                return 0;
+            // Banish only: do not clog MZ or grant a banish trigger (e.g. Giant Rex).
+            if (target.IsCode(55623480)) return 4500; // Snow
+            if (target.IsCode(67441435)) return 2500; // Glow-Up Bulb
+            if (target.IsCode(CardId.Raye)) return 3500;
+            if (target.IsCode(CardId.Roze)) return 1800;
+            return 0;
+        }
+
+        private bool TrySalvageSharkCannon(IList<ClientCard> targets)
+        {
+            if (!EmptyMainMonsterZone() || !IsThreatenedByPendingRemoval(Card))
+                return false;
+            ClientCard target = targets.Where(c => !Duel.CurrentChainInfo.Any(ch =>
+                    ch.ActivatePlayer == 0 && ch.IsActivateCode(CardId.SharkCannon) && ch.Targets.Contains(c)))
+                .OrderByDescending(GetPublicGraveDisruptionValue).FirstOrDefault();
+            if (GetPublicGraveDisruptionValue(target) <= 0)
+                return false;
+            SharkCannonTarget = target;
+            SharkCannonBanishOnly = true;
+            AI.SelectCard(target);
+            Logger.DebugWriteLine("[SkyStriker2026:decision] Shark Cannon: banish public GY engine " +
+                target.Id + "; card threatened by pending removal; reserve value=0; keep MZ empty");
+            return true;
+        }
+
+        private bool TryPlanLemnisgateGraveConversion()
+        {
+            LemnisgateLinkMaterial = null;
+            LemnisgateLinkDestination = 0;
+            bool main = Duel.Player == 0 &&
+                (Duel.Phase == DuelPhase.Main1 || Duel.Phase == DuelPhase.Main2);
+            string reason = main ? "PASS: normal Link is available after this trigger window" :
+                "PASS: no concrete timing gain exceeds loss of grave resource";
+            // A one-material conversion must clear MZ, not strand another body.
+            List<ClientCard> materials = Bot.GetMonsters().Where(c => c.IsFaceup() &&
+                IsSkyStrikerAce(c) && !c.IsCode(CardId.Zero) &&
+                Bot.GetMonstersInMainZone().All(m => m == c))
+                .OrderBy(GetLinkMaterialValue).ToList();
+            bool battle = Duel.Phase > DuelPhase.Main1 && Duel.Phase < DuelPhase.Main2;
+            if (!main)
+            {
+                foreach (ClientCard material in materials)
+                {
+                    if (Duel.Player == 1 && battle && !KainaSummoned && Bot.HasInExtra(CardId.Kaina) &&
+                        !material.HasAttribute(CardAttribute.Earth))
+                    {
+                        ClientCard attacker = Enemy.GetMonsters().Where(c => c.IsFaceup() && c.IsAttack() &&
+                            !c.Attacked && c.Attack > material.GetDefensePower() && !c.IsShouldNotBeTarget() &&
+                            !c.IsShouldNotBeMonsterTarget()).OrderByDescending(c => c.Attack).FirstOrDefault();
+                        if (attacker != null)
+                        {
+                            LemnisgateLinkMaterial = material;
+                            LemnisgateLinkDestination = CardId.Kaina;
+                            reason = "Kaina stops a remaining attacker that beats this material; normal Link unavailable";
+                            break;
+                        }
+                    }
+                    if (Duel.Player == 0 && battle && material.Attacked && !HasUnmodeledBattleDefense() &&
+                        Enemy.GetMonsterCount() == 0 && !KagariSummoned && Bot.HasInExtra(CardId.Kagari) &&
+                        !material.HasAttribute(CardAttribute.Fire))
+                    {
+                        int damage = 1500 + GetSpellCountInGrave() * 100;
+                        bool linkageFollowUp = Bot.HasInGraveyard(CardId.Linkage) &&
+                            !ZeroSummoned && !ZeroEffectSpent && Bot.HasInExtra(CardId.Zero) &&
+                            (Bot.HasInDeck(CardId.Raye) || Bot.HasInGraveyard(CardId.Raye)) &&
+                            (Bot.HasInDeck(CardId.Roze) || Bot.HasInGraveyard(CardId.Roze));
+                        if (damage >= Enemy.LifePoints || linkageFollowUp && damage + 4900 >= Enemy.LifePoints)
+                        {
+                            LemnisgateLinkMaterial = material;
+                            LemnisgateLinkDestination = CardId.Kagari;
+                            reason = "spent attacker converts to a concrete remaining-damage line this Battle Phase";
+                            break;
+                        }
+                    }
+                }
+            }
+            Logger.DebugWriteLine("[SkyStriker2026:decision] Lemnisgate-GY target=" +
+                LemnisgateLinkDestination + " material=" + (LemnisgateLinkMaterial == null ? 0 :
+                LemnisgateLinkMaterial.Id) + " reason=" + reason);
+            return LemnisgateLinkDestination != 0;
+        }
+
+        #endregion
+
+        #region Tactical decisions
+
+        // Tactical RDA layer for choices that compete for the same threat. It captures
+        // only observed cards, scores every known response without mutating duel state,
+        // then lets the normal executor commit selections for the winning legal offer.
+        private enum TacticalActionKind
+        {
+            None,
+            ForbiddenCrown,
+            WidowAnchor,
+            ForbiddenDroplet
+        }
+
+        private sealed class TacticalDecision
+        {
+            public TacticalActionKind Kind;
+            public readonly List<ClientCard> Targets = new List<ClientCard>();
+            public int Score;
+            public bool TakeControl;
+            public string Reason;
+        }
+
+        private TacticalDecision GetBestTacticalDecision()
+        {
+            var decisions = new List<TacticalDecision>();
+            TacticalDecision crown = BuildForbiddenCrownDecision();
+            TacticalDecision widow = BuildWidowAnchorDecision();
+            TacticalDecision droplet = BuildForbiddenDropletDecision();
+            if (crown != null)
+                decisions.Add(crown);
+            if (widow != null)
+                decisions.Add(widow);
+            if (droplet != null)
+                decisions.Add(droplet);
+
+            TacticalDecision best = decisions
+                .Where(decision => decision.Score > 0)
+                .OrderByDescending(decision => decision.Score)
+                .ThenByDescending(decision => GetTacticalTiePriority(decision.Kind))
+                .FirstOrDefault();
+            return best ?? new TacticalDecision
+            {
+                Kind = TacticalActionKind.None,
+                Score = 0,
+                Reason = "preserve interaction"
+            };
+        }
+
+        private TacticalDecision BuildForbiddenCrownDecision()
+        {
+            if (!CanAccessTacticalCard(CardId.ForbiddenCrown) ||
+                Duel.CurrentChain.Any(card => card.Controller == 0 &&
+                    card.IsCode(CardId.ForbiddenCrown)))
+                return null;
+
+            ClientCard target = GetBestTacticalMonsterTarget(false);
+            if (!IsUsableForbiddenCrownTarget(target))
+                return null;
+
+            ClientCard last = Util.GetLastChainCard();
+            bool answeringMonster = Duel.LastChainPlayer == 1 && last == target;
+            bool stoppingLethal = target == Enemy.BattlingMonster && Bot.UnderAttack &&
+                target.Attack >= Bot.LifePoints;
+            bool persistentThreat = target.IsFloodgate() ||
+                target.IsMonsterShouldBeDisabledBeforeItUseEffect();
+            if (!answeringMonster && !stoppingLethal && !persistentThreat)
+                return null;
+
+            int score = GetNegationOutcomeValue(target);
+            if (answeringMonster && !AssessLiveEffect(Duel.CurrentChainInfo.LastOrDefault()).Known)
+                score += 1700;
+            if (stoppingLethal)
+                score += 8000;
+            // Crown also protects the target and prevents using it as material. That
+            // downside matters most during our own turn when a take/removal line exists.
+            score -= Duel.Player == 0 ? 1500 : 500;
+            if (score < 2600)
+                return null;
+
+            var result = new TacticalDecision
+            {
+                Kind = TacticalActionKind.ForbiddenCrown,
+                Score = score,
+                Reason = stoppingLethal ? "stop lethal attack" :
+                    answeringMonster ? "unanswerable monster-effect stop" : "disable persistent threat"
+            };
+            result.Targets.Add(target);
+            return result;
+        }
+
+        private TacticalDecision BuildWidowAnchorDecision()
+        {
+            if (!CanAccessTacticalCard(CardId.WidowAnchor) || !EmptyMainMonsterZone() ||
+                Duel.CurrentChain.Any(card => card.Controller == 0 &&
+                    card.IsCode(CardId.WidowAnchor)))
+                return null;
+
+            ClientCard target = GetBestTacticalMonsterTarget(true);
+            if (target == null || target.IsDisabled() || target.HasType(CardType.Normal) ||
+                target.IsShouldNotBeTarget() || target.IsShouldNotBeSpellTrapTarget())
+                return null;
+
+            bool emergencyControl = HaveThreeSpellsInGrave() &&
+                ShouldTakeControlForEmergencyDefense(target);
+            bool takeControl = HaveThreeSpellsInGrave() &&
+                (emergencyControl || CanImmediatelyUseControlledMonster(target,
+                    Duel.Player == 0 && Duel.Phase < DuelPhase.Main2));
+            ClientCard last = Util.GetLastChainCard();
+            bool answeringMonster = Duel.LastChainPlayer == 1 && last == target;
+            bool stoppingBattle = target == Enemy.BattlingMonster && Bot.UnderAttack;
+            if (ShouldHoldWidowForMirrorRaye(SkyStrikerMirrorObserved,
+                Duel.CurrentChain.Count == 0, target.IsCode(CardId.Raye),
+                target.IsDisabled(), emergencyControl))
+                return null;
+            int score = GetNegationOutcomeValue(target) - 650;
+            if (answeringMonster && !AssessLiveEffect(Duel.CurrentChainInfo.LastOrDefault()).Known)
+                score += 1200;
+            if (takeControl)
+                score += 2400;
+            if (stoppingBattle && takeControl)
+            {
+                int projectedDamage = Math.Max(0, target.Attack -
+                    (Bot.BattlingMonster == null ? 0 : Bot.BattlingMonster.GetDefensePower()));
+                score += projectedDamage >= Bot.LifePoints ? 8000 : Math.Min(2500, projectedDamage);
+            }
+            if (Duel.CurrentChain.Count == 0 && Duel.Player == 0 && !takeControl &&
+                !target.IsFloodgate() && !target.IsMonsterDangerous() &&
+                !target.IsMonsterShouldBeDisabledBeforeItUseEffect())
+                score -= 2200;
+            if (score < 2400)
+                return null;
+
+            var result = new TacticalDecision
+            {
+                Kind = TacticalActionKind.WidowAnchor,
+                Score = score,
+                TakeControl = takeControl,
+                Reason = emergencyControl ? "take control to stop lethal damage" :
+                    takeControl ? "negate and convert target into tempo/material" :
+                    stoppingBattle ? "negate an attacking monster effect" : "efficient single-target negate"
+            };
+            result.Targets.Add(target);
+            return result;
+        }
+
+        private static bool ShouldHoldWidowForMirrorRaye(bool mirrorObserved,
+            bool idleChain, bool targetIsRaye, bool targetDisabled, bool emergency)
+        {
+            return mirrorObserved && idleChain && targetIsRaye && !targetDisabled &&
+                !emergency;
+        }
+
+        private TacticalDecision BuildForbiddenDropletDecision()
+        {
+            if (!CanAccessTacticalCard(CardId.ForbiddenDroplet) ||
+                Duel.CurrentChain.Any(card => card.Controller == 0 &&
+                    card.IsCode(CardId.ForbiddenDroplet)))
+                return null;
+
+            List<ClientCard> costs = GetAvailableForbiddenDropletCosts();
+            if (costs.Count == 0)
+                return null;
+            List<ClientCard> targets = GetForbiddenDropletTargets()
+                .Take(costs.Count)
+                .ToList();
+            if (targets.Count == 0)
+                return null;
+
+            int remainingAttack = GetRemainingEnemyBattleAttack();
+            int preventedDamage = targets
+                .Where(target => target.IsAttack() && !target.Attacked)
+                .Sum(target => Math.Max(0, target.Attack / 2));
+            bool preventsLethal = remainingAttack >= Bot.LifePoints &&
+                remainingAttack - preventedDamage < Bot.LifePoints;
+            ClientCard last = Util.GetLastChainCard();
+            bool stopsLiveBattleEffect = Duel.Player == 1 &&
+                Duel.Phase > DuelPhase.Main1 && Duel.Phase < DuelPhase.Main2 &&
+                Duel.LastChainPlayer == 1 && last != null && Duel.CurrentChain.Contains(last) &&
+                targets.Contains(last);
+            EffectImpact liveImpact = AssessLiveEffect(Duel.CurrentChainInfo.LastOrDefault());
+            int score = targets.Sum(GetNegationOutcomeValue) - 1100;
+            score -= costs.Take(targets.Count).Sum(GetDropletCostValue) / 3;
+            if (targets.Count > 1)
+                score += 1400 * (targets.Count - 1);
+            if (preventsLethal)
+                score += 8000;
+            if (!liveImpact.Known && Duel.LastChainPlayer == 1 && last != null && targets.Contains(last))
+                score += 1000;
+            if (stopsLiveBattleEffect && !liveImpact.Known)
+                score += 1800;
+            if (score < 3000)
+                return null;
+
+            var result = new TacticalDecision
+            {
+                Kind = TacticalActionKind.ForbiddenDroplet,
+                Score = score,
+                Reason = preventsLethal ? "halve remaining attackers to prevent lethal" :
+                    stopsLiveBattleEffect ? "negate a live Battle Phase monster effect" :
+                    targets.Count > 1 ? "positive multi-negate exchange" : "best available untargeted negate"
+            };
+            result.Targets.AddRange(targets);
+            return result;
+        }
+
+        private ClientCard GetBestTacticalMonsterTarget(bool requireTargetable)
+        {
+            List<ClientCard> candidates = Enemy.GetMonsters()
+                .Where(card => card.IsFaceup() && card.HasType(CardType.Effect) &&
+                    !card.IsDisabled() && !IsCurrentChainHandled(card) &&
+                    (!requireTargetable || !card.IsShouldNotBeTarget() &&
+                    !card.IsShouldNotBeSpellTrapTarget()))
+                .ToList();
+            if (candidates.Count == 0)
+                return null;
+
+            ClientCard last = Util.GetLastChainCard();
+            if (Duel.CurrentChain.Count > 0)
+            {
+                if (Duel.LastChainPlayer == 1 && last != null && candidates.Contains(last) &&
+                    GetNegationOutcomeValue(last) >= 2400)
+                    return last;
+                return null;
+            }
+            if (Bot.UnderAttack && Enemy.BattlingMonster != null &&
+                candidates.Contains(Enemy.BattlingMonster))
+                return Enemy.BattlingMonster;
+            return candidates.OrderByDescending(GetObservedThreatScore).FirstOrDefault();
+        }
+
+        private int GetObservedThreatScore(ClientCard card)
+        {
+            if (card == null || IsCurrentChainHandled(card))
+                return 0;
+            int score = Math.Min(2200, Math.Max(0, card.GetAttackPower()) / 2);
+            if (card.IsFloodgate())
+                score += 5200;
+            if (card.IsMonsterShouldBeDisabledBeforeItUseEffect())
+                score += 3900;
+            if (card.IsMonsterDangerous())
+                score += 3000;
+            if (card.IsMonsterInvincible())
+                score += 2200;
+            if (card.HasType(CardType.Link))
+                score += card.LinkCount * 300;
+            if (SkyStrikerMirrorObserved)
+                score += GetMirrorMonsterPriority(card) * 300;
+            ClientCard last = Util.GetLastChainCard();
+            if (Duel.LastChainPlayer == 1 && last == card)
+                score += 1600;
+            if (Bot.UnderAttack && Enemy.BattlingMonster == card)
+                score += card.Attack >= Bot.LifePoints ? 7000 : Math.Min(2200, card.Attack / 2);
+            return score;
+        }
+
+        private bool CanAccessTacticalCard(int id)
+        {
+            if (Card != null && Card.IsCode(id))
+                return true;
+            if (ReactionStateKey == GetDecisionObservationKey())
+                return ReactionOffers.Any(c => c.IsCode(id));
+            return Duel.Player == 0 && Duel.CurrentChain.Count == 0 &&
+                (Duel.Phase == DuelPhase.Main1 || Duel.Phase == DuelPhase.Main2) &&
+                Duel.MainPhase.ActivableCards.Any(c => c.IsCode(id));
+        }
+
+        private int GetTacticalTiePriority(TacticalActionKind kind)
+        {
+            if (kind == TacticalActionKind.WidowAnchor)
+                return 3;
+            if (kind == TacticalActionKind.ForbiddenCrown)
+                return 2;
+            if (kind == TacticalActionKind.ForbiddenDroplet)
+                return 1;
+            return 0;
+        }
+
+        private int GetStrategicReserveValue(ClientCard card)
+        {
+            if (card == null)
+                return 0;
+            if (card.IsCode(CardId.Engage))
+                return HaveThreeSpellsInGrave() ? 5000 : 4300;
+            if (card.IsCode(CardId.Linkage))
+                return LinkageOtk != LinkageOtkStage.None || GetLinkageOtkStarter() != null
+                    ? 5000 : 3900;
+            if (card.IsCode(CardId.Raye))
+            {
+                bool hasSecondAccess = Bot.Hand.Count(candidate => candidate.IsCode(CardId.Raye)) > 1 ||
+                    Bot.HasInHandOrInSpellZone(CardId.HornetDrones) ||
+                    Bot.HasInHandOrInSpellZone(CardId.Engage);
+                return hasSecondAccess ? 3200 : 5000;
+            }
+            if (card.IsCode(CardId.Roze))
+                return 3000;
+            if (card.IsCode(CardId.WidowAnchor))
+                return Enemy.GetMonsters().Any(candidate => candidate.IsFaceup() &&
+                    candidate.HasType(CardType.Effect) && !candidate.IsDisabled()) ? 4500 : 3200;
+            if (card.IsCode(CardId.ForbiddenDroplet))
+                return GetForbiddenDropletTargets().Count > 1 ? 4700 : 3400;
+            if (card.IsCode(CardId.Zero))
+                return 5000;
+            if (card.IsCode(CardId.Multirole))
+                return 4700;
+            if (card.IsCode(CardId.Lemnisgate))
+                return 5200;
+            if (card.IsCode(CardId.HornetDrones))
+                return 3500;
+            if (card.IsCode(CardId.TheFallenAndTheVirtuous))
+                return Bot.HasInExtra(CardId.AlbionTheBrandedDragon) ? 3300 : 2200;
+            if (card.IsCode(CardId.ForbiddenCrown))
+                return 2400;
+            if (card.IsCode(CardId.UltimateSky))
+                return 4300;
+            if (card.IsCode(CardId.TripleTacticsTalent))
+                return 3500;
+            if (card.IsCode(CardId.Kaina))
+                return 2400;
+            return 0;
+        }
+
+        private void LogTacticalDecision(TacticalDecision decision)
+        {
+            Logger.DebugWriteLine("[SkyStriker2026] tactical=" + decision.Kind +
+                " score=" + decision.Score + " reason=" + decision.Reason + " targets=" +
+                string.Join(",", decision.Targets.Select(card =>
+                    card.Name ?? card.Id.ToString()).ToArray()));
+        }
+
+        private int GetFallenAndVirtuousDestroyScore(ClientCard target)
+        {
+            if (!IsLiveFallenAndVirtuousDestroyTarget(target))
+                return 0;
+            int score;
+            if (target.IsMonster())
+            {
+                score = GetObservedThreatScore(target);
+            }
+            else
+            {
+                score = GetSpellTrapDestructionScore(target);
+                if (score == 0)
+                    return 0;
+            }
+            // Sending Albion while another TFTV remains converts this removal into
+            // an End Phase replacement, so it carries almost no long-term cost.
+            if (Bot.HasInExtra(CardId.AlbionTheBrandedDragon) &&
+                Bot.HasInDeck(CardId.TheFallenAndTheVirtuous))
+                score += 2200;
+            else
+                score -= 900;
+            return score;
+        }
+
+        private ClientCard GetBestFallenAndVirtuousReviveTarget()
+        {
+            return Bot.Graveyard.Concat(Enemy.Graveyard)
+                .Where(card => card.IsMonster() && card.IsCanRevive())
+                .OrderByDescending(GetFallenAndVirtuousReviveScore)
+                .FirstOrDefault();
+        }
+
+        private int GetFallenAndVirtuousReviveScore(ClientCard target)
+        {
+            if (target == null || !target.IsMonster() || !target.IsCanRevive())
+                return 0;
+            int score = Math.Max(0, target.GetAttackPower());
+            if (target.HasType(CardType.Link))
+                score += target.LinkCount * 600;
+            if (target.IsCode(CardId.Raye, CardId.Roze))
+                score += 2800;
+            if (target.IsCode(CardId.Kagari, CardId.Zero, CardId.Shizuku,
+                CardId.Hayate, CardId.Kaina))
+                score += 2200;
+            if (target.IsFloodgate())
+                score += 3000;
+            if (EmptyMainMonsterZone() && target.HasType(CardType.Effect))
+                score += 700;
+            return score;
+        }
+
+        private IList<ClientCard> SelectFallenAndVirtuousReviveTarget(
+            IList<ClientCard> cards, int min, int max)
+        {
+            var ordered = new List<ClientCard>();
+            ClientCard intended = FindMatchingOfferedCard(cards, FallenAndVirtuousReviveTarget);
+            if (intended != null)
+                ordered.Add(intended);
+            ordered.AddRange(cards.Where(card => !ordered.Contains(card))
+                .OrderByDescending(GetFallenAndVirtuousReviveScore));
+            FallenAndVirtuousReviveTarget = null;
+            return Util.CheckSelectCount(ordered, cards, min, max);
+        }
+
+        #endregion
+
+        #region Strategic route planning
+
+        // Bounded RDA-style route planner for the normal SkyStriker2026 executor.
+        // It models only public own resources and observed opponent counts. The normal
+        // executor remains the authority for legal offers, costs, targets and prompts.
+        private enum SkyStrategicActionKind
+        {
+            None,
+            ActivateReinforcement,
+            ActivateEngage,
+            ActivatePot,
+            NormalRaye,
+            NormalRoze,
+            ActivateHornet,
+            RayeTagZero,
+            LinkKagari,
+            LinkBridge,
+            LinkZero,
+            LinkShizuku,
+            ActivateUltimateLinkage,
+            SetLinkageFuel,
+            ActivateLinkage,
+            ResolveZeroSearch,
+            LinkBattleStarter
+        }
+
+        private enum SkyStrategicExtraKind
+        {
+            None,
+            Zero,
+            Kagari,
+            Bridge,
+            Shizuku,
+            Other
+        }
+
+        private sealed class SkyStrategicAction
+        {
+            public SkyStrategicActionKind Kind;
+            public int SearchTarget;
+            public string Text;
+        }
+
+        private sealed class SkyStrategicTransition
+        {
+            public SkyStrategicAction Action;
+            public SkyStrategicState After;
+        }
+
+        private sealed class SkyStrategicPlan
+        {
+            public SkyStrategicState Root;
+            public readonly List<SkyStrategicTransition> Steps =
+                new List<SkyStrategicTransition>();
+            public double Score;
+            public int Expanded;
+            public bool TimedOut;
+            public int ConsideredRootActions;
+            public string Outcome = "Unmodeled";
+            public string Reason = "no modeled legal root";
+        }
+
+        private sealed class SkyStrategicState : IEquatable<SkyStrategicState>
+        {
+            public bool MainPhase;
+            // Only the first step is filtered by the server's current offers.
+            public int RootActionMask = -1;
+            public bool Main1;
+            public bool Turn1;
+            public bool NormalAvailable;
+            public bool CanSearch = true;
+            public bool CanDraw = true;
+            public bool PotPermitted = true;
+            public int MainRaye;
+            public int MainRoze;
+            public int MainToken;
+            public int MainOther;
+            public SkyStrategicExtraKind ExtraKind;
+            public bool FieldFuel;
+            public bool HandRaye;
+            public bool HandRoze;
+            public bool HandEngage;
+            public bool HandReinforcement;
+            public bool HandHornet;
+            public bool HandLinkage;
+            public int HandLinkageFuelId;
+            public int HandLinkageFuelCost;
+            public bool HandUltimate;
+            public bool HandWidow;
+            public bool HandLemnisgate;
+            public bool HandMultirole;
+            public bool HandPot;
+            public bool LemnisgateLive;
+            public bool DeckRaye;
+            public bool DeckRoze;
+            public bool DeckEngage;
+            public bool DeckHornet;
+            public bool DeckLinkage;
+            public bool DeckWidow;
+            public bool DeckLemnisgate;
+            public bool DeckMultirole;
+            public bool GraveEngage;
+            public int GraveEngageCopies;
+            public bool GraveHornet;
+            public int GraveSpells;
+            public int GraveAceMonsters;
+            public bool GraveRaye;
+            public bool GraveRoze;
+            public int BattleStarterAttack;
+            public bool ExtraZero;
+            public bool ExtraKagari;
+            public bool ExtraBridge;
+            public bool ExtraHayate;
+            public bool ExtraShizuku;
+            public bool ZeroUsed;
+            public bool KagariUsed;
+            public bool PendingZeroSearch;
+            public bool HornetSetup;
+            public int EnemyMonsters;
+            public int EnemyField;
+            public int EnemyLife;
+            public int DeckCount;
+            public int Advantage;
+            public int PotRisk;
+            public int ResourceCost;
+            public int Step;
+
+            public int MainCount
+            {
+                get { return MainRaye + MainRoze + MainToken + MainOther; }
+            }
+
+            public bool EmptyMainZone
+            {
+                get { return MainCount == 0; }
+            }
+
+            public bool CanUseSkyStrikerSpell
+            {
+                get { return MainPhase && EmptyMainZone; }
+            }
+
+            public SkyStrategicState Clone()
+            {
+                return (SkyStrategicState)MemberwiseClone();
+            }
+
+            public bool Equals(SkyStrategicState other)
+            {
+                return other != null && GetKey() == other.GetKey();
+            }
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as SkyStrategicState);
+            }
+
+            public override int GetHashCode()
+            {
+                return GetKey().GetHashCode();
+            }
+
+            public string GetKey()
+            {
+                return string.Join("|", new[]
+                {
+                    MainPhase ? "1" : "0", RootActionMask.ToString(),
+                    Main1 ? "1" : "0", Turn1 ? "1" : "0",
+                    NormalAvailable ? "1" : "0", MainRaye.ToString(), MainRoze.ToString(),
+                    CanSearch ? "1" : "0", CanDraw ? "1" : "0", PotPermitted ? "1" : "0",
+                    MainToken.ToString(), MainOther.ToString(), ((int)ExtraKind).ToString(),
+                    FieldFuel ? "1" : "0", HandRaye ? "1" : "0", HandRoze ? "1" : "0",
+                    HandEngage ? "1" : "0", HandReinforcement ? "1" : "0",
+                    HandHornet ? "1" : "0", HandLinkage ? "1" : "0",
+                    HandLinkageFuelId.ToString(), HandLinkageFuelCost.ToString(),
+                    HandUltimate ? "1" : "0", HandWidow ? "1" : "0",
+                    HandLemnisgate ? "1" : "0", HandMultirole ? "1" : "0",
+                    HandPot ? "1" : "0", LemnisgateLive ? "1" : "0",
+                    DeckRaye ? "1" : "0", DeckRoze ? "1" : "0",
+                    DeckEngage ? "1" : "0", DeckHornet ? "1" : "0",
+                    DeckLinkage ? "1" : "0", DeckWidow ? "1" : "0",
+                    DeckLemnisgate ? "1" : "0", DeckMultirole ? "1" : "0",
+                    GraveEngage ? "1" : "0", GraveEngageCopies.ToString(),
+                    GraveHornet ? "1" : "0",
+                    GraveSpells.ToString(), GraveAceMonsters.ToString(),
+                    GraveRaye ? "1" : "0", GraveRoze ? "1" : "0",
+                    BattleStarterAttack.ToString(),
+                    ExtraZero ? "1" : "0", ExtraKagari ? "1" : "0",
+                    ExtraBridge ? "1" : "0", ExtraShizuku ? "1" : "0",
+                    ExtraHayate ? "1" : "0",
+                    ZeroUsed ? "1" : "0", KagariUsed ? "1" : "0",
+                    PendingZeroSearch ? "1" : "0", HornetSetup ? "1" : "0",
+                    EnemyMonsters.ToString(), EnemyField.ToString(), EnemyLife.ToString(),
+                    DeckCount.ToString(), Advantage.ToString(), PotRisk.ToString(),
+                    ResourceCost.ToString(), Step.ToString()
+                });
+            }
+        }
+
+        private sealed class SkyStrategicNode
+        {
+            public SkyStrategicState State;
+            public readonly List<SkyStrategicTransition> Steps =
+                new List<SkyStrategicTransition>();
+            public double Score;
+        }
+
+        private static class SkyStrategicPlanner
+        {
+            private const int TimeLimitMilliseconds = 35;
+            private const int MaximumDepth = 8;
+            private const int BeamWidth = 72;
+            private const int MaximumExpanded = 2500;
+            private const int MaximumCandidates = 6000;
+
+            public static SkyStrategicPlan Plan(SkyStrategicState root,
+                CancellationToken cancellation)
+            {
+                var result = new SkyStrategicPlan
+                {
+                    Root = root,
+                    Score = EvaluateTerminal(root)
+                };
+                if (root == null || !root.MainPhase)
+                    return result;
+
+                var watch = Stopwatch.StartNew();
+                var frontier = new List<SkyStrategicNode>
+                {
+                    new SkyStrategicNode { State = root, Score = Evaluate(root) }
+                };
+                SkyStrategicNode best = null;
+                double bestScore = EvaluateTerminal(root);
+                int expanded = 0;
+                int generated = 0;
+
+                for (int depth = 0; depth < MaximumDepth && frontier.Count > 0; depth++)
+                {
+                    var candidates = new List<SkyStrategicNode>();
+                    foreach (SkyStrategicNode node in frontier)
+                    {
+                        if (Expired(watch, cancellation) || expanded >= MaximumExpanded ||
+                            generated >= MaximumCandidates)
+                            break;
+                        expanded++;
+                        foreach (SkyStrategicTransition transition in Expand(node.State,
+                            cancellation))
+                        {
+                            if (Expired(watch, cancellation) || generated++ >= MaximumCandidates)
+                                break;
+                            if (depth == 0 && !root.PendingZeroSearch &&
+                                (root.RootActionMask & (1 << (int)transition.Action.Kind)) == 0)
+                                continue;
+                            if (depth == 0)
+                                result.ConsideredRootActions |= 1 << (int)transition.Action.Kind;
+                            var next = new SkyStrategicNode
+                            {
+                                State = transition.After,
+                                Score = Evaluate(transition.After)
+                            };
+                            next.Steps.AddRange(node.Steps);
+                            next.Steps.Add(transition);
+                            candidates.Add(next);
+                            double terminalScore = EvaluateTerminal(next.State);
+                            if (terminalScore > bestScore)
+                            {
+                                best = next;
+                                bestScore = terminalScore;
+                            }
+                        }
+                    }
+                    if (Expired(watch, cancellation) || expanded >= MaximumExpanded ||
+                        generated >= MaximumCandidates)
+                        break;
+                    frontier = candidates
+                        .GroupBy(node => node.State.GetKey())
+                        .Select(group => group.OrderByDescending(node => node.Score).First())
+                        .OrderByDescending(node => node.Score)
+                        .Take(BeamWidth)
+                        .ToList();
+                }
+
+                result.Expanded = expanded;
+                result.TimedOut = Expired(watch, cancellation);
+                result.Outcome = result.TimedOut || expanded >= MaximumExpanded || generated >= MaximumCandidates
+                    ? "Incomplete" : result.ConsideredRootActions == 0 ? "Unmodeled" : "NoImprovement";
+                result.Reason = result.Outcome == "Incomplete" ? "bounded search exhausted; local evaluation required" :
+                    result.Outcome == "Unmodeled" ? "no supported root; local evaluation required" :
+                    "projection found no better terminal; not proof that PASS dominates real actions";
+                if (!cancellation.IsCancellationRequested && best != null &&
+                    bestScore > EvaluateTerminal(root) + 100)
+                {
+                    result.Steps.AddRange(best.Steps);
+                    result.Score = bestScore;
+                    result.Outcome = "Route";
+                    result.Reason = "completed modeled route improves projected terminal";
+                }
+                return result;
+            }
+
+            private static bool Expired(Stopwatch watch, CancellationToken cancellation)
+            {
+                return cancellation.IsCancellationRequested ||
+                    watch.ElapsedMilliseconds >= TimeLimitMilliseconds;
+            }
+
+            private static IEnumerable<SkyStrategicTransition> Expand(
+                SkyStrategicState state, CancellationToken cancellation)
+            {
+                if (cancellation.IsCancellationRequested)
+                    yield break;
+
+                if (state.PendingZeroSearch)
+                {
+                    foreach (SkyStrategicTransition transition in ExpandZeroSearch(state))
+                        yield return transition;
+                    yield break;
+                }
+
+                // Deterministic deck access is deliberately expanded before Pot.
+                if (state.CanSearch && state.CanUseSkyStrikerSpell && state.HandReinforcement &&
+                    state.DeckRaye)
+                {
+                    SkyStrategicState after = Next(state);
+                    after.HandReinforcement = false;
+                    ConsumeHandFuel(after, CardId.ReinforcementOfTheArmy);
+                    after.HandRaye = true;
+                    after.DeckRaye = false;
+                    after.GraveSpells++;
+                    yield return Move(SkyStrategicActionKind.ActivateReinforcement,
+                        "ROTA -> Raye", after);
+                }
+
+                if (state.CanSearch && state.CanUseSkyStrikerSpell && state.HandEngage)
+                {
+                    foreach (int target in GetEngageTargets(state))
+                    {
+                        SkyStrategicState after = Next(state);
+                        int spellsBefore = after.GraveSpells;
+                        after.HandEngage = false;
+                        ConsumeHandFuel(after, CardId.Engage);
+                        after.GraveEngage = true;
+                        after.GraveEngageCopies++;
+                        after.GraveSpells++;
+                        if (spellsBefore >= 3 && state.CanDraw)
+                            after.Advantage++;
+                        AddSearchTarget(after, target, false);
+                        yield return Move(SkyStrategicActionKind.ActivateEngage,
+                            "Engage -> " + GetCardLabel(target), after, target);
+                    }
+                }
+
+                if (state.CanUseSkyStrikerSpell && state.HandUltimate &&
+                    state.HandLinkage && state.ExtraKind == SkyStrategicExtraKind.None &&
+                    state.EnemyMonsters > 0 && state.ExtraZero && !state.ZeroUsed)
+                {
+                    SkyStrategicState after = Next(state);
+                    after.HandUltimate = false;
+                    ConsumeHandFuel(after, CardId.UltimateSky);
+                    after.HandLinkage = false;
+                    after.GraveSpells += 2;
+                    after.ExtraKind = SkyStrategicExtraKind.Zero;
+                    after.ExtraZero = false;
+                    after.ZeroUsed = true;
+                    after.PendingZeroSearch = true;
+                    yield return Move(SkyStrategicActionKind.ActivateUltimateLinkage,
+                        "Ultimate Sky -> chain Linkage -> Zero", after);
+                }
+
+                if (state.CanUseSkyStrikerSpell && state.HandLinkage &&
+                    !state.FieldFuel && state.HandLinkageFuelId != 0 &&
+                    state.ExtraKind == SkyStrategicExtraKind.None && state.ExtraZero &&
+                    !state.ZeroUsed)
+                {
+                    SkyStrategicState after = Next(state);
+                    int fuelId = after.HandLinkageFuelId;
+                    after.HandLinkageFuelId = 0;
+                    after.ResourceCost += after.HandLinkageFuelCost;
+                    after.HandLinkageFuelCost = 0;
+                    after.FieldFuel = true;
+                    if (fuelId == CardId.Lemnisgate)
+                        after.HandLemnisgate = false;
+                    else if (fuelId == CardId.WidowAnchor)
+                        after.HandWidow = false;
+                    else if (fuelId == CardId.UltimateSky)
+                        after.HandUltimate = false;
+                    else if (fuelId == CardId.Engage)
+                        after.HandEngage = false;
+                    else if (fuelId == CardId.HornetDrones)
+                        after.HandHornet = false;
+                    else if (fuelId == CardId.ReinforcementOfTheArmy)
+                        after.HandReinforcement = false;
+                    else if (fuelId == CardId.PotOfDesires)
+                        after.HandPot = false;
+                    else if (fuelId == CardId.Multirole)
+                        after.HandMultirole = false;
+                    yield return Move(SkyStrategicActionKind.SetLinkageFuel,
+                        "set " + GetCardLabel(fuelId) + " -> Linkage fuel", after,
+                        fuelId);
+                }
+
+                if (state.CanUseSkyStrikerSpell && state.HandLinkage && state.FieldFuel &&
+                    state.ExtraKind == SkyStrategicExtraKind.None && state.ExtraZero &&
+                    !state.ZeroUsed)
+                {
+                    SkyStrategicState after = Next(state);
+                    after.HandLinkage = false;
+                    after.FieldFuel = false;
+                    after.GraveSpells += 2;
+                    after.ExtraKind = SkyStrategicExtraKind.Zero;
+                    after.ExtraZero = false;
+                    after.ZeroUsed = true;
+                    after.PendingZeroSearch = true;
+                    yield return Move(SkyStrategicActionKind.ActivateLinkage,
+                        "Linkage fuel -> Zero", after);
+                }
+
+                if (state.NormalAvailable && state.MainCount == 0 &&
+                    state.ExtraKind == SkyStrategicExtraKind.None && state.HandRaye)
+                {
+                    SkyStrategicState after = Next(state);
+                    after.HandRaye = false;
+                    after.MainRaye = 1;
+                    after.NormalAvailable = false;
+                    yield return Move(SkyStrategicActionKind.NormalRaye,
+                        "Normal Raye", after);
+                }
+
+                if (state.NormalAvailable && state.MainCount == 0 &&
+                    state.ExtraKind == SkyStrategicExtraKind.None && state.HandRoze)
+                {
+                    SkyStrategicState after = Next(state);
+                    after.HandRoze = false;
+                    after.MainRoze = 1;
+                    after.NormalAvailable = false;
+                    yield return Move(SkyStrategicActionKind.NormalRoze,
+                        "Normal Roze", after);
+                }
+
+                if (state.Main1 && state.CanUseSkyStrikerSpell && state.HandHornet &&
+                    (state.HornetSetup || state.Turn1 || state.EnemyMonsters == 0) &&
+                    (state.ExtraKind == SkyStrategicExtraKind.None ||
+                    state.ExtraKind == SkyStrategicExtraKind.Kagari ||
+                    state.ExtraKind == SkyStrategicExtraKind.Bridge))
+                {
+                    SkyStrategicState after = Next(state);
+                    after.HandHornet = false;
+                    ConsumeHandFuel(after, CardId.HornetDrones);
+                    after.GraveHornet = true;
+                    after.GraveSpells++;
+                    after.MainToken++;
+                    if (state.ExtraKind == SkyStrategicExtraKind.None)
+                        after.HornetSetup = true;
+                    yield return Move(SkyStrategicActionKind.ActivateHornet,
+                        state.ExtraKind == SkyStrategicExtraKind.None
+                            ? "Hornet token starter" : "Hornet second token", after);
+                }
+
+                if (state.Main1 && state.MainCount == 1 && state.MainRaye == 1 &&
+                    (state.Turn1 || state.EnemyMonsters == 0) &&
+                    state.ExtraKind == SkyStrategicExtraKind.None && state.ExtraZero &&
+                    !state.ZeroUsed)
+                {
+                    SkyStrategicState after = Next(state);
+                    after.MainRaye = 0;
+                    after.GraveAceMonsters++;
+                    after.GraveRaye = true;
+                    after.ExtraKind = SkyStrategicExtraKind.Zero;
+                    after.ExtraZero = false;
+                    after.ZeroUsed = true;
+                    after.PendingZeroSearch = true;
+                    yield return Move(SkyStrategicActionKind.RayeTagZero,
+                        "Raye tag -> Zero", after);
+                }
+
+                // Reserve Kagari and Zero before spending either summon. The
+                // terminal battle projection is only useful if the search can
+                // also reach that position from a normal summon/token starter.
+                if (state.Main1 && !state.Turn1 && state.EnemyField == 0 &&
+                    state.MainCount == 1 && state.MainOther == 0 &&
+                    state.ExtraKind == SkyStrategicExtraKind.None && state.ExtraHayate &&
+                    state.ExtraKagari && state.ExtraZero && !state.KagariUsed && !state.ZeroUsed)
+                {
+                    SkyStrategicState after = Next(state);
+                    BuryMainMaterials(after);
+                    after.MainRaye = 0;
+                    after.MainRoze = 0;
+                    after.MainToken = 0;
+                    after.HornetSetup = false;
+                    after.ExtraKind = SkyStrategicExtraKind.Bridge;
+                    after.BattleStarterAttack = 1500;
+                    after.ExtraHayate = false;
+                    yield return Move(SkyStrategicActionKind.LinkBattleStarter,
+                        "Link Hayate; reserve Kagari and Zero for battle", after);
+                }
+
+                if (state.MainCount == 1 && state.MainOther == 0 &&
+                    state.ExtraKind == SkyStrategicExtraKind.None && state.ExtraKagari &&
+                    !state.KagariUsed)
+                {
+                    SkyStrategicState after = Next(state);
+                    BuryMainMaterials(after);
+                    after.MainRaye = 0;
+                    after.MainRoze = 0;
+                    after.MainToken = 0;
+                    after.ExtraKind = SkyStrategicExtraKind.Kagari;
+                    after.BattleStarterAttack = 0;
+                    after.ExtraKagari = false;
+                    after.KagariUsed = true;
+                    if (after.HornetSetup && after.GraveHornet)
+                    {
+                        after.GraveHornet = false;
+                        after.HandHornet = true;
+                        after.GraveSpells = Math.Max(0, after.GraveSpells - 1);
+                    }
+                    else if (after.GraveEngage)
+                    {
+                        RemoveGraveEngage(after);
+                        after.HandEngage = true;
+                        after.GraveSpells = Math.Max(0, after.GraveSpells - 1);
+                    }
+                    yield return Move(SkyStrategicActionKind.LinkKagari,
+                        "Link Kagari and recover engine", after);
+                }
+
+                if (state.ExtraKind == SkyStrategicExtraKind.Kagari &&
+                    state.MainCount == 1 && state.MainToken == 1 && state.ExtraBridge)
+                {
+                    SkyStrategicState after = Next(state);
+                    after.ExtraKind = SkyStrategicExtraKind.Bridge;
+                    after.BattleStarterAttack = 0;
+                    after.ExtraBridge = false;
+                    after.GraveAceMonsters++;
+                    yield return Move(SkyStrategicActionKind.LinkBridge,
+                        "Kagari -> bridge Link", after);
+                }
+
+                bool bridgeZero = state.ExtraKind == SkyStrategicExtraKind.Bridge &&
+                    state.MainCount == 1 && state.MainToken == 1;
+                bool pairZero = state.ExtraKind == SkyStrategicExtraKind.None &&
+                    state.MainCount == 2 && state.MainRaye >= 1 && state.MainRoze >= 1;
+                if ((bridgeZero || pairZero) && state.ExtraZero && !state.ZeroUsed)
+                {
+                    SkyStrategicState after = Next(state);
+                    BuryMainMaterials(after);
+                    after.MainRaye = 0;
+                    after.MainRoze = 0;
+                    after.MainToken = 0;
+                    after.MainOther = 0;
+                    if (bridgeZero)
+                        after.GraveAceMonsters++;
+                    after.ExtraKind = SkyStrategicExtraKind.Zero;
+                    after.BattleStarterAttack = 0;
+                    after.ExtraZero = false;
+                    after.ZeroUsed = true;
+                    after.PendingZeroSearch = true;
+                    yield return Move(SkyStrategicActionKind.LinkZero,
+                        "clear both Main Zones -> Zero", after);
+                }
+
+                if ((state.Turn1 || !state.Main1) &&
+                    state.MainCount == 1 && state.MainOther == 0 &&
+                    state.ExtraKind == SkyStrategicExtraKind.None && state.ExtraShizuku)
+                {
+                    SkyStrategicState after = Next(state);
+                    BuryMainMaterials(after);
+                    after.MainRaye = 0;
+                    after.MainRoze = 0;
+                    after.MainToken = 0;
+                    after.ExtraKind = SkyStrategicExtraKind.Shizuku;
+                    // Summoned in attack position by the existing Link handler.
+                    after.BattleStarterAttack = 1500;
+                    after.ExtraShizuku = false;
+                    yield return Move(SkyStrategicActionKind.LinkShizuku,
+                        "Link Shizuku end board", after);
+                }
+
+                if (state.PotPermitted && state.CanDraw && state.CanUseSkyStrikerSpell &&
+                    state.HandPot && state.DeckCount > 15)
+                {
+                    SkyStrategicState after = Next(state);
+                    after.HandPot = false;
+                    ConsumeHandFuel(after, CardId.PotOfDesires);
+                    after.GraveSpells++;
+                    after.DeckCount -= 10;
+                    after.Advantage++;
+                    after.PotRisk += GetPotRisk(state);
+                    yield return Move(SkyStrategicActionKind.ActivatePot,
+                        "Pot of Desires recovery", after);
+                }
+            }
+
+            private static IEnumerable<SkyStrategicTransition> ExpandZeroSearch(
+                SkyStrategicState state)
+            {
+                var targets = new List<int>();
+                if (state.CanSearch && state.DeckEngage || state.GraveEngage)
+                    targets.Add(CardId.Engage);
+                else if (state.CanSearch)
+                {
+                    if (state.DeckLinkage && !state.HandLinkage)
+                        targets.Add(CardId.Linkage);
+                    if (state.DeckWidow && !state.HandWidow)
+                        targets.Add(CardId.WidowAnchor);
+                    if (state.DeckLemnisgate && !state.HandLemnisgate &&
+                        state.GraveSpells > 0 && state.GraveAceMonsters > 0 &&
+                        state.LemnisgateLive)
+                        targets.Add(CardId.Lemnisgate);
+                }
+                foreach (int target in targets.Distinct())
+                {
+                    SkyStrategicState after = Next(state);
+                    after.PendingZeroSearch = false;
+                    AddSearchTarget(after, target, true);
+                    yield return Move(SkyStrategicActionKind.ResolveZeroSearch,
+                        "Zero search -> " + GetCardLabel(target), after, target);
+                }
+                if (targets.Count == 0)
+                {
+                    SkyStrategicState after = Next(state);
+                    after.PendingZeroSearch = false;
+                    yield return Move(SkyStrategicActionKind.ResolveZeroSearch,
+                        "Zero: no modeled search target", after);
+                }
+            }
+
+            private static IEnumerable<int> GetEngageTargets(SkyStrategicState state)
+            {
+                bool starter = state.HandRaye || state.HandRoze || state.HandHornet ||
+                    state.MainCount > 0 || state.ExtraKind != SkyStrategicExtraKind.None;
+                if (!starter && state.DeckRaye)
+                    yield return CardId.Raye;
+                if (!state.HandLinkage && state.DeckLinkage && !state.Turn1 &&
+                    state.EnemyField == 0)
+                    yield return CardId.Linkage;
+                if (starter && !state.HandWidow && state.DeckWidow)
+                    yield return CardId.WidowAnchor;
+                if (state.DeckLemnisgate && !state.HandLemnisgate &&
+                    state.GraveSpells > 0 && state.GraveAceMonsters > 0 &&
+                    state.LemnisgateLive)
+                    yield return CardId.Lemnisgate;
+                if (!state.HandMultirole && state.DeckMultirole)
+                    yield return CardId.Multirole;
+                if (!starter && !state.HandHornet && state.DeckHornet)
+                    yield return CardId.HornetDrones;
+                if (!state.HandLinkage && state.DeckLinkage)
+                    yield return CardId.Linkage;
+                if (!state.HandWidow && state.DeckWidow)
+                    yield return CardId.WidowAnchor;
+                if (!starter && state.DeckRoze)
+                    yield return CardId.Roze;
+            }
+
+            private static void AddSearchTarget(SkyStrategicState state, int target,
+                bool allowGrave)
+            {
+                if (target == CardId.Raye)
+                {
+                    state.HandRaye = true;
+                    state.DeckRaye = false;
+                }
+                else if (target == CardId.Roze)
+                {
+                    state.HandRoze = true;
+                    state.DeckRoze = false;
+                }
+                else if (target == CardId.Engage)
+                {
+                    state.HandEngage = true;
+                    if (allowGrave && state.GraveEngage &&
+                        (!state.CanSearch || !state.DeckEngage || state.GraveSpells -
+                        Math.Max(1, state.GraveEngageCopies) >= 3))
+                    {
+                        RemoveGraveEngage(state);
+                        state.GraveSpells = Math.Max(0, state.GraveSpells - 1);
+                    }
+                    else
+                        state.DeckEngage = false;
+                }
+                else if (target == CardId.HornetDrones)
+                {
+                    state.HandHornet = true;
+                    state.DeckHornet = false;
+                }
+                else if (target == CardId.Linkage)
+                {
+                    state.HandLinkage = true;
+                    state.DeckLinkage = false;
+                }
+                else if (target == CardId.WidowAnchor)
+                {
+                    state.HandWidow = true;
+                    state.DeckWidow = false;
+                }
+                else if (target == CardId.Lemnisgate)
+                {
+                    state.HandLemnisgate = true;
+                    state.DeckLemnisgate = false;
+                }
+                else if (target == CardId.Multirole)
+                {
+                    state.HandMultirole = true;
+                    state.DeckMultirole = false;
+                }
+            }
+
+            private static SkyStrategicState Next(SkyStrategicState state)
+            {
+                SkyStrategicState next = state.Clone();
+                next.Step++;
+                return next;
+            }
+
+            private static void ConsumeHandFuel(SkyStrategicState state, int id)
+            {
+                // The fuel candidate is a real card, not a second copy of the
+                // same hand resource after its modeled activation.
+                if (state.HandLinkageFuelId != id)
+                    return;
+                state.HandLinkageFuelId = 0;
+                state.HandLinkageFuelCost = 0;
+            }
+
+            private static void RemoveGraveEngage(SkyStrategicState state)
+            {
+                state.GraveEngageCopies = Math.Max(0, state.GraveEngageCopies - 1);
+                state.GraveEngage = state.GraveEngageCopies > 0;
+            }
+
+            private static void BuryMainMaterials(SkyStrategicState state)
+            {
+                state.GraveRaye |= state.MainRaye > 0;
+                state.GraveRoze |= state.MainRoze > 0;
+                // A token disappears; it cannot fund Lemnisgate or a revival.
+                state.GraveAceMonsters += state.MainRaye + state.MainRoze;
+            }
+
+            private static double EvaluateTerminal(SkyStrategicState state)
+            {
+                if (state == null || state.PendingZeroSearch ||
+                    !state.EmptyMainZone && HasModeledSkyStrikerSpell(state))
+                    return double.MinValue;
+                return Evaluate(state) + GetFollowUpValue(state);
+            }
+
+            public static int GetFollowUpValue(SkyStrategicState state)
+            {
+                // Discounted next-turn access, not a simulated enemy turn. Do
+                // not invent draws, searches or survival of our current board.
+                int access = 0;
+                bool linkAvailable = state.ExtraZero || state.ExtraKagari ||
+                    state.ExtraBridge || state.ExtraShizuku;
+                if (linkAvailable)
+                {
+                    if (state.HandRaye || state.HandRoze)
+                        access = 650;
+                    if (state.HandHornet)
+                        access = Math.Max(access, 700);
+                    if (state.HandReinforcement && state.DeckRaye)
+                        access = Math.Max(access, 650);
+                    if (state.HandEngage && (state.DeckRaye || state.DeckHornet))
+                        access = Math.Max(access, 900);
+                }
+                if (state.GraveEngage && state.ExtraKagari && access > 0)
+                    access += 400;
+                return access;
+            }
+
+            public static int GetPreparedBattleDamage(SkyStrategicState state)
+            {
+                if (state.Turn1 || !state.Main1 || !state.EmptyMainZone ||
+                    state.EnemyField != 0 || !state.HandLinkage ||
+                    state.BattleStarterAttack < 1500 ||
+                    state.ExtraKind == SkyStrategicExtraKind.None ||
+                    state.ExtraKind == SkyStrategicExtraKind.Zero ||
+                    state.ExtraKind == SkyStrategicExtraKind.Kagari ||
+                    !state.ExtraKagari || !state.ExtraZero || state.KagariUsed ||
+                    state.ZeroUsed || !(state.DeckRaye || state.GraveRaye) ||
+                    !(state.DeckRoze || state.GraveRoze))
+                    return 0;
+                return state.BattleStarterAttack + 6500;
+            }
+
+            private static SkyStrategicTransition Move(SkyStrategicActionKind kind,
+                string text, SkyStrategicState after, int searchTarget = 0)
+            {
+                return new SkyStrategicTransition
+                {
+                    Action = new SkyStrategicAction
+                    {
+                        Kind = kind,
+                        SearchTarget = searchTarget,
+                        Text = text
+                    },
+                    After = after
+                };
+            }
+
+            private static int GetPotRisk(SkyStrategicState state)
+            {
+                int risk = 1;
+                bool starter = state.HandRaye || state.HandRoze || state.HandHornet ||
+                    state.MainCount > 0 || state.ExtraKind != SkyStrategicExtraKind.None;
+                if (!starter)
+                    risk += 5;
+                if (!state.HandLinkage)
+                    risk += 3;
+                if (!state.HandRoze && state.DeckRoze)
+                    risk += 2;
+                if (!state.HandWidow && state.DeckWidow)
+                    risk++;
+                return risk;
+            }
+
+            private static double Evaluate(SkyStrategicState state)
+            {
+                if (state == null)
+                    return double.MinValue;
+                double score = 0;
+                if (state.ExtraKind == SkyStrategicExtraKind.Zero)
+                    score += 6400;
+                else if (state.ExtraKind == SkyStrategicExtraKind.Shizuku)
+                    score += 3300;
+                else if (state.ExtraKind == SkyStrategicExtraKind.Kagari)
+                    score += 1900;
+                else if (state.ExtraKind == SkyStrategicExtraKind.Bridge)
+                    score += 1500;
+                else if (state.ExtraKind == SkyStrategicExtraKind.Other)
+                    score += 900;
+
+                if (state.EmptyMainZone)
+                    score += 700;
+                else if (HasModeledSkyStrikerSpell(state) &&
+                    !(state.ExtraKind == SkyStrategicExtraKind.Bridge &&
+                    state.MainToken == 1))
+                    score -= 3600 + 450 * state.MainCount;
+
+                score += Math.Min(3, state.GraveSpells) * 380;
+                if (state.GraveSpells >= 3)
+                    score += 1050;
+                if (state.HandEngage)
+                    score += 1650;
+                if (state.HandWidow)
+                    score += 1550;
+                if (state.HandLinkage)
+                    score += state.Turn1 ? 850 : 1250;
+                if (state.HandLemnisgate && state.GraveSpells > 0 &&
+                    state.GraveAceMonsters > 0 && state.LemnisgateLive)
+                    score += 900;
+                if (state.HandMultirole)
+                    score += 650;
+                if (state.HandRaye)
+                    score += 650;
+                if (state.HandRoze)
+                    score += 350;
+                if (state.PendingZeroSearch)
+                    score += 700;
+                score += state.Advantage * 620;
+                score -= state.PotRisk * 720;
+                score -= state.ResourceCost;
+                score -= state.Step * 65;
+                if (GetPreparedBattleDamage(state) >= Math.Max(1, state.EnemyLife))
+                    score += 20000;
+
+                bool hasStarter = state.HandRaye || state.HandRoze || state.HandHornet ||
+                    state.MainCount > 0 || state.ExtraKind != SkyStrategicExtraKind.None;
+                if (!hasStarter)
+                    score -= state.Turn1 ? 2800 : 1800;
+                if (state.ExtraKind == SkyStrategicExtraKind.Zero &&
+                    state.EmptyMainZone && (state.HandWidow || state.HandLinkage ||
+                    state.HandEngage))
+                    score += 1200;
+                if (!state.Turn1 && state.EnemyField == 0 && state.HandLinkage &&
+                    state.ExtraKind != SkyStrategicExtraKind.None &&
+                    state.ExtraKind != SkyStrategicExtraKind.Zero)
+                    score += 1800;
+                return score;
+            }
+
+            private static bool HasModeledSkyStrikerSpell(SkyStrategicState state)
+            {
+                return state.HandEngage || state.HandHornet || state.HandLinkage ||
+                    state.HandWidow || state.HandLemnisgate || state.HandMultirole;
+            }
+
+            private static string GetCardLabel(int id)
+            {
+                if (id == CardId.Raye) return "Raye";
+                if (id == CardId.Roze) return "Roze";
+                if (id == CardId.Engage) return "Engage";
+                if (id == CardId.HornetDrones) return "Hornet Drones";
+                if (id == CardId.Linkage) return "Linkage";
+                if (id == CardId.WidowAnchor) return "Widow Anchor";
+                if (id == CardId.Lemnisgate) return "Lemnisgate";
+                if (id == CardId.Multirole) return "Multirole";
+                return id.ToString();
+            }
+        }
+
+        private SkyStrategicState StrategicPlanState;
+        private SkyStrategicPlan StrategicPlan;
+        private CancellationTokenSource StrategicPlanCancellation;
+        private int StrategicSearchTargetPending;
+        private string StrategicObservationKey;
+
+        private SkyStrategicAction GetStrategicRecommendation()
+        {
+            if (Duel.Player != 0 || Duel.CurrentChain.Count > 0 ||
+                (Duel.Phase != DuelPhase.Main1 && Duel.Phase != DuelPhase.Main2))
+                return null;
+
+            SkyStrategicState observed = CaptureSkyStrategicState();
+            string observationKey = GetDecisionObservationKey();
+            if (StrategicPlan == null || StrategicPlanState == null ||
+                !StrategicPlanState.Equals(observed) || StrategicObservationKey != observationKey)
+            {
+                RetireSkyStrategicPlan();
+                StrategicPlanCancellation = new CancellationTokenSource();
+                StrategicPlan = SkyStrategicPlanner.Plan(observed,
+                    StrategicPlanCancellation.Token);
+                StrategicPlanState = observed;
+                StrategicObservationKey = observationKey;
+                if (StrategicPlan.Steps.Count > 0)
+                {
+                    SkyStrategicState end = StrategicPlan.Steps.Last().After;
+                    Logger.DebugWriteLine("[SkyStriker2026:RDA] score=" +
+                        StrategicPlan.Score.ToString("0") + " expanded=" +
+                        StrategicPlan.Expanded.ToString() + " timeout=" +
+                        StrategicPlan.TimedOut.ToString() + " end=" + end.ExtraKind +
+                        " main=" + end.MainCount + " followUp=" +
+                        SkyStrategicPlanner.GetFollowUpValue(end) + " battleDamage=" +
+                        SkyStrategicPlanner.GetPreparedBattleDamage(end) + " route=" +
+                        string.Join(" > ", StrategicPlan.Steps.Select(step =>
+                            step.Action.Text).ToArray()));
+                }
+                else
+                {
+                    Logger.DebugWriteLine("[SkyStriker2026:plan] outcome=" + StrategicPlan.Outcome +
+                        " reason=" + StrategicPlan.Reason + " consideredMask=" +
+                        StrategicPlan.ConsideredRootActions + " expanded=" + StrategicPlan.Expanded);
+                }
+            }
+            return StrategicPlan == null || StrategicPlan.Steps.Count == 0
+                ? null : StrategicPlan.Steps[0].Action;
+        }
+
+        private bool IsStrategicallyRecommended(SkyStrategicActionKind kind)
+        {
+            if (Duel.Player != 0 || Duel.CurrentChain.Count > 0 ||
+                (Duel.Phase != DuelPhase.Main1 && Duel.Phase != DuelPhase.Main2))
+                return false;
+            SkyStrategicAction action = GetStrategicRecommendation();
+            return action != null && action.Kind == kind;
+        }
+
+        private bool StrategicAllows(SkyStrategicActionKind kind)
+        {
+            if (Duel.Player != 0 || Duel.CurrentChain.Count > 0 ||
+                (Duel.Phase != DuelPhase.Main1 && Duel.Phase != DuelPhase.Main2))
+                return true;
+            SkyStrategicAction action = GetStrategicRecommendation();
+            if (action != null)
+                return action.Kind == kind;
+            // A bit in ConsideredRootActions means generated, NOT evaluated to
+            // completion and NOT proven inferior to PASS. Handlers retain their
+            // cost/legality guards. The one-step fallback must still have an exit.
+            bool allow = true;
+            string reason = "evaluate offered action with local cost/target guards";
+            if (kind == SkyStrategicActionKind.ActivateHornet)
+            {
+                allow = Bot.HasInExtra(new[] { CardId.Kagari, CardId.Shizuku,
+                    CardId.Hayate, CardId.Kaina, CardId.Amatsu, CardId.Linkuriboh });
+                reason = allow ? "token has an Extra Deck conversion" : "PASS: token would block MZ with no exit";
+            }
+            if ((kind == SkyStrategicActionKind.NormalRaye || kind == SkyStrategicActionKind.NormalRoze) &&
+                HasPlannedSkyStrikerSpell())
+            {
+                bool exit = (!KagariSummoned && Bot.HasInExtra(CardId.Kagari)) ||
+                    (!ShizukuSummoned && Bot.HasInExtra(CardId.Shizuku)) ||
+                    (!HayateSummoned && Bot.HasInExtra(CardId.Hayate)) ||
+                    (!KainaSummoned && Bot.HasInExtra(CardId.Kaina)) ||
+                    kind == SkyStrategicActionKind.NormalRaye && !ZeroSummoned && Bot.HasInExtra(CardId.Zero);
+                allow = exit;
+                reason = exit ? "normal summon has a modeled MZ exit" : "PASS: preserve spell access; no MZ exit";
+            }
+            Logger.DebugWriteLine("[SkyStriker2026:decision] fallback=" + kind +
+                " accept=" + allow + " reason=" + reason);
+            return allow;
+        }
+
+        private bool StrategicReservesModeledLink()
+        {
+            SkyStrategicAction action = GetStrategicRecommendation();
+            return action != null && (action.Kind == SkyStrategicActionKind.LinkKagari ||
+                action.Kind == SkyStrategicActionKind.LinkBridge ||
+                action.Kind == SkyStrategicActionKind.LinkZero ||
+                action.Kind == SkyStrategicActionKind.LinkBattleStarter ||
+                action.Kind == SkyStrategicActionKind.LinkShizuku);
+        }
+
+        private int GetStrategicSearchTarget(SkyStrategicActionKind kind)
+        {
+            SkyStrategicAction action = GetStrategicRecommendation();
+            return action != null && action.Kind == kind ? action.SearchTarget : 0;
+        }
+
+        private void RetireSkyStrategicPlan()
+        {
+            if (StrategicPlanCancellation != null)
+            {
+                StrategicPlanCancellation.Cancel();
+                StrategicPlanCancellation.Dispose();
+                StrategicPlanCancellation = null;
+            }
+            StrategicPlanState = null;
+            StrategicPlan = null;
+            StrategicObservationKey = null;
+        }
+
+        private SkyStrategicState CaptureSkyStrategicState()
+        {
+            List<ClientCard> main = Bot.GetMonstersInMainZone();
+            List<ClientCard> extra = Bot.GetMonsters().Where(card => card.Sequence >= 5)
+                .ToList();
+            SkyStrategicExtraKind extraKind = SkyStrategicExtraKind.None;
+            if (extra.Any(card => card.IsCode(CardId.Zero)))
+                extraKind = SkyStrategicExtraKind.Zero;
+            else if (extra.Any(card => card.IsCode(CardId.Kagari)))
+                extraKind = SkyStrategicExtraKind.Kagari;
+            else if (extra.Any(card => card.IsCode(CardId.Shizuku)))
+                extraKind = SkyStrategicExtraKind.Shizuku;
+            else if (extra.Any(IsSkyStrikerAceLink))
+                extraKind = SkyStrategicExtraKind.Bridge;
+            else if (extra.Count > 0)
+                extraKind = SkyStrategicExtraKind.Other;
+
+            return new SkyStrategicState
+            {
+                MainPhase = Duel.Phase == DuelPhase.Main1 || Duel.Phase == DuelPhase.Main2,
+                RootActionMask = CaptureStrategicRootOffers(),
+                Main1 = Duel.Phase == DuelPhase.Main1,
+                Turn1 = Duel.Turn == 1,
+                NormalAvailable = !NormalSummoned,
+                CanSearch = DefaultCheckWhetherBotCanSearch(),
+                CanDraw = DefaultCheckWhetherBotCanDraw(),
+                PotPermitted = IsPotRecoveryWorthRisk(),
+                MainRaye = main.Count(card => card.IsCode(CardId.Raye)),
+                MainRoze = main.Count(card => card.IsCode(CardId.Roze)),
+                MainToken = main.Count(card => card.IsCode(CardId.Token)),
+                MainOther = main.Count(card => !card.IsCode(CardId.Raye, CardId.Roze,
+                    CardId.Token)),
+                ExtraKind = extraKind,
+                FieldFuel = Bot.GetSpells().Any(card => !card.IsCode(CardId.Linkage)),
+                HandRaye = Bot.HasInHand(CardId.Raye),
+                HandRoze = Bot.HasInHand(CardId.Roze),
+                HandEngage = Bot.HasInHand(CardId.Engage),
+                HandReinforcement = Bot.HasInHand(CardId.ReinforcementOfTheArmy),
+                HandHornet = Bot.HasInHand(CardId.HornetDrones),
+                HandLinkage = Bot.HasInHand(CardId.Linkage),
+                HandLinkageFuelId = GetBestLinkageFuelFromHand(),
+                HandLinkageFuelCost = GetBestLinkageFuelCostFromHand(),
+                HandUltimate = Bot.HasInHand(CardId.UltimateSky),
+                HandWidow = Bot.HasInHand(CardId.WidowAnchor),
+                HandLemnisgate = Bot.HasInHand(CardId.Lemnisgate),
+                HandMultirole = Bot.HasInHand(CardId.Multirole),
+                HandPot = Bot.HasInHand(CardId.PotOfDesires),
+                LemnisgateLive = HasProfitableLemnisgatePlan(),
+                DeckRaye = Bot.HasInDeck(CardId.Raye),
+                DeckRoze = Bot.HasInDeck(CardId.Roze),
+                DeckEngage = Bot.HasInDeck(CardId.Engage),
+                DeckHornet = Bot.HasInDeck(CardId.HornetDrones),
+                DeckLinkage = Bot.HasInDeck(CardId.Linkage),
+                DeckWidow = Bot.HasInDeck(CardId.WidowAnchor),
+                DeckLemnisgate = Bot.HasInDeck(CardId.Lemnisgate),
+                DeckMultirole = Bot.HasInDeck(CardId.Multirole),
+                GraveEngage = Bot.HasInGraveyard(CardId.Engage),
+                GraveEngageCopies = Bot.Graveyard.Count(card => card.IsCode(CardId.Engage)),
+                GraveHornet = Bot.HasInGraveyard(CardId.HornetDrones),
+                GraveSpells = Bot.GetGraveyardSpells().Count,
+                GraveAceMonsters = Bot.GetGraveyardMonsters().Count(IsSkyStrikerAce),
+                GraveRaye = Bot.HasInGraveyard(CardId.Raye),
+                GraveRoze = Bot.HasInGraveyard(CardId.Roze),
+                BattleStarterAttack = extra.Where(card => card.IsFaceup() &&
+                    IsSkyStrikerAceLink(card) && !card.Attacked && !card.IsDisabled() &&
+                    !card.IsCode(CardId.Kagari, CardId.Zero))
+                    .Select(card => Math.Max(0, card.GetAttackPower())).DefaultIfEmpty(0).Max(),
+                ExtraZero = Bot.HasInExtra(CardId.Zero),
+                ExtraKagari = Bot.HasInExtra(CardId.Kagari),
+                ExtraHayate = !HayateSummoned && Bot.HasInExtra(CardId.Hayate),
+                ExtraBridge = !HayateSummoned && Bot.HasInExtra(CardId.Hayate) ||
+                    !KainaSummoned && Bot.HasInExtra(CardId.Kaina) ||
+                    !ShizukuSummoned && Bot.HasInExtra(CardId.Shizuku) ||
+                    !AmatsuSummoned && Bot.HasInExtra(CardId.Amatsu),
+                ExtraShizuku = !ShizukuSummoned && Bot.HasInExtra(CardId.Shizuku),
+                ZeroUsed = ZeroSummoned,
+                KagariUsed = KagariSummoned,
+                PendingZeroSearch = ZeroSearchPending,
+                HornetSetup = HornetSetupStage != HornetZeroSetupStage.None,
+                EnemyMonsters = Enemy.GetMonsterCount(),
+                EnemyField = Enemy.GetFieldCount(),
+                EnemyLife = Enemy.LifePoints,
+                DeckCount = Bot.Deck.Count
+            };
+        }
+
+        private int CaptureStrategicRootOffers()
+        {
+            return BuildStrategicRootOffers(Duel.MainPhase, GetBestLinkageFuelFromHand());
+        }
+
+        private static int BuildStrategicRootOffers(MainPhase main, int fuel)
+        {
+            if (main == null)
+                return 0;
+            int mask = 0;
+            foreach (ClientCard card in main.ActivableCards)
+            {
+                SkyStrategicActionKind kind = SkyStrategicActionKind.None;
+                if (card.IsCode(CardId.Engage)) kind = SkyStrategicActionKind.ActivateEngage;
+                else if (card.IsCode(CardId.ReinforcementOfTheArmy)) kind = SkyStrategicActionKind.ActivateReinforcement;
+                else if (card.IsCode(CardId.HornetDrones)) kind = SkyStrategicActionKind.ActivateHornet;
+                else if (card.IsCode(CardId.PotOfDesires)) kind = SkyStrategicActionKind.ActivatePot;
+                else if (card.IsCode(CardId.Linkage)) kind = SkyStrategicActionKind.ActivateLinkage;
+                else if (card.IsCode(CardId.UltimateSky)) kind = SkyStrategicActionKind.ActivateUltimateLinkage;
+                else if (card.IsCode(CardId.Raye) && card.Location == CardLocation.MonsterZone)
+                    kind = SkyStrategicActionKind.RayeTagZero;
+                if (kind != SkyStrategicActionKind.None)
+                    mask |= 1 << (int)kind;
+            }
+            foreach (ClientCard card in main.SummonableCards)
+            {
+                if (card.IsCode(CardId.Raye)) mask |= 1 << (int)SkyStrategicActionKind.NormalRaye;
+                if (card.IsCode(CardId.Roze)) mask |= 1 << (int)SkyStrategicActionKind.NormalRoze;
+            }
+            foreach (ClientCard card in main.SpecialSummonableCards)
+            {
+                if (card.Location != CardLocation.Extra)
+                    continue;
+                if (card.IsCode(CardId.Zero)) mask |= 1 << (int)SkyStrategicActionKind.LinkZero;
+                if (card.IsCode(CardId.Kagari)) mask |= 1 << (int)SkyStrategicActionKind.LinkKagari;
+                if (card.IsCode(CardId.Shizuku)) mask |= 1 << (int)SkyStrategicActionKind.LinkShizuku;
+                if (card.IsCode(CardId.Hayate)) mask |= 1 << (int)SkyStrategicActionKind.LinkBattleStarter;
+                if (card.IsCode(CardId.Hayate, CardId.Kaina, CardId.Amatsu, CardId.Shizuku))
+                    mask |= 1 << (int)SkyStrategicActionKind.LinkBridge;
+            }
+            if (fuel != 0 && main.SpellSetableCards.Any(card => card.IsCode(fuel)))
+                mask |= 1 << (int)SkyStrategicActionKind.SetLinkageFuel;
+            return mask;
+        }
+
+        #endregion
+
+        #region Battle planning
+
+        private bool ZeroEffectSpent;
+        private bool RayeTagSpent;
+        private int BattleSummonTarget;
+        private string BattlePlanKey;
+        private BattleRoute CachedBattleRoute;
+        private readonly HashSet<ClientCard> SpellsSetThisTurn = new HashSet<ClientCard>();
+        private readonly HashSet<string> BattleDecisionTraces = new HashSet<string>();
+
+        private sealed class BattleStep
+        {
+            public string Kind;
+            public ClientCard Source, Target;
+            public int Summon;
+            public override string ToString()
+            {
+                return Kind + ":" + (Source == null ? 0 : Source.Id) + ">" +
+                    (Target == null ? Summon : Target.Id);
+            }
+        }
+        private sealed class BattleBody
+        {
+            public ClientCard Card;
+            public int Id, Attack, Defense, Attribute;
+            public bool Spent, Extra, AttackPosition, Disabled;
+            public BattleBody Copy() { return (BattleBody)MemberwiseClone(); }
+        }
+        private sealed class BattlePosition
+        {
+            public List<BattleBody> Own = new List<BattleBody>();
+            public List<BattleBody> Enemy = new List<BattleBody>();
+            public List<BattleStep> Steps = new List<BattleStep>();
+            public HashSet<int> Extra = new HashSet<int>();
+            public int Damage, Linkages, Spells, GraveAttributes;
+            public bool ZeroSpent, RayeSpent, RayeAccess, RozeAccess, Removal;
+            public BattlePosition Copy()
+            {
+                var p = (BattlePosition)MemberwiseClone();
+                p.Own = Own.Select(c => c.Copy()).ToList();
+                p.Enemy = Enemy.Select(c => c.Copy()).ToList();
+                p.Steps = new List<BattleStep>(Steps);
+                p.Extra = new HashSet<int>(Extra);
+                return p;
+            }
+        }
+        private sealed class BattleRoute
+        {
+            public List<BattleStep> Steps = new List<BattleStep>();
+            public int Damage, Expanded;
+            public bool Lethal;
+            public string Reason;
+        }
+
+        private BattleBody ObserveBattleBody(ClientCard c)
+        {
+            return new BattleBody { Card = c, Id = c.Id, Attack = Math.Max(0, c.Attack),
+                Defense = Math.Max(0, c.Defense), Attribute = c.Attribute,
+                Extra = c.Sequence >= 5, Spent = c.Attacked || !c.IsAttack() ||
+                    ControlledEnemyCards.Contains(c), AttackPosition = c.IsAttack(), Disabled = c.IsDisabled() };
+        }
+
+        private bool HasUnmodeledBattleDefense()
+        {
+            return Enemy.GetSpellCount() > 0 || Enemy.GetMonsters().Any(c =>
+                c.Id == 0 || !c.IsFaceup() || c.HasType(CardType.Effect) ||
+                c.IsMonsterInvincible() || c.IsMonsterDangerous()) ||
+                Enemy.Graveyard.Any(c => GetPublicGraveDisruptionValue(c) > 0);
+        }
+
+        private BattleRoute GetBattleRoute(bool recoverLinkage = false)
+        {
+            if (Duel.Player != 0 || Duel.Turn == 1 || Duel.Phase >= DuelPhase.Main2 ||
+                Duel.Phase < DuelPhase.Main1 || Duel.CurrentChain.Count > 0 && !recoverLinkage)
+                return new BattleRoute { Reason = "outside an executable battle planning window" };
+            string key = GetDecisionObservationKey() + "/" + ZeroEffectSpent + "/" + RayeTagSpent +
+                "/" + KagariSummoned + "/" + ZeroSummoned + "/" + recoverLinkage + "/" +
+                string.Join(",", Duel.MainPhase.ActivableCards.Select(c => c.Id));
+            if (key == BattlePlanKey && CachedBattleRoute != null)
+                return CachedBattleRoute;
+            var result = new BattleRoute { Reason = "no lethal within supported observed-state search" };
+            if (HasUnmodeledBattleDefense())
+                result.Reason = "unknown/unsupported defense; no lethal certificate";
+            else
+            {
+                var root = new BattlePosition
+                {
+                    Own = Bot.GetMonsters().Select(ObserveBattleBody).ToList(),
+                    Enemy = Enemy.GetMonsters().Select(ObserveBattleBody).ToList(),
+                    Linkages = Bot.Hand.Concat(Bot.GetSpells()).Count(c => c.IsCode(CardId.Linkage) &&
+                        !SpellsSetThisTurn.Contains(c) && !c.IsDisabled()) +
+                        (recoverLinkage ? 1 : 0),
+                    Spells = Math.Max(0, GetSpellCountInGrave() - (recoverLinkage ? 1 : 0)),
+                    GraveAttributes = Bot.Graveyard.Where(IsSkyStrikerAce)
+                        .Aggregate(0, (bits, c) => bits | c.Attribute),
+                    ZeroSpent = ZeroEffectSpent, RayeSpent = RayeTagSpent,
+                    RayeAccess = Bot.HasInDeck(CardId.Raye) || Bot.HasInGraveyard(CardId.Raye),
+                    RozeAccess = Bot.HasInDeck(CardId.Roze) || Bot.HasInGraveyard(CardId.Roze),
+                    Removal = Duel.Phase == DuelPhase.Main1 && EmptyMainMonsterZone() &&
+                        Duel.MainPhase.ActivableCards.Any(c => c.IsCode(CardId.Afterburners) && !c.IsDisabled())
+                };
+                if (recoverLinkage)
+                    foreach (BattleBody body in root.Own.Where(c => c.Id == CardId.Kagari && !c.Disabled))
+                        body.Attack = Math.Max(0, body.Attack - 100);
+                foreach (ClientCard c in Bot.ExtraDeck)
+                    if (c.IsCode(CardId.Kagari) && !KagariSummoned || c.IsCode(CardId.Zero) && !ZeroSummoned ||
+                        c.IsCode(CardId.Hayate) && !HayateSummoned || c.IsCode(CardId.Shizuku) && !ShizukuSummoned ||
+                        c.IsCode(CardId.Kaina) && !KainaSummoned)
+                        root.Extra.Add(c.Id);
+                SearchBattle(root, result, Math.Max(1, Enemy.LifePoints));
+            }
+            BattlePlanKey = key;
+            CachedBattleRoute = result;
+            if (result.Lethal)
+                Logger.DebugWriteLine("[SkyStriker2026:battle] observed-line lethal damage=" +
+                    result.Damage + " expanded=" + result.Expanded + " route=" +
+                    string.Join(" > ", result.Steps.Select(s => s.ToString())) +
+                    "; conditional on no unknown opponent response; replan after every event");
+            return result;
+        }
+
+        // Deterministic bounds, independent of the setup beam. No random draws,
+        // hidden defenders, arbitrary Lua simulation, or increased setup budget.
+        private void SearchBattle(BattlePosition p, BattleRoute best, int life)
+        {
+            if (best.Expanded >= 768 || p.Steps.Count >= 14 || best.Lethal)
+                return;
+            best.Expanded++;
+            if (p.Damage > best.Damage)
+            {
+                best.Damage = p.Damage;
+                best.Steps = new List<BattleStep>(p.Steps);
+            }
+            if (p.Damage >= life)
+            {
+                best.Lethal = true;
+                best.Reason = "supported line reaches current LP without resource generation";
+                return;
+            }
+            for (int i = 0; i < p.Own.Count; i++)
+            {
+                BattleBody attacker = p.Own[i];
+                if (attacker.Spent || attacker.Attack <= 0)
+                    continue;
+                if (p.Enemy.Count == 0)
+                {
+                    BattlePosition next = p.Copy();
+                    next.Own[i].Spent = true;
+                    next.Damage += attacker.Attack;
+                    next.Steps.Add(new BattleStep { Kind = "attack", Source = attacker.Card });
+                    SearchBattle(next, best, life);
+                }
+                for (int j = 0; j < p.Enemy.Count; j++)
+                {
+                    BattleBody defender = p.Enemy[j];
+                    if (attacker.Attack <= (defender.AttackPosition ? defender.Attack : defender.Defense))
+                        continue;
+                    BattlePosition next = p.Copy();
+                    next.Own[i].Spent = true;
+                    next.Enemy.RemoveAt(j);
+                    next.Damage += defender.AttackPosition ? attacker.Attack - defender.Attack : 0;
+                    next.Steps.Add(new BattleStep { Kind = "attack", Source = attacker.Card, Target = defender.Card });
+                    SearchBattle(next, best, life);
+                }
+            }
+            if (p.Removal && p.Steps.Count == 0)
+            {
+                for (int j = 0; j < p.Enemy.Count; j++)
+                {
+                    ClientCard target = p.Enemy[j].Card;
+                    if (target == null || target.IsShouldNotBeTarget() || target.IsShouldNotBeSpellTrapTarget())
+                        continue;
+                    BattlePosition next = p.Copy();
+                    next.Removal = false;
+                    next.Enemy.RemoveAt(j);
+                    next.Steps.Add(new BattleStep { Kind = "remove", Target = target });
+                    SearchBattle(next, best, life);
+                }
+            }
+            for (int i = 0; i < p.Own.Count; i++)
+            {
+                BattleBody material = p.Own[i];
+                if (material.Id == CardId.Zero && !material.Disabled && !p.ZeroSpent &&
+                    p.RayeAccess && p.RozeAccess && p.Own.Count(c => !c.Extra) <= 3 && material.Spent)
+                {
+                    BattlePosition next = p.Copy();
+                    next.Own.RemoveAt(i);
+                    next.ZeroSpent = true;
+                    next.Own.Add(new BattleBody { Id = CardId.Raye, Attack = 1500, AttackPosition = true });
+                    next.Own.Add(new BattleBody { Id = CardId.Roze, Attack = 1500, AttackPosition = true });
+                    next.Steps.Add(new BattleStep { Kind = "zero-exit", Source = material.Card });
+                    // Optional destruction is omitted here: do not guess an
+                    // unknown destruction/revival trigger in a lethal certificate.
+                    SearchBattle(next, best, life);
+                }
+                bool linkage = material.Extra && material.Spent && p.Linkages > 0 &&
+                    p.Own.All(c => c.Extra);
+                // Shizuku leaving can restore opposing ATK/DEF. Until that
+                // continuous-effect transition is modeled, do not certify it.
+                if (material.Id == CardId.Shizuku && !material.Disabled && p.Enemy.Count > 0)
+                    linkage = false;
+                bool raye = material.Id == CardId.Raye && !material.Disabled &&
+                    material.Spent && !p.RayeSpent && p.Own.All(c => !c.Extra);
+                if (!linkage && !raye)
+                    continue;
+                foreach (int id in p.Extra.OrderBy(c => c == CardId.Kagari ? 0 : c == CardId.Zero ? 1 : 2))
+                {
+                    BattlePosition next = p.Copy();
+                    next.Extra.Remove(id);
+                    next.Own.RemoveAt(i);
+                    next.GraveAttributes |= material.Attribute;
+                    if (material.Id == CardId.Raye) next.RayeAccess = true;
+                    if (material.Id == CardId.Roze) next.RozeAccess = true;
+                    if (linkage) { next.Linkages--; next.Spells++; }
+                    else next.RayeSpent = true;
+                    ClientCard extra = Bot.ExtraDeck.First(c => c.Id == id);
+                    int attrs = next.GraveAttributes | extra.Attribute;
+                    int boost = linkage && (attrs & (int)CardAttribute.Light) != 0 &&
+                        (attrs & (int)CardAttribute.Dark) != 0 ? 1000 : 0;
+                    int attack = id == CardId.Zero ? 2000 : id == CardId.Kaina ? 1500 : 1500;
+                    if (id == CardId.Kagari)
+                    {
+                        // Recover the spent Linkage, not an imaginary extra card.
+                        if (linkage) { next.Linkages++; next.Spells--; }
+                        attack += Math.Max(0, next.Spells) * 100;
+                    }
+                    next.Own.Add(new BattleBody { Id = id, Attack = attack + boost,
+                        Extra = true, AttackPosition = true, Attribute = extra.Attribute });
+                    next.Steps.Add(new BattleStep { Kind = linkage ? "linkage" : "raye-tag",
+                        Source = material.Card, Summon = id });
+                    SearchBattle(next, best, life);
+                }
+            }
+        }
+
+        private bool BattleLethalToBattle()
+        {
+            BattleRoute route = GetBattleRoute();
+            return route.Lethal && route.Steps.Count > 0 && route.Steps[0].Kind == "attack";
+        }
+
+        public override bool OnPreActivate(ClientCard card)
+        {
+            if (!base.OnPreActivate(card)) return false;
+            if (Duel.Player != 0 || Duel.CurrentChain.Count > 0 || Duel.Phase != DuelPhase.Main1)
+                return true;
+            BattleRoute route = GetBattleRoute();
+            if (!route.Lethal || route.Steps.Count == 0) return true;
+            BattleStep step = route.Steps[0];
+            bool allowed = step.Kind == "remove" && card.IsCode(CardId.Afterburners) ||
+                step.Kind == "zero-exit" && card == step.Source ||
+                step.Kind == "raye-tag" && card == step.Source;
+            if (!allowed && BattleDecisionTraces.Add(BattlePlanKey + "/" + card.Id))
+                Logger.DebugWriteLine("[SkyStriker2026:decision] PASS card=" + card.Id +
+                    " reason=preserve supported lethal; next=" + step);
+            return allowed;
+        }
+
+        private bool HasFreeBattleRemoval(ClientCard target)
+        {
+            if (Duel.Player != 0 || Duel.Turn <= 1 || Duel.Phase >= DuelPhase.Main2 ||
+                target == null || !target.IsFaceup() || Enemy.GetSpellCount() > 0 ||
+                target.IsMonsterInvincible() || target.IsMonsterDangerous() ||
+                target.HasType(CardType.Effect) || HasUnmodeledBattleDefense())
+                return false;
+            return Bot.GetMonsters().Any(c => c.IsFaceup() && c.IsAttack() &&
+                (!c.Attacked || c == Bot.BattlingMonster) &&
+                !ControlledEnemyCards.Contains(c) && c.Attack > target.GetDefensePower());
+        }
+
+        #endregion
+
+        #region Observed outcomes
+
+        // Like Witchcraft2026, forecasts are receipts, never protocol state.
+        // A mismatch retires the dependent route; it is not automatic training.
+        private sealed class OutcomeReceipt
+        {
+            public int Source, Summon;
+            public string Effect;
+            public List<ClientCard> Targets = new List<ClientCard>();
+            public CardLocation Destination;
+        }
+
+        private readonly List<OutcomeReceipt> OutcomeReceipts = new List<OutcomeReceipt>();
+
+        private void RecordAcceptedOutcome(int player, ClientCard card)
+        {
+            if (player != 0 || card == null)
+                return;
+            OutcomeReceipt receipt = null;
+            if (card.IsCode(CardId.SharkCannon) && SharkCannonBanishOnly && SharkCannonTarget != null)
+                receipt = new OutcomeReceipt { Source = card.Id, Effect = "banish-public-GY-target",
+                    Targets = new List<ClientCard> { SharkCannonTarget }, Destination = CardLocation.Removed };
+            else if (card.IsCode(CardId.UltimateSky) && UltimateSkyTargets.Count > 0)
+                receipt = new OutcomeReceipt { Source = card.Id, Effect = "field-negation",
+                    Targets = new List<ClientCard>(UltimateSkyTargets) };
+            else if (card.IsCode(CardId.Linkage) && BattleSummonTarget != 0)
+                receipt = new OutcomeReceipt { Source = card.Id, Effect = "battle-conversion",
+                    Summon = BattleSummonTarget };
+            else if (card.IsCode(CardId.Lemnisgate) && LemnisgateLinkDestination != 0)
+                receipt = new OutcomeReceipt { Source = card.Id, Effect = "timed-link-conversion",
+                    Summon = LemnisgateLinkDestination };
+            if (receipt == null)
+                return;
+            OutcomeReceipts.Add(receipt);
+            Logger.DebugWriteLine("[SkyStriker2026:prediction] accepted=" + receipt.Source +
+                " effect=" + receipt.Effect + " targets=" + string.Join(",", receipt.Targets.Select(c => c.Id)) +
+                " summon=" + receipt.Summon + "; expected only, awaiting engine");
+        }
+
+        private void ReconcileAcceptedOutcomes()
+        {
+            foreach (OutcomeReceipt receipt in OutcomeReceipts)
+            {
+                bool matched = receipt.Summon != 0 ? Bot.HasInMonstersZone(receipt.Summon) :
+                    receipt.Targets.All(c => receipt.Destination == CardLocation.Removed ?
+                        c.Location == CardLocation.Removed : c.IsOnField() && c.IsDisabled());
+                Logger.DebugWriteLine("[SkyStriker2026:reconcile] source=" + receipt.Source +
+                    " effect=" + receipt.Effect + " status=" + (matched ? "observed" : "changed-or-interrupted") +
+                    " actualTargets=" + string.Join(",", receipt.Targets.Select(c =>
+                        c.Id + "@" + c.Location + "/disabled=" + c.IsDisabled())) +
+                    " actualOwnMonsters=" + string.Join(",", Bot.GetMonsters().Select(c => c.Id)) +
+                    "; whole-chain outcome, not causal proof; retire dependent forecast");
+            }
+            OutcomeReceipts.Clear();
+            BattlePlanKey = null;
+        }
+
+        #endregion
     }
 }
