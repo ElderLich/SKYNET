@@ -4,12 +4,11 @@ using System.Linq;
 using WindBot;
 using WindBot.Game;
 using WindBot.Game.AI;
-using System;
 
 namespace WindBot.Game.AI.Decks
 {
     [Deck("DinocarriageDynarmix", "AI_DinocarriageDynarmix")]
-    public class DinocarriageDynarmixExecutor : DefaultExecutor
+    public class DinocarriageDynarmixExecutor : RushExecutor
     {
         public class CardId
         {
@@ -80,196 +79,73 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.Repos, 圣防Repos);
             //AddExecutor(ExecutorType.Activate, DefaultDontChainMyself);
         }
-        private List<int> HintMsgForEnemy = new List<int>
-        {
-            HintMsg.Release, HintMsg.Destroy, HintMsg.Remove, HintMsg.ToGrave, HintMsg.ReturnToHand, HintMsg.ToDeck,
-            HintMsg.FusionMaterial, HintMsg.SynchroMaterial, HintMsg.XyzMaterial, HintMsg.LinkMaterial, HintMsg.Disable
-        };
+        protected override bool UseGenericRushChoices { get { return false; } }
 
-        private List<int> HintMsgForDeck = new List<int>
+        public override IList<ClientCard> OnSelectCard(IList<ClientCard> cards, int min, int max, int hint, bool cancelable)
         {
-            HintMsg.SpSummon, HintMsg.ToGrave, HintMsg.Remove, HintMsg.AddToHand, HintMsg.FusionMaterial
-        };
-        private List<int> HintMsgForExtra = new List<int>
-        {
-            HintMsg.SpSummon, HintMsg.ToGrave, HintMsg.Remove, HintMsg.AddToHand, HintMsg.FusionMaterial
-        };
-        private List<int> HintMsgForSelf = new List<int>
-        {
-            HintMsg.Equip
-        };
-
-        private List<int> HintMsgForMaterial = new List<int>
-        {
-            HintMsg.FusionMaterial, HintMsg.SynchroMaterial, HintMsg.XyzMaterial, HintMsg.LinkMaterial, HintMsg.Release
-        };
-
-        private List<int> HintMsgForMaxSelect = new List<int>
-        {
-            HintMsg.SpSummon, HintMsg.ToGrave, HintMsg.AddToHand, HintMsg.FusionMaterial, HintMsg.Destroy, HintMsg.Equip ,HintMsg.Confirm
-        };
-
-        public override IList<ClientCard> OnSelectCard(IList<ClientCard> _cards, int min, int max, int hint, bool cancelable)
-        {
-            if (Duel.Phase == DuelPhase.BattleStart)
-                return null;
             if (AI.HaveSelectedCards())
                 return null;
-
-            IList<ClientCard> selected = new List<ClientCard>();
-            IList<ClientCard> cards = new List<ClientCard>(_cards);
-            if (max > cards.Count)
-                max = cards.Count;
-
-            if (HintMsgForEnemy.Contains(hint))
+            if (hint == Util.GetStringId(120000000, 1) && cards.All(c => c.Controller == 0 &&
+                c.Location == CardLocation.Hand && (c.IsCode(CardId.大恐龙驾L) || c.IsCode(CardId.大恐龙驾R))))
             {
-                IList<ClientCard> enemyCards = cards.Where(card => card.Controller == 1).ToList();
-
-                // select enemy's card first
-                while (enemyCards.Count > 0 && selected.Count < max)
+                // RD.MaximumSummonTarget can offer the two pieces in successive subgroup prompts.
+                var pieces = new List<ClientCard>(2);
+                foreach (int id in MaximumPieces)
                 {
-                    ClientCard card = enemyCards[Program.Rand.Next(enemyCards.Count)];
-                    selected.Add(card);
-                    enemyCards.Remove(card);
-                    cards.Remove(card);
+                    var piece = cards.FirstOrDefault(c => c.IsCode(id));
+                    if (piece != null && pieces.Count < min)
+                        pieces.Add(piece);
                 }
+                if (pieces.Count == min)
+                    return pieces;
             }
 
-            if (HintMsgForDeck.Contains(hint))
+            ChainInfo link = Duel.GetCurrentSolvingChainInfo();
+            if (link != null && link.ActivatePlayer == 0 && link.IsActivateCode(CardId.恐龙粉碎) &&
+                hint == HintMsg.Destroy && min == 1 && max == 1 && cards.Count > 0)
             {
-                IList<ClientCard> deckCards = cards.Where(card => card.Location == CardLocation.Deck).ToList();
-
-                // select deck's card first
-                while (deckCards.Count > 0 && selected.Count < max)
-                {
-                    ClientCard card = deckCards[Program.Rand.Next(deckCards.Count)];
-                    selected.Add(card);
-                    deckCards.Remove(card);
-                    cards.Remove(card);
-                }
+                CardLocation preferred = Bot.HasInMonstersZone(CardId.大恐龙驾) ? CardLocation.MonsterZone : CardLocation.SpellZone;
+                ClientCard target = cards.FirstOrDefault(c => c.Controller == 1 && c.IsFacedown() && c.Location == preferred)
+                    ?? cards.FirstOrDefault(c => c.Controller == 1 && c.IsFacedown());
+                if (target != null)
+                    return new[] { target };
             }
-            if (HintMsgForExtra.Contains(hint))
+            if (link != null && link.ActivatePlayer == 0 && link.IsActivateCode(CardId.奇迹的共进化) &&
+                hint == HintMsg.SpSummon && min == 1 && max == 1)
             {
-                IList<ClientCard> ExtraCards = cards.Where(card => card.Location == CardLocation.Extra).ToList();
-
-                // select extra's card first
-                while (ExtraCards.Count > 0 && selected.Count < max)
-                {
-                    ClientCard card = ExtraCards[Program.Rand.Next(ExtraCards.Count)];
-                    selected.Add(card);
-                    ExtraCards.Remove(card);
-                    cards.Remove(card);
-                }
+                int preferred = Bot.HasInGraveyard(CardId.巨身多角龙) || Bot.HasInGraveyard(CardId.荒野盗龙)
+                    ? CardId.超级恐龙王 : CardId.凶怒甲龙;
+                var dinosaur = cards.FirstOrDefault(c => c.IsCode(preferred))
+                    ?? cards.FirstOrDefault(c => c.IsCode(CardId.凶怒甲龙, CardId.超级恐龙王));
+                if (dinosaur != null)
+                    return new[] { dinosaur };
             }
-
-            if (HintMsgForSelf.Contains(hint))
+            if (link != null && link.ActivatePlayer == 0 && link.IsActivateCode(CardId.大恐龙驾) &&
+                hint == HintMsg.Destroy && min == 1 && max <= 2 && max >= min)
             {
-                IList<ClientCard> botCards = cards.Where(card => card.Controller == 0).ToList();
-
-                // select bot's card first
-                while (botCards.Count > 0 && selected.Count < max)
-                {
-                    ClientCard card = botCards[Program.Rand.Next(botCards.Count)];
-                    selected.Add(card);
-                    botCards.Remove(card);
-                    cards.Remove(card);
-                }
+                var targets = cards.Where(c => c.Controller == 1 && c.Location == CardLocation.MonsterZone)
+                    .OrderByDescending(c => c.IsFacedown()).Take(max).ToList();
+                if (targets.Count >= min)
+                    return targets;
             }
-
-            if (HintMsgForMaterial.Contains(hint))
-            {
-                IList<ClientCard> materials = cards.OrderBy(card => card.Attack).ToList();
-
-                // select low attack first
-                while (materials.Count > 0 && selected.Count < min)
-                {
-                    ClientCard card = materials[0];
-                    selected.Add(card);
-                    materials.Remove(card);
-                    cards.Remove(card);
-                }
-            }
-
-            // select random cards
-            while (selected.Count < min)
-            {
-                ClientCard card = cards[Program.Rand.Next(cards.Count)];
-                selected.Add(card);
-                cards.Remove(card);
-            }
-
-            if (HintMsgForMaxSelect.Contains(hint))
-            {
-                // select max cards
-                while (selected.Count < max)
-                {
-                    ClientCard card = cards[Program.Rand.Next(cards.Count)];
-                    selected.Add(card);
-                    cards.Remove(card);
-                }
-            }
-
-            return selected;
+            return base.OnSelectCard(cards, min, max, hint, cancelable);
         }
+
+        private static readonly int[] MaximumPieces = { CardId.大恐龙驾L, CardId.大恐龙驾R };
+
         private bool 大恐龙驾Effect()
         {
-            {            
-                IList<ClientCard> targets = new List<ClientCard>();
-                foreach (ClientCard target in Enemy.GetMonsters())
-                {
-                    if (target.IsFacedown())
-                        targets.Add(target);
-                    if (targets.Count >= 2)
-                        break;
-                }
-                if (targets.Count < 2)
-                {
-                    foreach (ClientCard target in Enemy.GetMonsters())
-                    {
-                        if (target.IsFaceup())
-                            targets.Add(target);
-                        if (targets.Count >= 2)
-                            break;
-                    }
-                }
-                if (targets.Count > 0)
-                {
-                    AI.SelectCard(
-                     CardId.抑龙,
-                     CardId.名流雷龙,
-                     CardId.荒野盗龙,
-                     CardId.巨身多角龙,
-                     CardId.成金恐龙王,
-                     CardId.机械镰刀盗龙,
-                     CardId.凶怒甲龙, 
-                     CardId.超级恐龙王,
-                     CardId.大恐龙驾,
-                     CardId.大恐龙驾L,
-                     CardId.大恐龙驾R
-                     );
-                    AI.SelectNextCard(targets);
-                    return true;
-                }
-                return false;
-            }
-        }
-        private bool MAXsummon()
-        {
-            if (Bot.HasInMonstersZone(CardId.大恐龙驾))
-            {
-                return false;
-            }
-            else
-            AI.SelectCard(CardId.大恐龙驾L);
-            AI.SelectNextCard(CardId.大恐龙驾R);
+            AI.SelectCard(CardId.抑龙, CardId.名流雷龙, CardId.荒野盗龙, CardId.巨身多角龙,
+                CardId.成金恐龙王, CardId.机械镰刀盗龙, CardId.凶怒甲龙, CardId.超级恐龙王,
+                CardId.大恐龙驾, CardId.大恐龙驾L, CardId.大恐龙驾R);
             return true;
         }
 
-        public override bool OnSelectHand()
+        private bool MAXsummon()
         {
-            // go first
-            return true;
+            return !Bot.HasInMonstersZone(CardId.大恐龙驾);
         }
+
         public bool monsterset()
         {
             if (Duel.Turn == 1)
@@ -304,45 +180,18 @@ namespace WindBot.Game.AI.Decks
         }
         private bool 奇迹的共进化Effect()
         {
-            if (Bot.HasInMonstersZone(CardId.大恐龙驾)) return false; 
-            if (Bot.HasInHand(CardId.超级恐龙王) && Bot.MonsterZone.GetMatchingCardsCount(card => card.Level < 7) >= 1 && (Bot.HasInGraveyard(CardId.巨身多角龙) || Bot.HasInGraveyard(CardId.荒野盗龙)))
-            {
-                AI.SelectCard(                   
-                    CardId.大恐龙驾L,
-                    CardId.大恐龙驾R,
-                    CardId.抑龙,
-                    CardId.名流雷龙,
-                    CardId.荒野盗龙, 
-                    CardId.巨身多角龙
-                    );
-                AI.SelectNextCard(CardId.超级恐龙王); return true;
-            }
-            if (Bot.HasInHand(CardId.凶怒甲龙) && Bot.MonsterZone.GetMatchingCardsCount(card => card.Level < 5) >=1)
-            {
-                AI.SelectCard(
-                    CardId.大恐龙驾L,
-                    CardId.大恐龙驾R,
-                    CardId.抑龙,
-                    CardId.名流雷龙,
-                    CardId.荒野盗龙,
-                    CardId.巨身多角龙
-                    );
-                AI.SelectNextCard(CardId.凶怒甲龙); return true;
-            }
-            if (Bot.HasInHand(CardId.超级恐龙王) && Bot.MonsterZone.GetMatchingCardsCount(card => card.Level < 5) >= 1)
-            {
-                AI.SelectCard(
-                    CardId.大恐龙驾L,
-                    CardId.大恐龙驾R,
-                    CardId.抑龙,
-                    CardId.名流雷龙,
-                    CardId.荒野盗龙,
-                    CardId.巨身多角龙
-                    );
-                AI.SelectNextCard(CardId.超级恐龙王); return true;
-            }
-            return false;
+            if (Bot.HasInMonstersZone(CardId.大恐龙驾))
+                return false;
+            bool hasBoss = Bot.HasInHand(CardId.超级恐龙王);
+            bool canRevive = Bot.HasInGraveyard(CardId.巨身多角龙) || Bot.HasInGraveyard(CardId.荒野盗龙);
+            int maxLevel = hasBoss && canRevive ? 6 : 4;
+            if ((!hasBoss && !Bot.HasInHand(CardId.凶怒甲龙)) || !Bot.MonsterZone.Any(c => c != null &&
+                c.IsFaceup() && c.HasRace(CardRace.Dinosaur) && c.Level <= maxLevel))
+                return false;
+            AI.SelectCard(CardId.大恐龙驾L, CardId.大恐龙驾R, CardId.抑龙, CardId.名流雷龙, CardId.荒野盗龙, CardId.巨身多角龙);
+            return true;
         }
+
         private bool 机械镰刀盗龙Effect()
         {
             if (Bot.Hand.GetCardCount(CardId.大恐龙驾) >= 2) AI.SelectCard(CardId.大恐龙驾);
@@ -363,42 +212,23 @@ namespace WindBot.Game.AI.Decks
                     );
             return true;
         }
+        private static readonly int[] DuplicateDiscardPriority =
+        {
+            CardId.侏罗纪世界, CardId.大恐龙驾, CardId.大恐龙驾R, CardId.大恐龙驾L, CardId.巨身多角龙
+        };
+
         private bool 恐龙粉碎Effect()
         {
-            ClientCard check = null;
-            List<ClientCard> spells = Enemy.GetSpells(); List<ClientCard> mons = Enemy.GetMonsters();
-            foreach (ClientCard spell in spells) foreach (ClientCard mon in mons)
+            foreach (int id in DuplicateDiscardPriority)
+            {
+                if (Bot.Hand.GetCardCount(id) >= 2)
                 {
-                    if (Bot.HasInMonstersZone(CardId.大恐龙驾) && mon.IsFacedown()) check = mon;
-                    else if (Bot.HasInMonstersZone(CardId.大恐龙驾) && spell.IsFacedown()) check = spell;
-                    else if (spell.IsFacedown()) check = spell;
-                    else check = mon;
+                    AI.SelectCard(id);
+                    return true;
                 }
-
-            if (Bot.Hand.GetCardCount(CardId.侏罗纪世界) >= 2)
-            {
-                AI.SelectCard(CardId.侏罗纪世界); AI.SelectNextCard(check);
             }
-            else if (Bot.Hand.GetCardCount(CardId.大恐龙驾) >= 2)
-            {
-                AI.SelectCard(CardId.大恐龙驾); AI.SelectNextCard(check);
-            }
-            else if (Bot.Hand.GetCardCount(CardId.大恐龙驾R) >= 2)
-            {
-                AI.SelectCard(CardId.大恐龙驾R); AI.SelectNextCard(check);
-            }
-            else if (Bot.Hand.GetCardCount(CardId.大恐龙驾L) >= 2)
-            {
-                AI.SelectCard(CardId.大恐龙驾L); AI.SelectNextCard(check);
-            }
-            else if (Bot.Hand.GetCardCount(CardId.巨身多角龙) >= 2)
-            {
-                AI.SelectCard(CardId.巨身多角龙); AI.SelectNextCard(check);
-            }
-            else
-                AI.SelectCard(                   
-                    CardId.成金恐龙王,CardId.抑龙,CardId.奇迹的共进化,CardId.名流雷龙,CardId.超级恐龙王,CardId.恐力重压,CardId.超越进化,CardId.恐龙粉碎,CardId.荒野盗龙);
-                AI.SelectNextCard(check);
+            AI.SelectCard(CardId.成金恐龙王, CardId.抑龙, CardId.奇迹的共进化, CardId.名流雷龙,
+                CardId.超级恐龙王, CardId.恐力重压, CardId.超越进化, CardId.恐龙粉碎, CardId.荒野盗龙);
             return true;
         }
         private bool 超越进化Effect()
@@ -448,11 +278,5 @@ namespace WindBot.Game.AI.Decks
             return true;
         }
 
-
     }
 }
-
-
-
-
-
