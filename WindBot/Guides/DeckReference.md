@@ -2,11 +2,12 @@
 
 [WindBot quick start](../README.md) · [Write an executor](ExecutorAuthoring.md) · [Registered sources](../Game/AI/Decks/) · [Deck-specific tools](../Tools/Executors/)
 
-Look up a deck by its exact registration. Commands on this page run from the **workspace root**. Use a fresh output directory for each check. Offline examples use the bundled Standard database. In native examples, replace `D:/YourGame` with the installation whose database, scripts and server you intend to test.
+Look up a deck by its exact registration. Commands on this page run from the **workspace root**. Use a fresh output directory for each check. Each example selects its card database explicitly. In native examples, replace `D:/YourGame` with the installation whose database, scripts and server you intend to test.
 
 | Deck or topic | What you can check |
 | --- | --- |
 | [The Crimson King](#the-crimson-king) | RDA planner scheduling, fixed hands and frozen memory settings |
+| [Rush Duel](#rush-duel) | Eight registrations, card effects, prompt allocations and rematch cleanup |
 | [Metalmorph and Odion](#personal-executor-checks) | Effect selection, prompt ownership and the rejected Odion candidate |
 | [Witchcraft 2026](#witchcraft-2026-executor) | Planner, graveyard effects and fixed-opening guide |
 | [Voiceless](#voiceless-voice-routes-and-recovery) | Ritual setup and recovery after interruption |
@@ -15,6 +16,37 @@ Look up a deck by its exact registration. Commands on this page run from the **w
 | [Blue-Eyes 2025](#blue-eyes-2025) | Spirit revival targets, Tyrant Dragon trap selection and callback checks |
 | [Shaddoll 2025](#shaddoll-2025-executor) | Lev/Void routes, quick Fusions, suite and match records |
 | [Import provenance](#executor-origins) · [Recorded comparisons](#recorded-validation-and-arena-results) | Revisions, tested binaries and opponent-specific results |
+
+## Rush Duel
+
+The MDPro4 roster has eight Rush registrations. Pass the exact name to `--deck`. Each loads its matching `WindBot/Decks/AI_<registration>.ydk` file.
+
+| MDPro4 roster group | WindBot registrations |
+| --- | --- |
+| `AI_RD1` | `RushDragonDragears` |
+| `AI_RD2` | `BusterBlader`, `DinocarriageDynarmix`, `Mituzi`, `SaikyoBattleFlag`, `TheLegend` |
+| `AI_RD3` | `Excutie`, `ObsidianMagical` |
+
+Build WindBot and run the offline checks for all eight decks together. The suite loads every listed card, exercises the effect callbacks and records allocated bytes over 12,000 prompts per deck. It also checks that completed duel objects can be collected and that a failed launch releases the client.
+
+```powershell
+python WindBot/Tools/bot_tool.py build --configuration Release
+python WindBot/Tools/bot_tool.py check --suite rush --configuration Release --database DeckWorkshop/Data/rush/cards.cdb --deck-dir WindBot/Decks --output Artifacts/rush-check
+```
+
+Open `Artifacts/rush-check/report.json` for the per-deck results and the hashes of the executable and card database. To compare builds, repeat the check with `--bot-exe` pointing at a frozen executable and a fresh output directory. The allocation measurement covers the WindBot thread answering the prompts.
+
+To play, open a room on a compatible host configured with **Rush rules, cards and scripts**. Substitute its address and port in this example.
+
+```powershell
+python WindBot/Tools/bot_tool.py run --configuration Release --database DeckWorkshop/Data/rush/cards.cdb --deck SaikyoBattleFlag --host 127.0.0.1 --port 7911
+```
+
+**November 2026 memory check.** Four failed deck launches left four room connections open in the original build. The fix rejected all four before connecting. Across 12,000 synthetic prompts per deck, Release allocations fell from 866 bytes per prompt for Mituzi and 1,004 for the other decks to 134 for all eight. Both builds released all tracked executors, duels and AI instances after 32 simulated duel lifetimes per deck.
+
+The repaired Debug build finished 24 duels on a native MDPro4 Rush host, eight with fixed deck order and 16 shuffled. Every deck played first and second. Both clients recorded all 24 endings, and each batch finished with zero established room connections. During the 16 shuffled games the persistent WindBot worker used 39.44–39.93 MB of private memory after games.
+
+MDPro4's Solo launcher can run its own embedded WindBot on a thread inside the game. That copy needs the fixes integrated into the game build. The measurements above cover this repository's standalone WindBot. For a report from Solo play, record the MDPro4 version, deck, process memory before and after each rematch, and whether a launch failed.
 
 ## Executor origins
 

@@ -38,6 +38,7 @@ python WindBot/Tools/bot_tool.py run --configuration Release --database DeckWork
 | Goal | Open |
 | --- | --- |
 | Work on Shaddoll 2025, Blue-Eyes 2025, Witchcraft, Sky Striker, Voiceless, Metalmorph, Destiny Board or the RDA planner | [Deck reference and exact check commands](Guides/DeckReference.md) |
+| Run one of the eight MDPro4 Rush bots or investigate memory growth across rematches | [Rush registrations, checks and launch command](Guides/DeckReference.md#rush-duel) |
 | Create an executor from a deck list | [Deck Workshop](../DeckWorkshop/README.md) · [RDA C# scaffold](Templates/RdaPlannerExecutor.cs.template) |
 | Implement a decision, prompt or recovery route | [Authoring guide](Guides/ExecutorAuthoring.md) · [Copyable starter prompt](Guides/ExecutorAuthoring.md#copyable-starter-prompt) |
 | Check imported decks and previously measured matchups | [Source revisions and results](Guides/DeckReference.md#executor-origins) |
