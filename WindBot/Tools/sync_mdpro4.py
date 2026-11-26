@@ -88,7 +88,7 @@ def plan_sync(windbot, game, companion):
         if before is not None and comparable_text(before) == comparable_text(content):
             continue
         changes.append(Change(path, before, content))
-    return sorted(changes, key=lambda change: str(change.path)), len(outputs)
+    return sorted(changes, key=lambda change: str(change.path)), sum(path.suffix != ".meta" for path in seen)
 
 
 def replace_file(path, content):
@@ -145,10 +145,10 @@ def main(argv=None):
         for change in changes:
             print(("ADD    " if change.before is None else "UPDATE ") + str(change.path))
         if args.check or args.dry_run:
-            print(f"{len(changes)} pending changes across {total} managed files.")
+            print(f"{len(changes)} pending changes. Checked {total} source, resource and roster files.")
             return int(args.check and bool(changes))
         apply_changes(changes)
-        print(f"Synced {len(changes)} changes across {total} managed files.")
+        print(f"Synced {len(changes)} changes. Checked {total} source, resource and roster files.")
         return 0
     except (ValueError, OSError, RuntimeError) as exc:
         print("WindBot sync failed: " + str(exc), file=sys.stderr)

@@ -32,6 +32,8 @@ class UnitySourceTests(unittest.TestCase):
         snapshot = {}
         first = dict(plan_unity_sources(self.source, self.target, snapshot))
         self.assertNotIn(meta, first)
+        self.assertIsNone(snapshot[self.target / "Game.meta"])
+        self.assertIsNone(snapshot[self.target / "WindBotInfo.cs.meta"])
         self.assertNotIn(self.target / "Game/Ignored.cs", first)
         self.assertEqual(first[ai], ai.read_bytes())
         self.assertEqual(snapshot[self.target / "Program.cs"], first[self.target / "Program.cs"])

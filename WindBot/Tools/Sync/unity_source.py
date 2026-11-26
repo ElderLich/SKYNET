@@ -82,10 +82,14 @@ def plan_unity_sources(windbot: Path, unity_windbot: Path, originals=None):
         yield target, contents
         meta = target.with_name(target.name + ".meta")
         if not meta.exists():
+            if originals is not None:
+                originals[meta] = None
             yield meta, _meta(relative, False)
         folders.update(p for p in relative.parents if p != Path("."))
     for relative in sorted(folders):
         target = unity_windbot / relative
         meta = target.with_name(target.name + ".meta")
         if not meta.exists():
+            if originals is not None:
+                originals[meta] = None
             yield meta, _meta(relative, True)
