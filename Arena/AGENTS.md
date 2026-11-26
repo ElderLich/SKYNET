@@ -99,6 +99,7 @@ Use explicitly selected source locations; do not search parent or sibling direct
 - The upstream development layout places `arena-srvpro` beside the Arena checkout (`../arena-srvpro`). If that checkout is present at an explicitly configured location, inspect its `index.js` for room and ranking API behavior. Room counts and match rankings are queried through `/api/getroomscount` and `/api/getscores` respectively. This repository does not assume that upstream layout or provide the server automatically.
 - The restored normal WindBot project lives at `../WindBot`. Its `Program.cs` defines the ServerMode HTTP protocol and its own implementation defines deck/runtime resource behavior. New Arena databases point at its Release runtime and English `BotWrapper/bot.conf`; existing saved configurations are never overwritten. Historical sources are preserved in the local `../Artifacts/retired-local-folders-20261102/historical-folders.zip` archive and are not runtime dependencies.
 - `Tools/` owns the dedicated native host, isolated native build, pinned SRVPro bootstrap and owned-process regression. Bootstrap outputs stay under ignored workspace `Artifacts/` or `Arena/Artifacts/`; existing staged runtimes remain valid.
+- Keep public dashboard shortcuts at the Arena root, shared launcher functions in `Tools/`, and deck-specific Arena matchup drivers in `Tools/Executors/<registered deck>/`. Normal WindBot executor checks belong in that project's corresponding tools folder.
 
 ## Validation priorities
 
