@@ -298,54 +298,7 @@ namespace WindBot
 
         private static void Run(object o)
         {
-            // All errors should be caught instead of causing the program to crash.
-            GameClient client = null;
-            try
-            {
-                WindBotInfo Info = (WindBotInfo)o;
-                client = new GameClient(Info);
-                Logger.SetContext(client.GetLogContext);
-                client.Start();
-                Logger.DebugWriteLine(client.Username + " started.");
-                while (client.Connection.IsConnected)
-                {
-                    try
-                    {
-                        client.Tick();
-                        #if DEBUG
-                            Thread.Sleep(1);
-                        #else
-                            Thread.Sleep(30);
-                        #endif
-                    }
-                    catch (Exception ex)
-                    {
-                        if (Debugger.IsAttached)
-                            throw;
-                        Logger.WriteErrorLine("Tick Error", ex);
-                        break;
-                    }
-                }
-                Logger.DebugWriteLine(client.Username + " end.");
-            }
-            catch (Exception ex)
-            {
-                if (Debugger.IsAttached)
-                    throw;
-                Logger.WriteErrorLine("Run Error", ex);
-            }
-            finally
-            {
-                try
-                {
-                    client?.Connection?.Close();
-                }
-                finally
-                {
-                    client?.CloseTrace();
-                    Logger.ClearContext();
-                }
-            }
+            GameClient.RunSession((WindBotInfo)o);
         }
 
         public static FileStream ReadFile(string directory, string filename, string extension)

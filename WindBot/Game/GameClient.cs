@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -76,6 +77,57 @@ namespace WindBot.Game
                 + ", Bot=" + (Username ?? "<null>")
                 + ", Executor=" + (ExecutorName ?? "<not initialized>")
                 + ", STOCMessage=" + (CurrentSTOCMessage ?? "<none>");
+        }
+
+        internal static void RunSession(WindBotInfo info)
+        {
+            // All errors should be caught instead of causing the program to crash.
+            GameClient client = null;
+            try
+            {
+                client = new GameClient(info);
+                Logger.SetContext(client.GetLogContext);
+                client.Start();
+                Logger.DebugWriteLine(client.Username + " started.");
+                while (client.Connection.IsConnected)
+                {
+                    try
+                    {
+                        client.Tick();
+                        #if DEBUG
+                            Thread.Sleep(1);
+                        #else
+                            Thread.Sleep(30);
+                        #endif
+                    }
+                    catch (Exception ex)
+                    {
+                        if (Debugger.IsAttached)
+                            throw;
+                        Logger.WriteErrorLine("Tick Error", ex);
+                        break;
+                    }
+                }
+                Logger.DebugWriteLine(client.Username + " end.");
+            }
+            catch (Exception ex)
+            {
+                if (Debugger.IsAttached)
+                    throw;
+                Logger.WriteErrorLine("Run Error", ex);
+            }
+            finally
+            {
+                try
+                {
+                    client?.Connection?.Close();
+                }
+                finally
+                {
+                    client?.CloseTrace();
+                    Logger.ClearContext();
+                }
+            }
         }
 
         public void Start()
