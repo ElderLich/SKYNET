@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WINDOWS = os.name == "nt"
 SUITES = {
     "runtime": "RuntimeChecks.cs",
+    "rush": "Rush/RushChecks.cs",
     "rda": "Executors/TheCrimsonKing/RdaPlannerChecks.cs",
     "voiceless": "Executors/Voiceless/VoicelessChecks.cs",
     "metalmorph": "Executors/Metalmorph/MetalmorphChecks.cs",
@@ -181,7 +182,14 @@ def copy_runtime(executable, output):
 def check(args):
     executable = binary_path(args)
     database = existing_file(args.database)
-    deck = existing_file(args.deck)
+    if args.suite == "rush":
+        if not args.deck_dir or not Path(args.deck_dir).is_dir():
+            raise ValueError("The Rush suite requires --deck-dir pointing to the directory with all eight Rush lists.")
+        deck = Path(args.deck_dir).resolve()
+    else:
+        if not args.deck:
+            raise ValueError("This suite requires --deck with an explicit .ydk file.")
+        deck = existing_file(args.deck)
     inspect_database(database)
     compiler = find_compiler(args.compiler)
     if not compiler:
@@ -194,6 +202,9 @@ def check(args):
     command = [compiler, "/nologo", "/langversion:6", "/target:exe", "/platform:anycpu",
                "/r:System.Core.dll", "/r:System.Web.Extensions.dll", "/r:" + str(output / "WindBot.exe"),
                "/out:" + str(harness), str(source)]
+    if args.suite == "rush":
+        command.extend(str(source.with_name(name)) for name in
+                       ("RushCombatChecks.cs", "RushSpecialistChecks.cs", "RushLifecycleChecks.cs"))
     result = execute(command, output, args.timeout)
     if result:
         return result
@@ -252,7 +263,9 @@ def parser():
     checks = commands.add_parser("check", help="Run a bounded offline fixture with fresh receipts")
     checks.add_argument("--suite", choices=tuple(SUITES), default="runtime")
     checks.add_argument("--database", required=True)
-    checks.add_argument("--deck", required=True, help="Explicit .ydk path")
+    deck_input = checks.add_mutually_exclusive_group(required=True)
+    deck_input.add_argument("--deck", help="Explicit .ydk path")
+    deck_input.add_argument("--deck-dir", help="Rush suite: directory containing the eight registered .ydk files")
     checks.add_argument("--registration", help="Runtime suite: also require this exact compiled Deck name")
     checks.add_argument("--output", required=True, help="New output directory; existing receipts are never overwritten")
     checks.add_argument("--compiler")
