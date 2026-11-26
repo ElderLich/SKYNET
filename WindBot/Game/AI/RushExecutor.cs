@@ -492,30 +492,5 @@ namespace WindBot.Game.AI
             return false;
         }
 
-        protected bool SummonGreatMajuGarzett()
-        {
-            int tributecount = 1;
-            int maxAttack = 0;
-            for (int k = 0; k < 7; ++k)
-            {
-                ClientCard tributeCard2 = Bot.MonsterZone[k];
-                if (tributeCard2 == null) continue;
-                if (tributeCard2.Attack > maxAttack && tributeCard2.Attack > 1600)
-                {
-                    maxAttack = tributeCard2.Attack;
-                }
-            }
-            for (int k = 0; k < 7; ++k)
-            {
-                ClientCard tributeCard2 = Bot.MonsterZone[k];
-                if (tributeCard2 == null) continue;
-                if (tributeCard2.Attack == maxAttack)
-                {
-                    tributecount--;
-                    AI.SelectMaterials(tributeCard2);
-                }
-            }
-            return tributecount <= 0;
-        }
     }
 }
