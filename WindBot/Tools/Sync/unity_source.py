@@ -85,14 +85,16 @@ def plan_unity_sources(windbot: Path, unity_windbot: Path, originals=None, forme
             if originals is not None:
                 originals[meta] = None
             former = (former_paths or {}).get(relative, relative)
-            former_meta = (unity_windbot / former).with_suffix(".cs.meta")
-            if former != relative and former_meta.is_file():
-                former_bytes = former_meta.read_bytes()
+            former_bytes = None
+            if former != relative:
+                former_meta = (unity_windbot / former).with_suffix(".cs.meta")
+                try:
+                    former_bytes = former_meta.read_bytes()
+                except FileNotFoundError:
+                    pass
                 if originals is not None:
                     originals[former_meta] = former_bytes
-                yield meta, former_bytes
-            else:
-                yield meta, _meta(former, False)
+            yield meta, former_bytes if former_bytes is not None else _meta(former, False)
         folders.update(p for p in relative.parents if p != Path("."))
     for relative in sorted(folders):
         target = unity_windbot / relative

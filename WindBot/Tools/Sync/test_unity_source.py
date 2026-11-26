@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from unity_source import plan_unity_sources
+from unity_source import _meta, plan_unity_sources
 
 
 class UnitySourceTests(unittest.TestCase):
@@ -51,6 +51,19 @@ class UnitySourceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Custom session worker"):
             list(plan_unity_sources(self.source, self.target))
         self.assertEqual(target.read_bytes(), custom)
+
+    def test_rename_records_absent_metadata_and_uses_the_previous_asset_guid(self):
+        relative = Path("Game/AI.cs")
+        former = Path("Game/Original.cs")
+        snapshot = {}
+        plan = dict(plan_unity_sources(self.source, self.target, snapshot, {relative: former}))
+        old_meta = (self.target / former).with_suffix(".cs.meta")
+        self.assertIsNone(snapshot[old_meta])
+        self.assertEqual(plan[(self.target / relative).with_suffix(".cs.meta")], _meta(former, False))
+        old_meta.parent.mkdir()
+        old_meta.write_bytes(b"fresh editor GUID")
+        self.assertNotEqual(plan[(self.target / relative).with_suffix(".cs.meta")], old_meta.read_bytes())
+        self.assertIsNone(snapshot[old_meta])
 
 
 if __name__ == "__main__":
