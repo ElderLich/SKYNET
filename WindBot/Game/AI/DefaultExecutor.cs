@@ -280,7 +280,7 @@ namespace WindBot.Game.AI
             public const int 大风暴 = 120229003;
             public const int 魔法筒 = 120232005;
             public const int 圣防 = 120198003;
-            public const int 激流葬 = 1202223105;
+            public const int 激流葬 = 120223105;
             public const int 大灾害 = 120238028;
             public const int 炸甲 = 120194005;
             public const int 万能地雷 = 120234005;
@@ -301,7 +301,7 @@ namespace WindBot.Game.AI
             public const int 遮盖罩 = 120227029;
 
             public const int 人造人 = 120155000;
-            public const int 狼人 = 120214004;
+            public const int 狼人 = 120214001;
             public const int 幻影之龙 = 120223102;        
             public const int 手枪龙 = 120208000;
             public const int 伟大魔兽 = 120238019;
