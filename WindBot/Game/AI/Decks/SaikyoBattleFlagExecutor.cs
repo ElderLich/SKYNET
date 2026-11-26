@@ -4,12 +4,11 @@ using System.Linq;
 using WindBot;
 using WindBot.Game;
 using WindBot.Game.AI;
-using System;
 
 namespace WindBot.Game.AI.Decks
 {
     [Deck("SaikyoBattleFlag", "AI_SaikyoBattleFlag")]
-    public class SaikyoBattleFlagExecutor : DefaultExecutor
+    public class SaikyoBattleFlagExecutor : RushExecutor
     {
         public class CardId
         {
@@ -49,7 +48,7 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.Activate, CardId.捕鸟蛛);
             AddExecutor(ExecutorType.Activate, CardId.恶德, 恶德Effect);            
             AddExecutor(ExecutorType.Activate, CardId.最强战旗, 最强战旗Eff);           
-            AddExecutor(ExecutorType.Activate, CardId.突击坦克, 突击坦克Effect); 
+            AddExecutor(ExecutorType.Activate, CardId.突击坦克);
             AddExecutor(ExecutorType.Activate, CardId.瞄准鹰, 瞄准鹰Effect);
             AddExecutor(ExecutorType.Activate, CardId.双角兽, 双角兽Effect);
             AddExecutor(ExecutorType.Activate, _CardId.手枪龙, 手枪龙Effect);
@@ -105,7 +104,7 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.Activate, CardId.兽之拳, 兽之拳Effect);
             AddExecutor(ExecutorType.Activate, CardId.左迁, 左迁1Effect); 
             AddExecutor(ExecutorType.Activate, CardId.减俸);
-            AddExecutor(ExecutorType.Activate, CardId.左迁,左迁2Effect);
+            AddExecutor(ExecutorType.Activate, CardId.左迁);
             AddExecutor(ExecutorType.Activate, CardId.兽之拳);
             AddExecutor(ExecutorType.Activate, CardId.冻结,冻结Effect);
             AddExecutor(ExecutorType.Activate, _CardId.魔法筒, 魔法筒Effect);
@@ -127,189 +126,137 @@ namespace WindBot.Game.AI.Decks
             AddExecutor(ExecutorType.Repos, CardId.钢机神, 圣防Repos);
         }
 
-        private List<int> HintMsgForEnemy = new List<int>
+        private readonly HashSet<ClientCard> _doubleTributes = new HashSet<ClientCard>();
+        private ClientCard _resolvingBicorn;
+        private bool _payingEagleCost;
+
+        public override void OnChaining(int player, ClientCard card)
         {
-            HintMsg.Release, HintMsg.Destroy, HintMsg.Remove, HintMsg.ToGrave, HintMsg.ReturnToHand, HintMsg.ToDeck,
-            HintMsg.FusionMaterial, HintMsg.SynchroMaterial, HintMsg.XyzMaterial, HintMsg.LinkMaterial, HintMsg.Disable
-        };
-
-        private List<int> HintMsgForDeck = new List<int>
-        {
-            HintMsg.SpSummon, HintMsg.ToGrave, HintMsg.Remove, HintMsg.AddToHand, HintMsg.FusionMaterial
-        };
-        private List<int> HintMsgForExtra = new List<int>
-        {
-            HintMsg.SpSummon, HintMsg.ToGrave, HintMsg.Remove, HintMsg.AddToHand, HintMsg.FusionMaterial
-        };
-        private List<int> HintMsgForSelf = new List<int>
-        {
-            HintMsg.Equip
-        };
-
-        private List<int> HintMsgForMaterial = new List<int>
-        {
-            HintMsg.FusionMaterial, HintMsg.SynchroMaterial, HintMsg.XyzMaterial, HintMsg.LinkMaterial, HintMsg.Release
-        };
-
-        private List<int> HintMsgForMaxSelect = new List<int>
-        {
-            HintMsg.SpSummon, HintMsg.ToGrave, HintMsg.AddToHand, HintMsg.FusionMaterial, HintMsg.Destroy, HintMsg.Equip ,HintMsg.Confirm
-        };
-
-        public override IList<ClientCard> OnSelectCard(IList<ClientCard> _cards, int min, int max, int hint, bool cancelable)
-        {
-            if (Duel.Phase == DuelPhase.BattleStart)
-                return null;
-            if (AI.HaveSelectedCards())
-                return null;
-
-            IList<ClientCard> selected = new List<ClientCard>();
-            IList<ClientCard> cards = new List<ClientCard>(_cards);
-            if (max > cards.Count)
-                max = cards.Count;
-
-            if (HintMsgForEnemy.Contains(hint))
-            {
-                IList<ClientCard> enemyCards = cards.Where(card => card.Controller == 1).ToList();
-
-                // select enemy's card first
-                while (enemyCards.Count > 0 && selected.Count < max)
-                {
-                    ClientCard card = enemyCards[Program.Rand.Next(enemyCards.Count)];
-                    selected.Add(card);
-                    enemyCards.Remove(card);
-                    cards.Remove(card);
-                }
-            }
-
-            if (HintMsgForDeck.Contains(hint))
-            {
-                IList<ClientCard> deckCards = cards.Where(card => card.Location == CardLocation.Deck).ToList();
-
-                // select deck's card first
-                while (deckCards.Count > 0 && selected.Count < max)
-                {
-                    ClientCard card = deckCards[Program.Rand.Next(deckCards.Count)];
-                    selected.Add(card);
-                    deckCards.Remove(card);
-                    cards.Remove(card);
-                }
-            }
-            if (HintMsgForExtra.Contains(hint))
-            {
-                IList<ClientCard> ExtraCards = cards.Where(card => card.Location == CardLocation.Extra).ToList();
-
-                // select extra's card first
-                while (ExtraCards.Count > 0 && selected.Count < max)
-                {
-                    ClientCard card = ExtraCards[Program.Rand.Next(ExtraCards.Count)];
-                    selected.Add(card);
-                    ExtraCards.Remove(card);
-                    cards.Remove(card);
-                }
-            }
-
-            if (HintMsgForSelf.Contains(hint))
-            {
-                IList<ClientCard> botCards = cards.Where(card => card.Controller == 0).ToList();
-
-                // select bot's card first
-                while (botCards.Count > 0 && selected.Count < max)
-                {
-                    ClientCard card = botCards[Program.Rand.Next(botCards.Count)];
-                    selected.Add(card);
-                    botCards.Remove(card);
-                    cards.Remove(card);
-                }
-            }
-
-            if (HintMsgForMaterial.Contains(hint))
-            {
-                IList<ClientCard> materials = cards.OrderBy(card => card.Attack).ToList();
-
-                // select low attack first
-                while (materials.Count > 0 && selected.Count < min)
-                {
-                    ClientCard card = materials[0];
-                    selected.Add(card);
-                    materials.Remove(card);
-                    cards.Remove(card);
-                }
-            }
-
-            // select random cards
-            while (selected.Count < min)
-            {
-                ClientCard card = cards[Program.Rand.Next(cards.Count)];
-                selected.Add(card);
-                cards.Remove(card);
-            }
-
-            if (HintMsgForMaxSelect.Contains(hint))
-            {
-                // select max cards
-                while (selected.Count < max)
-                {
-                    ClientCard card = cards[Program.Rand.Next(cards.Count)];
-                    selected.Add(card);
-                    cards.Remove(card);
-                }
-            }
-
-            return selected;
+            base.OnChaining(player, card);
+            _payingEagleCost = false;
+            if (player == 0 && card.IsCode(CardId.双角兽))
+                _resolvingBicorn = card;
         }
 
-        public override int OnSelectOption(IList<int> options)
+        public override void OnChainSolved(int chainIndex)
         {
-            return Program.Rand.Next(options.Count);
-        }
-
-        public override CardPosition OnSelectPosition(int cardId, IList<CardPosition> positions)
-        {
-            YGOSharp.OCGWrapper.NamedCard cardData = YGOSharp.OCGWrapper.NamedCard.Get(cardId);
-            if (cardData != null)
+            base.OnChainSolved(chainIndex);
+            ChainInfo link = Duel.GetCurrentSolvingChainInfo();
+            if (_resolvingBicorn != null && link != null && link.RelatedCard == _resolvingBicorn)
             {
-                if (cardData.Attack < 0)
-                    return CardPosition.FaceUpAttack;
-                if (cardData.Attack <= 1000)
-                    return CardPosition.FaceUpDefence;
+                if (!Duel.IsCurrentSolvingChainNegated() && _resolvingBicorn.IsFaceup() &&
+                    Bot.MonsterZone.Contains(_resolvingBicorn))
+                    _doubleTributes.Add(_resolvingBicorn);
+                _resolvingBicorn = null;
             }
-            return 0;
         }
 
-        public override bool OnSelectHand()
+        public override void OnChainEnd()
         {
-            // go first
-            return true;
+            base.OnChainEnd();
+            _payingEagleCost = false;
+            _resolvingBicorn = null;
         }
 
-        bool DoubleTribute = false;
+        public override void OnMove(ClientCard card, int previousControler, int previousLocation, int currentControler, int currentLocation)
+        {
+            base.OnMove(card, previousControler, previousLocation, currentControler, currentLocation);
+            if (previousControler == 0 && previousLocation == (int)CardLocation.MonsterZone &&
+                (currentControler != 0 || currentLocation != (int)CardLocation.MonsterZone))
+                ForgetBicorn(card);
+        }
+
+        public override void OnPosChange(ClientCard card, int previousPosition, int currentPosition)
+        {
+            base.OnPosChange(card, previousPosition, currentPosition);
+            if ((currentPosition & (int)CardPosition.FaceDown) != 0)
+                ForgetBicorn(card);
+        }
+
+        private void ForgetBicorn(ClientCard card)
+        {
+            if (_resolvingBicorn == card)
+                _resolvingBicorn = null;
+            _doubleTributes.Remove(card);
+        }
+
         public override void OnNewTurn()
         {
-            DoubleTribute = false;
             base.OnNewTurn();
+            _payingEagleCost = false;
+            _resolvingBicorn = null;
+            _doubleTributes.Clear();
         }
+
+        public override void OnNewPhase()
+        {
+            base.OnNewPhase();
+            _payingEagleCost = false;
+        }
+
         private bool DefaultDoubleSummon()
         {
-         int tribute_count = 0;
-         IList<ClientCard> m_list = new List<ClientCard>(); List<ClientCard> _sort_list = new List<ClientCard>(Bot.GetMonsters());
-            if (!DoubleTribute)
-                return false;
-            else
-            {               
-            foreach (ClientCard monster in _sort_list)
-            {
-                if (monster.IsCode(CardId.双角兽))
-                    { tribute_count += 2;
-                    m_list.Add(monster);
-                    }
-                    if (tribute_count == 2)  break;
-             }
-                AI.SelectMaterials(m_list);           
-            DoubleTribute = false;
-                return true;
-            }                      
+            // The core supplies each offered tribute's actual weight to GameAI.OnSelectTribute.
+            return _doubleTributes.Count > 0;
         }
+
+        private static readonly int[] EagleSummonPriority =
+        {
+            _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德, CardId.旗兽, CardId.社员
+        };
+
+        public override IList<ClientCard> OnSelectCard(IList<ClientCard> cards, int min, int max, int hint, bool cancelable)
+        {
+            if (AI.HaveSelectedCards())
+                return null;
+            if (_payingEagleCost && hint == HintMsg.ToGrave && min >= 1 && min <= 2 &&
+                cards.All(c => c.Controller == 0 && c.Location == CardLocation.MonsterZone &&
+                    c.IsFaceup() && c.HasAttribute(CardAttribute.Light)))
+            {
+                var materials = cards.OrderBy(c => c.Level > 4).ThenBy(c => c.Attack).Take(min).ToList();
+                if (materials.Count == min)
+                    return materials;
+            }
+            ChainInfo link = Duel.GetCurrentSolvingChainInfo();
+            if (link != null && link.ActivatePlayer == 0)
+            {
+                if (link.IsActivateCode(CardId.瞄准鹰) && hint == HintMsg.SpSummon && min == 1 && max == 1)
+                {
+                    foreach (int id in EagleSummonPriority)
+                    {
+                        var machine = cards.FirstOrDefault(c => c.Controller == 0 && c.Location == CardLocation.Hand && c.IsCode(id));
+                        if (machine != null)
+                            return new[] { machine };
+                    }
+                }
+                if (link.IsActivateCode(CardId.左迁) && hint == HintMsg.PosChange && min == 1 && max == 1)
+                {
+                    ClientCard attacker = Enemy.BattlingMonster;
+                    if (attacker != null && attacker.Attack > 2000 && cards.Contains(attacker))
+                        return new[] { attacker };
+                    var target = cards.Where(c => c.Controller == 1 && c.IsFaceup() && c.IsAttack())
+                        .OrderByDescending(c => c.Attack).FirstOrDefault();
+                    if (target != null)
+                        return new[] { target };
+                }
+                if (link.IsActivateCode(CardId.恶德) && hint == HintMsg.Set && max > 0)
+                {
+                    var traps = new List<ClientCard>(2);
+                    foreach (int id in TrapPriority)
+                    {
+                        var trap = cards.FirstOrDefault(c => c.Controller == 0 && c.Location == CardLocation.Grave && c.IsCode(id));
+                        if (trap != null && traps.Count < max)
+                            traps.Add(trap);
+                    }
+                    if (traps.Count >= min)
+                        return traps;
+                }
+            }
+            return base.OnSelectCard(cards, min, max, hint, cancelable);
+        }
+
+        private static readonly int[] TrapPriority = { CardId.左迁, CardId.减俸 };
+
         private bool DefaultOverSummon()
         {
             if (Bot.Hand.Count >= 6 && Bot.HasInMonstersZone(CardId.恶德)) return true;
@@ -317,21 +264,9 @@ namespace WindBot.Game.AI.Decks
         }
         private bool 左迁1Effect()
         {
-            
-        if (Enemy.BattlingMonster.Attack > 2000)
-            {
-            AI.SelectCard(Enemy.BattlingMonster);
-            return true;
-            }
-            return false;
+            return Enemy.BattlingMonster != null && Enemy.BattlingMonster.Attack > 2000;
         }
-        private bool 左迁2Effect()
-        {
-            ClientCard target = Util.GetBestEnemyMonster(true, true);
-            if (target != null)
-                AI.SelectCard(target);
-            return true;        
-        }
+
         private bool 冻结Effect()
         {
             foreach (ClientCard monster in Bot.GetMonsters())
@@ -352,91 +287,32 @@ namespace WindBot.Game.AI.Decks
         }
         private bool 钢机神3Effect()
         {
-            if (Duel.Turn == 1)
-            {
-                return false;
-            }
-            else 
-                AI.SelectCard(_CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德, CardId.捕鸟蛛, CardId.突击坦克, CardId.工匠无人机,  CardId.社员, CardId.双角兽, CardId.旗兽, CardId.瞄准鹰);
-            return true;       
+            return Duel.Turn != 1;
         }
         private bool 恶德Effect()
         {
-            foreach (ClientCard m in Bot.Hand)
-                AI.SelectCard(m);
-            AI.SelectNextCard(CardId.左迁, CardId.减俸);
-            AI.SelectNextCard(CardId.左迁, CardId.减俸);
+            AI.SelectCard(CardLocation.Hand);
             return true;
-            
         }
         private bool 兽之拳Effect()
         {
-            if (Enemy.BattlingMonster.Race == (int)CardRace.Dragon)
-                return true;
-            if (Enemy.BattlingMonster.Race == (int)CardRace.Fairy)
-                return true;
-            if (Enemy.BattlingMonster.Race == (int)CardRace.SpellCaster)
-                return true;
-            return false;
+            ClientCard attacker = Enemy.BattlingMonster;
+            return attacker != null && attacker.HasRace(CardRace.Dragon | CardRace.Fairy | CardRace.SpellCaster);
         }
 
         private bool 死苏effect()
         {
-            List<ClientCard> cards = new List<ClientCard>(Bot.Graveyard.GetMatchingCards(card => card.IsCanRevive()));
-            cards.Sort(CardContainer.CompareCardAttack);
-            ClientCard selectedCard = null;
-            for (int i = cards.Count - 1; i >= 0; --i)
-            {
-                ClientCard card = cards[i];
-                if (card.Attack < 2000)
-                    break;
-                if (card.IsMonster())
-                {
-                    selectedCard = card;
-                    break;
-                }
-            }
-            cards = new List<ClientCard>(Enemy.Graveyard.GetMatchingCards(card => card.IsCanRevive()));
-            cards.Sort(CardContainer.CompareCardAttack);
-            for (int i = cards.Count - 1; i >= 0; --i)
-            {
-                ClientCard card = cards[i];
-                if (card.Attack < 2000)
-                    break;
-                if (card.IsMonster() && card.HasType(CardType.Normal) && (selectedCard == null || card.Attack > selectedCard.Attack))
-                {
-                    selectedCard = card;
-                    break;
-                }
-            }
-            if (selectedCard != null)
-            {
-                AI.SelectCard(selectedCard);
-                return true;
-            }
-            return false;
+            return Bot.Graveyard.Any(IsRevivalTarget) || Enemy.Graveyard.Any(IsRevivalTarget);
+        }
+
+        private static bool IsRevivalTarget(ClientCard card)
+        {
+            return card.IsMonster() && card.Attack >= 2000 && card.IsCanRevive();
         }
         private bool 成金恐龙王Summon()
         {
             if (Enemy.GetHandCount() < 1) return true;
             return false;
-        }
-        private bool 突击坦克Effect()
-        {           
-            foreach (ClientCard mon in Enemy.GetMonsters())
-                if (mon.Level >= 9)
-                    AI.SelectCard(mon);
-                else if (mon.Level >= 8)
-                    AI.SelectCard(mon);
-                else if (mon.Level >= 6)
-                    AI.SelectCard(mon);
-                else if (mon.Level >= 4)
-                    AI.SelectCard(mon);
-                else if (mon.Level >= 2)
-                    AI.SelectCard(mon);
-                else if (mon.Level >= 1)
-                    AI.SelectCard(mon);
-            return true;
         }
         private bool 突击坦克summon()
         {
@@ -460,26 +336,25 @@ namespace WindBot.Game.AI.Decks
             if (Bot.HasInHand(new[] { CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && !Bot.HasInMonstersZone(new[] { CardId.最强战旗, CardId.钢机神 }))
             {
                 AI.SelectCard(CardId.瞄准鹰, CardId.捕鸟蛛, CardId.双角兽, CardId.工匠无人机, CardId.突击坦克, CardId.社员, CardId.旗兽, CardId.恶德, CardId.钢机神, CardId.最强战旗);
-                DoubleTribute = true;
                 return true;
             }
             return false;
         }
         private bool 瞄准鹰双角兽summon()
         {
-            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.GetMatchingCardsCount(card => card.Level >= 7) > 0)
+            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                 return true;
             return false;
         }
         private bool 瞄准鹰坦克summon()
         {
-            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.GetMatchingCardsCount(card => card.Level >= 7) > 0)
+            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                 return true;
             return false;
         }
         private bool 瞄准鹰成金恐龙王summon()
         {
-            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.GetMatchingCardsCount(card => card.Level >= 7) > 0)
+            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                 return true;
             return false;
         }
@@ -488,7 +363,7 @@ namespace WindBot.Game.AI.Decks
           foreach (ClientCard m in Bot.GetMonsters())
                if (m.HasAttribute(CardAttribute.Light) && m.Level <= 4 && m.IsFaceup())
               if (Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }))
-             if (Enemy.MonsterZone.GetMatchingCardsCount(card => card.Level >= 7) > 0)                       
+             if (Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
               return true;           
             return false;
         }
@@ -496,7 +371,7 @@ namespace WindBot.Game.AI.Decks
         {
             if (Bot.Hand.GetCardCount(CardId.瞄准鹰) >= 2 )
                 if (Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }))
-                  if (Enemy.MonsterZone.GetMatchingCardsCount(card => card.Level >= 7) > 0)
+                  if (Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                              return true;           
             return false;
         }
@@ -504,66 +379,42 @@ namespace WindBot.Game.AI.Decks
         {
                      if (Bot.HasInHand(CardId.双角兽) || Bot.HasInHand(CardId.突击坦克) || Bot.HasInHand(CardId.成金恐龙王))
                 if (Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }))
-                            if (Enemy.MonsterZone.GetMatchingCardsCount(card => card.Level >= 7) > 0)
+                            if (Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                                 return true;
             return false;
         }
         private bool 瞄准鹰Effect()
         {
-           
-            if (Bot.MonsterZone.GetMatchingCardsCount(card => card.Level <= 4 && card.IsFaceup()) >= 2 && Bot.HasInHand(new[] { _CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德, CardId.旗兽, CardId.社员 }))
-            {
-                AI.SelectCard(CardId.瞄准鹰,CardId.突击坦克, CardId.成金恐龙王, CardId.社员, CardId.旗兽);
-            AI.SelectNextCard(CardId.瞄准鹰, CardId.突击坦克, CardId.成金恐龙王, CardId.社员, CardId.旗兽);
-            AI.SelectThirdCard(_CardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德, CardId.旗兽, CardId.社员);
-            return true;
-            }
-            return false;
+            _payingEagleCost = Bot.MonsterZone.GetMatchingCardsCount(c => c.IsFaceup() &&
+                c.Level <= 4 && c.HasAttribute(CardAttribute.Light)) >= 2 && Bot.HasInHand(EagleSummonPriority);
+            return _payingEagleCost;
         }
         private bool 七抽Effect()
         {
-            if (Bot.HasInHand(CardId.恶德))
-            {
-                AI.SelectCard(CardId.恶德); AI.SelectYesNo(true);
-                return true;
-            }
-            else if (Bot.HasInHand(CardId.钢机神))
-            {
-                AI.SelectCard(CardId.钢机神); AI.SelectYesNo(true);
-                return true;
-            }
-            else if (Bot.HasInHand(CardId.最强战旗))
-            {
-                AI.SelectCard(CardId.最强战旗); AI.SelectYesNo(true);
-                return true;
-            }
-            else if (Bot.HasInHand(_CardId.手枪龙))
-            {
-                AI.SelectCard(_CardId.手枪龙); AI.SelectYesNo(true);
-                return true;
-            }          
-            else
-            {
+            if (!Bot.HasInHand(SevenTreasuresPriority))
                 return false;
-            }
+            AI.SelectCard(SevenTreasuresPriority);
+            return true;
         }
+
+        private static readonly int[] SevenTreasuresPriority = { CardId.恶德, CardId.钢机神, CardId.最强战旗, _CardId.手枪龙 };
         private bool 无人机Effect()
         {
-
-            if ((Bot.MonsterZone.GetMatchingCardsCount(card => card.Level < 5)+ Bot.Hand.GetMatchingCardsCount(card => card.Level < 5)) <= 2 )
+            int fodder = Bot.MonsterZone.GetMatchingCardsCount(c => c.Level < 5)
+                + Bot.Hand.GetMatchingCardsCount(c => c.IsMonster() && c.Level < 5);
+            if (fodder <= 2)
             {
-                if (Bot.Hand.GetMatchingCardsCount(card => card.Level > 5) > 2)
+                int bosses = Bot.Hand.GetMatchingCardsCount(c => c.Level > 5);
+                if (bosses > 2)
                     AI.SelectCard(CardId.最强战旗, CardId.钢机神, CardId.恶德, _CardId.手枪龙);
-               else if (Bot.Hand.GetMatchingCardsCount(card => card.Level > 5) == 1 && (Bot.MonsterZone.GetMatchingCardsCount(card => card.Level < 5) + Bot.Hand.GetMatchingCardsCount(card => card.Level < 5)) == 1)
-                {
+                else if (bosses == 1 && fodder == 1)
                     AI.SelectCard(CardId.最强战旗, CardId.钢机神, _CardId.手枪龙, CardId.恶德);
-                return true;
-                }
-                return false;
+                else
+                    return false;
             }
             else
-            AI.SelectCard(CardId.瞄准鹰, CardId.突击坦克, CardId.工匠无人机, CardId.社员, CardId.旗兽);        
-                return true;
+                AI.SelectCard(CardId.瞄准鹰, CardId.突击坦克, CardId.工匠无人机, CardId.社员, CardId.旗兽);
+            return true;
         }
         private bool 无人机summon()
         {
@@ -583,11 +434,3 @@ namespace WindBot.Game.AI.Decks
 
     }
 }
-
-
-
-
-
-
-
-
