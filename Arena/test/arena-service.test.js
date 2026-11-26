@@ -12,6 +12,23 @@ const {
 } = require('../server/arena-service');
 const { createDefaultArenaSettings } = require('../server/arena-settings');
 
+test('conditional settings saves preserve concurrent changes during launcher setup', async () => {
+    const settings = createDefaultArenaSettings();
+    let updatedAt = 'original';
+    const service = new ArenaService({}, {
+        getArenaSettings: () => ({ settings, updatedAt }),
+        saveArenaSettings: (value, expected) => {
+            assert.notEqual(expected, updatedAt);
+            return null;
+        },
+    });
+    service.fetchRemoteBotConfigs = async () => { updatedAt = 'edited during validation'; };
+    await assert.rejects(service.updateSettings({ ...settings, expectedUpdatedAt: 'stale' }), /settings changed/);
+    assert.equal(updatedAt, 'original');
+    await assert.rejects(service.updateSettings({ ...settings, expectedUpdatedAt: updatedAt }), /settings changed/);
+    assert.equal(updatedAt, 'edited during validation');
+});
+
 test('timed stop rejects finite modes and invalid durations before accessing settings', () => {
     const service = new ArenaService({}, {});
     for (const kind of ['regression', 'challenge']) {

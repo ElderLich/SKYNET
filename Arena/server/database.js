@@ -122,12 +122,14 @@ class ArenaDatabase {
         };
     }
 
-    saveArenaSettings(settings) {
-        const updatedAt = now();
-        this.db.prepare(`
-            UPDATE arena_settings SET settings_json = ?, updated_at = ? WHERE singleton = 1
-        `).run(JSON.stringify(settings), updatedAt);
-        return { settings, updatedAt };
+    saveArenaSettings(settings, expectedUpdatedAt = null) {
+        const row = this.db.prepare(`
+            UPDATE arena_settings SET settings_json = ?,
+                updated_at = MAX(?, strftime('%Y-%m-%dT%H:%M:%fZ', updated_at, '+0.001 seconds'))
+            WHERE singleton = 1 AND (? IS NULL OR updated_at = ?)
+            RETURNING updated_at
+        `).get(JSON.stringify(settings), now(), expectedUpdatedAt, expectedUpdatedAt);
+        return row ? { settings, updatedAt: row.updated_at } : null;
     }
 
     transaction(callback) {

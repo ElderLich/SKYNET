@@ -409,6 +409,9 @@ class ArenaService {
             throw requestError('System settings cannot be changed while a run is active', 409);
         }
         const record = this.database.getArenaSettings();
+        const expectedUpdatedAt = input?.expectedUpdatedAt;
+        const changedSettings = () => requestError('Arena settings changed during setup. Reload and retry.', 409);
+        if (expectedUpdatedAt !== undefined && expectedUpdatedAt !== record.updatedAt) throw changedSettings();
         let settings;
         try {
             settings = validateAndMergeArenaSettings(input, record.settings);
@@ -419,7 +422,8 @@ class ArenaService {
         if (this.contexts.size > 0) {
             throw requestError('System settings cannot be changed while a run is active', 409);
         }
-        const saved = this.database.saveArenaSettings(settings);
+        const saved = this.database.saveArenaSettings(settings, expectedUpdatedAt);
+        if (!saved) throw changedSettings();
         this.markChanged('settings');
         return getPublicArenaSettings(saved.settings, saved.updatedAt);
     }

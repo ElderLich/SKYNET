@@ -8,6 +8,20 @@ const test = require('node:test');
 const { ArenaDatabase } = require('../server/database');
 const { normalizeRank } = require('../server/stats');
 
+test('settings revisions advance when the clock lags and stale writes are atomic', (context) => {
+    const database = new ArenaDatabase(':memory:');
+    context.after(() => database.close());
+    const future = '2090-01-01T00:00:00.000Z';
+    database.db.prepare('UPDATE arena_settings SET updated_at = ?').run(future);
+    const { settings } = database.getArenaSettings();
+    const first = database.saveArenaSettings(settings, future);
+    const second = database.saveArenaSettings(settings, first.updatedAt);
+    assert.equal(first.updatedAt, '2090-01-01T00:00:00.001Z');
+    assert.equal(second.updatedAt, '2090-01-01T00:00:00.002Z');
+    assert.equal(database.saveArenaSettings({}, future), null);
+    assert.deepEqual(database.getArenaSettings(), second);
+});
+
 test('new workspace defaults are persisted without replacing saved agent paths', (context) => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'windbot-arena-workspace-'));
     const databasePath = path.join(tempDir, 'arena.sqlite');
