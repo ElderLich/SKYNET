@@ -26,7 +26,7 @@ def trace_files(inputs):
             require(path.suffix.lower() == ".jsonl", "Trace input must be a .jsonl file: " + str(path))
             files.append(path)
         else:
-            files.extend(sorted(item for item in path.rglob("*.jsonl") if item.is_file()))
+            files.extend(item.resolve() for item in path.rglob("*.jsonl") if item.is_file())
     unique = sorted(set(files))
     require(unique, "No .jsonl trace files were found.")
     return unique
@@ -42,6 +42,9 @@ def read_capture(path):
                 row = json.loads(line)
             except json.JSONDecodeError as error:
                 raise ValueError("{}:{}: invalid JSON: {}".format(path, line_number, error.msg))
+            require(isinstance(row, dict), "{}:{}: expected a record object".format(path, line_number))
+            require(not rows or rows[-1].get("kind") != "end",
+                    "{}:{}: unexpected record after end".format(path, line_number))
             require(row.get("schema") == SCHEMA,
                     "{}:{}: unsupported schema".format(path, line_number))
             require(row.get("sequence") == len(rows),
@@ -162,8 +165,17 @@ def merge_counts(target, values):
         target[key] += value
 
 
-def analyze(inputs):
-    captures = [summarize_capture(path, read_capture(path)) for path in trace_files(inputs)]
+def analyze(inputs, outputs=()):
+    files = trace_files(inputs)
+    destinations = [Path(path).resolve() for path in outputs if path is not None]
+    require(len(set(destinations)) == len(destinations) and not set(destinations).intersection(files),
+            "Choose separate output files outside the input captures.")
+    # Existing report paths can also have hard links that resolve to different names.
+    for i, destination in enumerate(destinations):
+        if destination.exists():
+            require(not any(path.exists() and destination.samefile(path) for path in files + destinations[:i]),
+                    "Choose separate output files outside the input captures.")
+    captures = [summarize_capture(path, read_capture(path)) for path in files]
     captures.sort(key=lambda capture: (
         capture["startedAt"] is None,
         capture["startedAt"] or "",
@@ -233,7 +245,7 @@ def main():
     parser.add_argument("--decisions-csv", type=Path, help="Optional flat decision/selection CSV")
     args = parser.parse_args()
     try:
-        report = analyze(args.traces)
+        report = analyze(args.traces, outputs=(args.output, args.decisions_csv))
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         if args.decisions_csv:

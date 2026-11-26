@@ -1,7 +1,11 @@
 import json
+import os
 import tempfile
 import unittest
+from contextlib import redirect_stderr
+from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 import analyze_traces
 
@@ -53,6 +57,41 @@ class TraceAnalysisTests(unittest.TestCase):
             path = self.write_capture(directory, rows)
             with self.assertRaisesRegex(ValueError, "non-contiguous sequence"):
                 analyze_traces.read_capture(path)
+
+    def test_rejects_records_after_end(self):
+        rows = [dict(schema=analyze_traces.SCHEMA, duelId="one", sequence=i, kind=kind)
+                for i, kind in enumerate(("start", "end", "decision"))]
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.write_capture(directory, rows)
+            with self.assertRaisesRegex(ValueError, "after end"):
+                analyze_traces.read_capture(path)
+
+    def test_outputs_cannot_replace_captures_or_each_other(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.write_capture(directory, [dict(schema=analyze_traces.SCHEMA, duelId="one",
+                                                       sequence=0, kind="start")])
+            data = path.read_bytes()
+            report = Path(directory) / "report.json"
+            for output, csv_path in ((path, report), (report, path), (report, report)):
+                with self.subTest(output=output, csv=csv_path), redirect_stderr(StringIO()):
+                    args = ["analyze_traces", "--traces", directory, "--output", str(output),
+                            "--decisions-csv", str(csv_path)]
+                    with patch("sys.argv", args), self.assertRaises(SystemExit):
+                        analyze_traces.main()
+                    self.assertEqual(path.read_bytes(), data)
+                    self.assertFalse(report.exists())
+
+    def test_output_link_cannot_replace_an_input_capture(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.write_capture(directory, [dict(schema=analyze_traces.SCHEMA, duelId="linked",
+                                                       sequence=0, kind="start")])
+            linked_output = Path(directory) / "analysis.json"
+            try:
+                os.link(path, linked_output)
+            except OSError as error:
+                self.skipTest("Hard links unavailable: " + str(error))
+            with self.assertRaisesRegex(ValueError, "separate output"):
+                analyze_traces.analyze([directory], outputs=[linked_output])
 
     def test_legacy_mislabeled_card_selection_is_normalized(self):
         common = {"schema": analyze_traces.SCHEMA, "duelId": "legacy", "agent": "A"}
