@@ -13,92 +13,92 @@ namespace WindBot.Game.AI.Decks
     {
         public class CardId
         {
-            public const int 遂行者 = 120254035;
-            public const int 剑黎 = 120246080;
-            public const int 黑曜 = 120246081;
-            public const int DMG = 120181002;
-            public const int DMA = 120130041;
-            public const int DMB = 120203027;
-            public const int 采掘 = 120203029;
-            public const int 魔术的幕帘 = 120217018;
-            public const int 二重加速 = 120246018;
-            public const int 宝石 = 120246083;
-            public const int 魔导书弃却 = 120246084;
-            public const int 魔力抽出 = 120246085;
-            public const int 七宝船 = 120199052;
-            public const int 三猫 = 120249055;
-            public const int 天惠枪 = 120244055;
-            public const int 水流 = 120105012;
-            public const int 幽灵旋风 = 120208053;
+            public const int DarkEradicatorSorcerer = 120254035;
+            public const int DarkSwordMagician = 120246080;
+            public const int ObsidianMagicalSoldier = 120246081;
+            public const int DarkMagicianGirl = 120181002;
+            public const int DarkMagicAttack = 120130041;
+            public const int DarkResonanceBurst = 120203027;
+            public const int MagicalStoneExcavation = 120203029;
+            public const int MagicCurtain = 120217018;
+            public const int HighMagicDoubleAcceleration = 120246018;
+            public const int StoneOfTheDarkMagicians = 120246083;
+            public const int SpellbookRejection = 120246084;
+            public const int SpellExtraction = 120246085;
+            public const int ShipOfSevenTreasures = 120199052;
+            public const int CatTroisChoice = 120249055;
+            public const int MagicalLanceGraceSpear = 120244055;
+            public const int MagicalStream = 120105012;
+            public const int GhostCyclone = 120208053;
 
         }
 
         public ObsidianMagicalExecutor(GameAI ai, Duel duel)
             : base(ai, duel)
         {
-            AddExecutor(ExecutorType.Activate, RushCardId.魔法筒, 魔法筒Effect);
-            AddExecutor(ExecutorType.Activate, CardId.DMA, DMAEffect);
-            AddExecutor(ExecutorType.Activate, CardId.幽灵旋风);
-            AddExecutor(ExecutorType.Activate, CardId.水流);
-            AddExecutor(ExecutorType.Activate, CardId.三猫, 三猫Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.黑洞, 黑洞Effect);
-                        
-            AddExecutor(ExecutorType.Activate, CardId.魔导书弃却);
-            AddExecutor(ExecutorType.Activate, CardId.七宝船, 七宝船Effect);
-            AddExecutor(ExecutorType.Activate, CardId.遂行者);
-            AddExecutor(ExecutorType.Activate, CardId.采掘, 采掘Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.MagicCylinder, ActivateMagicCylinder);
+            AddExecutor(ExecutorType.Activate, CardId.DarkMagicAttack, ActivateDarkMagicAttackWithSpellcaster);
+            AddExecutor(ExecutorType.Activate, CardId.GhostCyclone);
+            AddExecutor(ExecutorType.Activate, CardId.MagicalStream);
+            AddExecutor(ExecutorType.Activate, CardId.CatTroisChoice, ActivateCatTroisChoice);
+            AddExecutor(ExecutorType.Activate, RushCardId.DarkHole, ActivateDarkHole);
 
-            AddExecutor(ExecutorType.SpellSet, CardId.魔导书弃却, 抽出set);
-            AddExecutor(ExecutorType.SpellSet, CardId.三猫, 抽出set);
-            AddExecutor(ExecutorType.SpellSet, CardId.魔力抽出, 抽出set);
-            AddExecutor(ExecutorType.SpellSet, CardId.幽灵旋风, 抽出set);
-            AddExecutor(ExecutorType.SpellSet, CardId.水流, 抽出set);
-            AddExecutor(ExecutorType.SpellSet, CardId.天惠枪, 抽出set);
-            AddExecutor(ExecutorType.SpellSet, CardId.DMB, 抽出set);
-            AddExecutor(ExecutorType.SpellSet, CardId.魔术的幕帘, 抽出set);
-            AddExecutor(ExecutorType.SpellSet, CardId.宝石, 抽出set);
-            AddExecutor(ExecutorType.SpellSet, CardId.采掘, 抽出set);
-            AddExecutor(ExecutorType.SpellSet, CardId.DMA, 抽出set);
-            AddExecutor(ExecutorType.Activate, CardId.魔力抽出, 魔力抽出Effect);
+            AddExecutor(ExecutorType.Activate, CardId.SpellbookRejection);
+            AddExecutor(ExecutorType.Activate, CardId.ShipOfSevenTreasures, ActivateShipOfSevenTreasures);
+            AddExecutor(ExecutorType.Activate, CardId.DarkEradicatorSorcerer);
+            AddExecutor(ExecutorType.Activate, CardId.MagicalStoneExcavation, ActivateMagicalStoneExcavation);
 
-            AddExecutor(ExecutorType.SpSummon, CardId.剑黎, 抽出sp);
-            AddExecutor(ExecutorType.Activate, CardId.宝石, 宝石Effect);
-            AddExecutor(ExecutorType.Activate, CardId.采掘, 采掘Effect2);
-            AddExecutor(ExecutorType.Activate, CardId.七宝船, 七宝船Effect2);
-            AddExecutor(ExecutorType.Activate, CardId.魔术的幕帘, 幕帘Effect);
-            AddExecutor(ExecutorType.SpellSet, CardId.七宝船, 抽出set);
-            AddExecutor(ExecutorType.Activate, CardId.二重加速, 二重加速Effect);
-            AddExecutor(ExecutorType.Activate, CardId.DMB, DMBEffect);
-            AddExecutor(ExecutorType.Activate, CardId.天惠枪, 天惠枪Effect);
+            AddExecutor(ExecutorType.SpellSet, CardId.SpellbookRejection, SetSpellExtraction);
+            AddExecutor(ExecutorType.SpellSet, CardId.CatTroisChoice, SetSpellExtraction);
+            AddExecutor(ExecutorType.SpellSet, CardId.SpellExtraction, SetSpellExtraction);
+            AddExecutor(ExecutorType.SpellSet, CardId.GhostCyclone, SetSpellExtraction);
+            AddExecutor(ExecutorType.SpellSet, CardId.MagicalStream, SetSpellExtraction);
+            AddExecutor(ExecutorType.SpellSet, CardId.MagicalLanceGraceSpear, SetSpellExtraction);
+            AddExecutor(ExecutorType.SpellSet, CardId.DarkResonanceBurst, SetSpellExtraction);
+            AddExecutor(ExecutorType.SpellSet, CardId.MagicCurtain, SetSpellExtraction);
+            AddExecutor(ExecutorType.SpellSet, CardId.StoneOfTheDarkMagicians, SetSpellExtraction);
+            AddExecutor(ExecutorType.SpellSet, CardId.MagicalStoneExcavation, SetSpellExtraction);
+            AddExecutor(ExecutorType.SpellSet, CardId.DarkMagicAttack, SetSpellExtraction);
+            AddExecutor(ExecutorType.Activate, CardId.SpellExtraction, ActivateSpellExtraction);
 
-            AddExecutor(ExecutorType.SpellSet, CardId.魔力抽出, speset);
-            AddExecutor(ExecutorType.SpellSet, CardId.魔术的幕帘, 幕帘set);
-            AddExecutor(ExecutorType.SpellSet, CardId.七宝船, speset);
-            AddExecutor(ExecutorType.SpellSet, CardId.采掘, speset);
-            AddExecutor(ExecutorType.SpellSet, CardId.幽灵旋风, speset);
-            AddExecutor(ExecutorType.SpellSet, CardId.宝石, speset);
-            AddExecutor(ExecutorType.SpellSet, CardId.DMB, speset);
-            AddExecutor(ExecutorType.SpellSet, CardId.二重加速, speset);
-            AddExecutor(ExecutorType.SpellSet, CardId.水流, speset);           
-            AddExecutor(ExecutorType.SpellSet, CardId.天惠枪, speset);
-            AddExecutor(ExecutorType.SpellSet, CardId.三猫, speset);            
-            AddExecutor(ExecutorType.SpellSet, RushCardId.魔法筒);
-            AddExecutor(ExecutorType.SpellSet, CardId.魔术的幕帘);
-            AddExecutor(ExecutorType.SpellSet, CardId.宝石);              
-            AddExecutor(ExecutorType.SpellSet, RushCardId.黑洞);
-            AddExecutor(ExecutorType.SpellSet, CardId.DMA);
+            AddExecutor(ExecutorType.SpSummon, CardId.DarkSwordMagician, SpecialSummonForSpellExtraction);
+            AddExecutor(ExecutorType.Activate, CardId.StoneOfTheDarkMagicians, ActivateStoneOfTheDarkMagicians);
+            AddExecutor(ExecutorType.Activate, CardId.MagicalStoneExcavation, RecoverUtilitySpellWithMagicalStoneExcavation);
+            AddExecutor(ExecutorType.Activate, CardId.ShipOfSevenTreasures, UseAlternativeSevenTreasuresDiscard);
+            AddExecutor(ExecutorType.Activate, CardId.MagicCurtain, ActivateMagicCurtain);
+            AddExecutor(ExecutorType.SpellSet, CardId.ShipOfSevenTreasures, SetSpellExtraction);
+            AddExecutor(ExecutorType.Activate, CardId.HighMagicDoubleAcceleration, ActivateHighMagicDoubleAcceleration);
+            AddExecutor(ExecutorType.Activate, CardId.DarkResonanceBurst, ActivateDarkResonanceBurst);
+            AddExecutor(ExecutorType.Activate, CardId.MagicalLanceGraceSpear, ActivateMagicalLanceGraceSpear);
 
-            AddExecutor(ExecutorType.Summon, CardId.DMG, DMGsummon);
-            AddExecutor(ExecutorType.Activate, CardId.宝石, 宝石Effect2);
+            AddExecutor(ExecutorType.SpellSet, CardId.SpellExtraction, speset);
+            AddExecutor(ExecutorType.SpellSet, CardId.MagicCurtain, SetMagicCurtain);
+            AddExecutor(ExecutorType.SpellSet, CardId.ShipOfSevenTreasures, speset);
+            AddExecutor(ExecutorType.SpellSet, CardId.MagicalStoneExcavation, speset);
+            AddExecutor(ExecutorType.SpellSet, CardId.GhostCyclone, speset);
+            AddExecutor(ExecutorType.SpellSet, CardId.StoneOfTheDarkMagicians, speset);
+            AddExecutor(ExecutorType.SpellSet, CardId.DarkResonanceBurst, speset);
+            AddExecutor(ExecutorType.SpellSet, CardId.HighMagicDoubleAcceleration, speset);
+            AddExecutor(ExecutorType.SpellSet, CardId.MagicalStream, speset);
+            AddExecutor(ExecutorType.SpellSet, CardId.MagicalLanceGraceSpear, speset);
+            AddExecutor(ExecutorType.SpellSet, CardId.CatTroisChoice, speset);
+            AddExecutor(ExecutorType.SpellSet, RushCardId.MagicCylinder);
+            AddExecutor(ExecutorType.SpellSet, CardId.MagicCurtain);
+            AddExecutor(ExecutorType.SpellSet, CardId.StoneOfTheDarkMagicians);
+            AddExecutor(ExecutorType.SpellSet, RushCardId.DarkHole);
+            AddExecutor(ExecutorType.SpellSet, CardId.DarkMagicAttack);
 
-            //AddExecutor(ExecutorType.Activate, DefaultDontChainMyself);          
-            
-            AddExecutor(ExecutorType.Repos, CardId.黑曜, 反转Repos);
-            AddExecutor(ExecutorType.Repos, RushCardId.黑魔术师, 反转Repos);
-            AddExecutor(ExecutorType.Repos, CardId.遂行者, 反转Repos);
-            AddExecutor(ExecutorType.Repos, RushCardId.黑魔术师, 圣防Repos);
-            AddExecutor(ExecutorType.Repos, CardId.遂行者, 圣防Repos);
-            AddExecutor(ExecutorType.Repos, CardId.DMG, 圣防Repos);
+            AddExecutor(ExecutorType.Summon, CardId.DarkMagicianGirl, SummonDarkMagicianGirl);
+            AddExecutor(ExecutorType.Activate, CardId.StoneOfTheDarkMagicians, UseStoneWithOneFreeZone);
+
+            //AddExecutor(ExecutorType.Activate, DefaultDontChainMyself);
+
+            AddExecutor(ExecutorType.Repos, CardId.ObsidianMagicalSoldier, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, RushCardId.DarkMagician, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, CardId.DarkEradicatorSorcerer, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, RushCardId.DarkMagician, RepositionAgainstBattleTraps);
+            AddExecutor(ExecutorType.Repos, CardId.DarkEradicatorSorcerer, RepositionAgainstBattleTraps);
+            AddExecutor(ExecutorType.Repos, CardId.DarkMagicianGirl, RepositionAgainstBattleTraps);
             AddExecutor(ExecutorType.Repos, DefaultMonsterRepos);
 
             //AddExecutor(ExecutorType.SummonOrSet, ImFeelingLazy);
@@ -126,24 +126,24 @@ namespace WindBot.Game.AI.Decks
         }
 
         private static readonly int[] over3 = new[] {
-                RushCardId.黑洞, CardId.DMA, CardId.宝石, CardId.二重加速, CardId.DMB, CardId.魔力抽出, CardId.幽灵旋风, CardId.水流, CardId.魔导书弃却, CardId.天惠枪, CardId.魔术的幕帘, CardId.七宝船, CardId.采掘, CardId.三猫};
+                RushCardId.DarkHole, CardId.DarkMagicAttack, CardId.StoneOfTheDarkMagicians, CardId.HighMagicDoubleAcceleration, CardId.DarkResonanceBurst, CardId.SpellExtraction, CardId.GhostCyclone, CardId.MagicalStream, CardId.SpellbookRejection, CardId.MagicalLanceGraceSpear, CardId.MagicCurtain, CardId.ShipOfSevenTreasures, CardId.MagicalStoneExcavation, CardId.CatTroisChoice};
 
         private static readonly int[] target = new[] {
-                CardId.三猫, CardId.宝石, RushCardId.黑洞, CardId.DMB, CardId.魔导书弃却, CardId.幽灵旋风,CardId.魔术的幕帘,  CardId.水流,CardId.天惠枪, CardId.二重加速, CardId.七宝船, CardId.魔力抽出, CardId.DMA, CardId.采掘};
+                CardId.CatTroisChoice, CardId.StoneOfTheDarkMagicians, RushCardId.DarkHole, CardId.DarkResonanceBurst, CardId.SpellbookRejection, CardId.GhostCyclone,CardId.MagicCurtain,  CardId.MagicalStream,CardId.MagicalLanceGraceSpear, CardId.HighMagicDoubleAcceleration, CardId.ShipOfSevenTreasures, CardId.SpellExtraction, CardId.DarkMagicAttack, CardId.MagicalStoneExcavation};
 
         private static readonly int[] cost2 = new[] {
 
-                CardId.三猫, CardId.幽灵旋风,CardId.水流, CardId.DMB, CardId.二重加速, CardId.采掘,CardId.魔术的幕帘, CardId.七宝船, CardId.魔导书弃却, CardId.天惠枪, CardId.魔力抽出, CardId.宝石,CardId.DMA, RushCardId.黑洞 };
+                CardId.CatTroisChoice, CardId.GhostCyclone,CardId.MagicalStream, CardId.DarkResonanceBurst, CardId.HighMagicDoubleAcceleration, CardId.MagicalStoneExcavation,CardId.MagicCurtain, CardId.ShipOfSevenTreasures, CardId.SpellbookRejection, CardId.MagicalLanceGraceSpear, CardId.SpellExtraction, CardId.StoneOfTheDarkMagicians,CardId.DarkMagicAttack, RushCardId.DarkHole };
 
         private static readonly int[] mon = new[] {
 
-                RushCardId.黑魔术师, CardId.遂行者, CardId.黑曜, CardId.剑黎};
+                RushCardId.DarkMagician, CardId.DarkEradicatorSorcerer, CardId.ObsidianMagicalSoldier, CardId.DarkSwordMagician};
 
         private static readonly int[] mon2 = new[] {
-                CardId.黑曜,  CardId.遂行者, CardId.剑黎 ,RushCardId.黑魔术师};
+                CardId.ObsidianMagicalSoldier,  CardId.DarkEradicatorSorcerer, CardId.DarkSwordMagician ,RushCardId.DarkMagician};
 
         private static readonly int[] mon3 = new[] {
-                CardId.黑曜,  CardId.遂行者, CardId.剑黎 ,RushCardId.黑魔术师 ,CardId.DMG};
+                CardId.ObsidianMagicalSoldier,  CardId.DarkEradicatorSorcerer, CardId.DarkSwordMagician ,RushCardId.DarkMagician ,CardId.DarkMagicianGirl};
 
         private bool speset()
         {
@@ -151,33 +151,33 @@ namespace WindBot.Game.AI.Decks
                 return true;
             return false;
         }
-        private bool 抽出set()
+        private bool SetSpellExtraction()
         {
-            if (Bot.HasInSpellZone(CardId.魔力抽出) && Bot.GetSpellCountWithoutField() < 3)
+            if (Bot.HasInSpellZone(CardId.SpellExtraction) && Bot.GetSpellCountWithoutField() < 3)
                 return true;
-            if (Bot.HasInHand(CardId.魔力抽出) && Bot.GetSpellCountWithoutField() < 2)
+            if (Bot.HasInHand(CardId.SpellExtraction) && Bot.GetSpellCountWithoutField() < 2)
                 return true;
             return false;
         }
-        private bool 幕帘set()
+        private bool SetMagicCurtain()
         {
             if (Bot.LifePoints > 1000 && Bot.GetSpellCountWithoutField() <= 1)
                 return true;
             return false;
         }
 
-        private bool 抽出sp()
+        private bool SpecialSummonForSpellExtraction()
         {
-            if (Bot.HasInHand(CardId.魔力抽出) && Bot.Hand.GetMatchingCardsCount(card => card.Level >= 6) == 1 )       
+            if (Bot.HasInHand(CardId.SpellExtraction) && Bot.Hand.GetMatchingCardsCount(card => card.Level >= 6) == 1 )
                 return false;
             return true;
         }
-        private bool DMGsummon()
+        private bool SummonDarkMagicianGirl()
         {
             int tributecount = 1;
             IList<int> ssmon = new[] {
-                CardId.DMG, RushCardId.黑魔术师, CardId.剑黎, CardId.遂行者};
-            if ((Bot.GetHandCount() <= 4) && (Bot.HasInMonstersZone(ssmon)) && (Bot.HasInMonstersZoneOrInGraveyard(RushCardId.黑魔术师)))
+                CardId.DarkMagicianGirl, RushCardId.DarkMagician, CardId.DarkSwordMagician, CardId.DarkEradicatorSorcerer};
+            if ((Bot.GetHandCount() <= 4) && (Bot.HasInMonstersZone(ssmon)) && (Bot.HasInMonstersZoneOrInGraveyard(RushCardId.DarkMagician)))
             for (int j = 0; j < 7; ++j)
             {
                 ClientCard tributeCard = Bot.MonsterZone[j];
@@ -191,11 +191,11 @@ namespace WindBot.Game.AI.Decks
         public override bool OnSelectYesNo(int desc)
         {
             ChainInfo link = Duel.GetCurrentSolvingChainInfo();
-            if (link != null && link.ActivatePlayer == 0 && link.IsActivateCode(CardId.遂行者)
-                && desc == Util.GetStringId(CardId.遂行者, 1))
+            if (link != null && link.ActivatePlayer == 0 && link.IsActivateCode(CardId.DarkEradicatorSorcerer)
+                && desc == Util.GetStringId(CardId.DarkEradicatorSorcerer, 1))
             {
                 int spells = Bot.Graveyard.Count(c => c.IsSpell());
-                return spells >= 10 && (!Bot.HasInMonstersZone(CardId.黑曜)
+                return spells >= 10 && (!Bot.HasInMonstersZone(CardId.ObsidianMagicalSoldier)
                     || Util.GetBestAttack(Bot) - Util.GetBestAttack(Enemy) >= (spells >= 15 ? 1000 : 1500));
             }
             return base.OnSelectYesNo(desc);
@@ -206,7 +206,7 @@ namespace WindBot.Game.AI.Decks
             ChainInfo link = Duel.GetCurrentSolvingChainInfo();
             if (link != null && link.ActivatePlayer == 0)
             {
-                if (link.IsActivateCode(CardId.遂行者))
+                if (link.IsActivateCode(CardId.DarkEradicatorSorcerer))
                 {
                     if (hint == HintMsg.ToDeck)
                     {
@@ -216,15 +216,15 @@ namespace WindBot.Game.AI.Decks
                     if (hint == HintMsg.Destroy)
                         return cards.OrderByDescending(c => c.Level).ThenByDescending(c => c.Attack).Take(max).ToList();
                 }
-                if (link.IsActivateCode(CardId.三猫) && hint == HintMsg.AddToHand)
+                if (link.IsActivateCode(CardId.CatTroisChoice) && hint == HintMsg.AddToHand)
                 {
                     int preferred = CatRecovery(cards);
                     return preferred == 0 ? new CardSelector(target).Select(cards, min, max)
                         : new CardSelector(preferred).Select(cards, min, max);
                 }
-                if (link.IsActivateCode(CardId.魔力抽出) && hint == HintMsg.Confirm)
+                if (link.IsActivateCode(CardId.SpellExtraction) && hint == HintMsg.Confirm)
                     return new CardSelector(mon3).Select(cards, min, max);
-                if (link.IsActivateCode(CardId.宝石) && hint == HintMsg.SpSummon)
+                if (link.IsActivateCode(CardId.StoneOfTheDarkMagicians) && hint == HintMsg.SpSummon)
                 {
                     var choices = new CardSelector(mon3).Select(cards, 0, cards.Count);
                     return choices.Concat(cards).GroupBy(c => c.Attack).Select(g => g.First()).Take(max).ToList();
@@ -237,39 +237,39 @@ namespace WindBot.Game.AI.Decks
         {
             if (Bot.Graveyard.Count(c => c.IsMonster()) < 2)
                 return 0;
-            if (Bot.Hand.Count(c => c.Level >= 7) >= 2 && cards.Any(c => c.IsCode(CardId.七宝船)))
-                return CardId.七宝船;
+            if (Bot.Hand.Count(c => c.Level >= 7) >= 2 && cards.Any(c => c.IsCode(CardId.ShipOfSevenTreasures)))
+                return CardId.ShipOfSevenTreasures;
             bool needsMonster = !Bot.Hand.Any(c => c.Level >= 6);
-            if ((needsMonster || (Bot.GetMonsterCount() == 0 && !Bot.HasInHandOrInSpellZone(CardId.宝石)))
-                && cards.Any(c => c.IsCode(CardId.宝石)))
-                return CardId.宝石;
-            if (Bot.GetMonsterCount() == 0 && Bot.HasInHand(mon3) && !Bot.HasInHandOrInSpellZoneOrInGraveyard(CardId.宝石)
-                && cards.Any(c => c.IsCode(CardId.魔术的幕帘)))
-                return CardId.魔术的幕帘;
-            if (Enemy.GetSpellCount() > 2 && (Bot.HasInMonstersZone(RushCardId.黑魔术师) || Bot.HasInMonstersZone(CardId.遂行者))
-                && cards.Any(c => c.IsCode(CardId.DMA)))
-                return CardId.DMA;
-            if (!Enemy.HasAttackingMonster() && (Bot.HasInMonstersZone(CardId.黑曜) || Bot.HasInHandOrInSpellZone(CardId.宝石))
-                && cards.Any(c => c.IsCode(CardId.天惠枪)))
-                return CardId.天惠枪;
-            return needsMonster && cards.Any(c => c.IsCode(CardId.剑黎)) ? CardId.剑黎 : 0;
+            if ((needsMonster || (Bot.GetMonsterCount() == 0 && !Bot.HasInHandOrInSpellZone(CardId.StoneOfTheDarkMagicians)))
+                && cards.Any(c => c.IsCode(CardId.StoneOfTheDarkMagicians)))
+                return CardId.StoneOfTheDarkMagicians;
+            if (Bot.GetMonsterCount() == 0 && Bot.HasInHand(mon3) && !Bot.HasInHandOrInSpellZoneOrInGraveyard(CardId.StoneOfTheDarkMagicians)
+                && cards.Any(c => c.IsCode(CardId.MagicCurtain)))
+                return CardId.MagicCurtain;
+            if (Enemy.GetSpellCount() > 2 && (Bot.HasInMonstersZone(RushCardId.DarkMagician) || Bot.HasInMonstersZone(CardId.DarkEradicatorSorcerer))
+                && cards.Any(c => c.IsCode(CardId.DarkMagicAttack)))
+                return CardId.DarkMagicAttack;
+            if (!Enemy.HasAttackingMonster() && (Bot.HasInMonstersZone(CardId.ObsidianMagicalSoldier) || Bot.HasInHandOrInSpellZone(CardId.StoneOfTheDarkMagicians))
+                && cards.Any(c => c.IsCode(CardId.MagicalLanceGraceSpear)))
+                return CardId.MagicalLanceGraceSpear;
+            return needsMonster && cards.Any(c => c.IsCode(CardId.DarkSwordMagician)) ? CardId.DarkSwordMagician : 0;
         }
 
-        private bool DMAEffect()
+        private bool ActivateDarkMagicAttackWithSpellcaster()
         {
-            if (Enemy.GetSpellCount() >= 2 
-                && (Bot.HasInMonstersZone(RushCardId.黑魔术师) || Bot.HasInMonstersZone(CardId.遂行者)))
+            if (Enemy.GetSpellCount() >= 2
+                && (Bot.HasInMonstersZone(RushCardId.DarkMagician) || Bot.HasInMonstersZone(CardId.DarkEradicatorSorcerer)))
                 return true;
-            if (Enemy.GetSpellCount() == 1 
-                && (Bot.HasInMonstersZone(RushCardId.黑魔术师) || Bot.HasInMonstersZone(CardId.遂行者))
+            if (Enemy.GetSpellCount() == 1
+                && (Bot.HasInMonstersZone(RushCardId.DarkMagician) || Bot.HasInMonstersZone(CardId.DarkEradicatorSorcerer))
                 && Bot.MonsterZone.GetMatchingCardsCount(card => card.IsAttack() && card.Attack >= Enemy.LifePoints) >= 2)
                 return true;
             return false;
         }
 
-        private bool 七宝船Effect()
+        private bool ActivateShipOfSevenTreasures()
         {
-            if (!Bot.HasInHand(CardId.魔力抽出) && Bot.HasInHand(mon))
+            if (!Bot.HasInHand(CardId.SpellExtraction) && Bot.HasInHand(mon))
             {
                 AI.SelectCard(mon);
                 AI.SelectYesNo(true);
@@ -277,7 +277,7 @@ namespace WindBot.Game.AI.Decks
             }
             return false;
         }
-        private bool 七宝船Effect2()
+        private bool UseAlternativeSevenTreasuresDiscard()
         {
             if (Bot.HasInHand(mon))
             {
@@ -285,37 +285,37 @@ namespace WindBot.Game.AI.Decks
                 AI.SelectYesNo(true);
                 return true;
             }
-            else if (Bot.HasInHand(CardId.DMG) && Bot.GetSpellCount() >= 2 && Bot.GetHandCount() >=4)
+            else if (Bot.HasInHand(CardId.DarkMagicianGirl) && Bot.GetSpellCount() >= 2 && Bot.GetHandCount() >=4)
             {
-                AI.SelectCard(CardId.DMG);
+                AI.SelectCard(CardId.DarkMagicianGirl);
                 return true;
             }
             return false;
         }
-        private bool 魔力抽出Effect()
+        private bool ActivateSpellExtraction()
         {
             // The second draw reveals a monster from the hand as it exists after the first draw.
             AI.SelectCard(cost2);
             return true;
         }
 
-        private bool 幕帘Effect()
+        private bool ActivateMagicCurtain()
         {
             if (Bot.LifePoints > 1000)
             {
-                if (Bot.HasInHandOrInSpellZone(CardId.DMA) && (Bot.HasInHand(CardId.遂行者) || Bot.HasInHand(RushCardId.黑魔术师)) && Enemy.GetSpellCount() >= 2)
+                if (Bot.HasInHandOrInSpellZone(CardId.DarkMagicAttack) && (Bot.HasInHand(CardId.DarkEradicatorSorcerer) || Bot.HasInHand(RushCardId.DarkMagician)) && Enemy.GetSpellCount() >= 2)
                 {
-                    AI.SelectCard(CardId.遂行者, RushCardId.黑魔术师);
+                    AI.SelectCard(CardId.DarkEradicatorSorcerer, RushCardId.DarkMagician);
                     return true;
                 }
-                if (Bot.HasInHand(CardId.黑曜) && Bot.GetGraveyardSpells().Count >= 5)
+                if (Bot.HasInHand(CardId.ObsidianMagicalSoldier) && Bot.GetGraveyardSpells().Count >= 5)
                 {
-                    AI.SelectCard(CardId.黑曜);
+                    AI.SelectCard(CardId.ObsidianMagicalSoldier);
                     return true;
                 }
-                if (Bot.HasInHand(CardId.遂行者))
+                if (Bot.HasInHand(CardId.DarkEradicatorSorcerer))
                 {
-                    AI.SelectCard(CardId.遂行者);
+                    AI.SelectCard(CardId.DarkEradicatorSorcerer);
                     return true;
                 }
                 if (Bot.HasInHand(mon3)) AI.SelectCard(mon3);
@@ -324,31 +324,31 @@ namespace WindBot.Game.AI.Decks
             return false;
         }
 
-        private bool 天惠枪Effect()
+        private bool ActivateMagicalLanceGraceSpear()
         {
-            if (Bot.HasInMonstersZone(CardId.黑曜))
+            if (Bot.HasInMonstersZone(CardId.ObsidianMagicalSoldier))
             {
-                AI.SelectCard(CardId.黑曜);
+                AI.SelectCard(CardId.ObsidianMagicalSoldier);
                 return true;
             }
-            if (Bot.HasInMonstersZone(CardId.遂行者))
+            if (Bot.HasInMonstersZone(CardId.DarkEradicatorSorcerer))
             {
-                AI.SelectCard(CardId.遂行者);
+                AI.SelectCard(CardId.DarkEradicatorSorcerer);
                 return true;
             }
-            if (Bot.HasInMonstersZone(RushCardId.黑魔术师))
+            if (Bot.HasInMonstersZone(RushCardId.DarkMagician))
             {
-                AI.SelectCard(RushCardId.黑魔术师);
+                AI.SelectCard(RushCardId.DarkMagician);
                 return true;
             }
-            if (Bot.HasInMonstersZone(CardId.剑黎))
+            if (Bot.HasInMonstersZone(CardId.DarkSwordMagician))
             {
-                AI.SelectCard(CardId.剑黎);
+                AI.SelectCard(CardId.DarkSwordMagician);
                 return true;
             }
             return true;
         }
-        private bool 二重加速Effect()
+        private bool ActivateHighMagicDoubleAcceleration()
         {
             if (Duel.Turn == 1)
                 return false;
@@ -358,7 +358,7 @@ namespace WindBot.Game.AI.Decks
             AI.SelectNextCard(mon3);
             return true;
         }
-        private bool DMBEffect()
+        private bool ActivateDarkResonanceBurst()
         {
             if (Duel.Turn == 1)
                 return false;
@@ -368,77 +368,77 @@ namespace WindBot.Game.AI.Decks
                 AI.SelectCard(mon3);
             return true;
         }
-        private bool 三猫Effect()
+        private bool ActivateCatTroisChoice()
         {
             return Bot.Graveyard.Count(c => c.IsMonster()) <= 3
-                || (!Bot.HasInHand(CardId.魔导书弃却) && Bot.HasInMonstersZone(CardId.黑曜))
+                || (!Bot.HasInHand(CardId.SpellbookRejection) && Bot.HasInMonstersZone(CardId.ObsidianMagicalSoldier))
                 || Bot.GetHandCount() >= 5;
         }
 
-        private bool 采掘Effect()
+        private bool ActivateMagicalStoneExcavation()
         {
-            if (HasStrongerFaceupEnemy() && Util.GetTotalAttackingMonsterAttack(1) >= 3500 && !Enemy.HasInMonstersZone(RushCardId.终焰魔神, faceUp: true) && Bot.HasInGraveyard(RushCardId.黑洞))
+            if (HasStrongerFaceupEnemy() && Util.GetTotalAttackingMonsterAttack(1) >= 3500 && !Enemy.HasInMonstersZone(RushCardId.DoomblazeFiendOverlordDespairacion, faceUp: true) && Bot.HasInGraveyard(RushCardId.DarkHole))
             {
                 AI.SelectCard(cost2);
-                AI.SelectNextCard(RushCardId.黑洞);
+                AI.SelectNextCard(RushCardId.DarkHole);
                 return true;
             }
-            if (Enemy.GetMonsterCount() >0 && Bot.GetGraveyardMonsters().Count < 3 && Bot.HasInGraveyard(CardId.三猫) )
+            if (Enemy.GetMonsterCount() >0 && Bot.GetGraveyardMonsters().Count < 3 && Bot.HasInGraveyard(CardId.CatTroisChoice) )
             {
                 AI.SelectCard(cost2);
-                AI.SelectNextCard(CardId.三猫);
+                AI.SelectNextCard(CardId.CatTroisChoice);
                 return true;
             }
-            if (Bot.GetMonsterCount() <= 1 && Bot.HasInGraveyard(CardId.宝石) && (Bot.HasInHandOrInGraveyard(CardId.DMG) && Bot.HasInHandOrInGraveyard(mon2)))
+            if (Bot.GetMonsterCount() <= 1 && Bot.HasInGraveyard(CardId.StoneOfTheDarkMagicians) && (Bot.HasInHandOrInGraveyard(CardId.DarkMagicianGirl) && Bot.HasInHandOrInGraveyard(mon2)))
             {
                 AI.SelectCard(cost2);
-             AI.SelectNextCard(CardId.宝石);
+             AI.SelectNextCard(CardId.StoneOfTheDarkMagicians);
              return true;
             }
-            if (Bot.Hand.GetMatchingCardsCount(card => card.Level >= 6) >= 3 && Bot.HasInGraveyard(CardId.七宝船))
+            if (Bot.Hand.GetMatchingCardsCount(card => card.Level >= 6) >= 3 && Bot.HasInGraveyard(CardId.ShipOfSevenTreasures))
             {
                 AI.SelectCard(cost2);
-                AI.SelectNextCard(CardId.七宝船);
+                AI.SelectNextCard(CardId.ShipOfSevenTreasures);
                 return true;
             }
-            if (Bot.HasInMonstersZone(CardId.黑曜) && Bot.HasInGraveyard(CardId.天惠枪) && !Enemy.HasAttackingMonster() && Enemy.HasDefendingMonster())
+            if (Bot.HasInMonstersZone(CardId.ObsidianMagicalSoldier) && Bot.HasInGraveyard(CardId.MagicalLanceGraceSpear) && !Enemy.HasAttackingMonster() && Enemy.HasDefendingMonster())
             {
                 AI.SelectCard(cost2);
-                AI.SelectNextCard(CardId.天惠枪);
+                AI.SelectNextCard(CardId.MagicalLanceGraceSpear);
                 return true;
             }
 
             return false;
         }
-        private bool 采掘Effect2()
+        private bool RecoverUtilitySpellWithMagicalStoneExcavation()
         {
-            if (Enemy.GetSpellCount() >= 2 && (Bot.HasInMonstersZone(RushCardId.黑魔术师) || Bot.HasInMonstersZone(CardId.遂行者)) && Bot.HasInGraveyard(CardId.DMA))
+            if (Enemy.GetSpellCount() >= 2 && (Bot.HasInMonstersZone(RushCardId.DarkMagician) || Bot.HasInMonstersZone(CardId.DarkEradicatorSorcerer)) && Bot.HasInGraveyard(CardId.DarkMagicAttack))
             {
                 AI.SelectCard(cost2);
-                AI.SelectNextCard(CardId.DMA);
+                AI.SelectNextCard(CardId.DarkMagicAttack);
                 return true;
             }
-            if (Bot.Deck.Count >= 10 && Bot.HasInGraveyard(CardId.魔导书弃却))
+            if (Bot.Deck.Count >= 10 && Bot.HasInGraveyard(CardId.SpellbookRejection))
             {
                 AI.SelectCard(cost2);
-                AI.SelectNextCard(CardId.魔导书弃却);
+                AI.SelectNextCard(CardId.SpellbookRejection);
                 return true;
             }
 
-            if (Duel.Turn != 1 && Bot.HasInGraveyard(CardId.二重加速) && Bot.HasAttackingMonster() && Bot.Graveyard.GetMatchingCardsCount(card => card.Level > 5) >= 2)
+            if (Duel.Turn != 1 && Bot.HasInGraveyard(CardId.HighMagicDoubleAcceleration) && Bot.HasAttackingMonster() && Bot.Graveyard.GetMatchingCardsCount(card => card.Level > 5) >= 2)
             {
                 AI.SelectCard(cost2);
-                AI.SelectNextCard(CardId.二重加速);
+                AI.SelectNextCard(CardId.HighMagicDoubleAcceleration);
                 return true;
             }
             return false;
         }
-        private bool 宝石Effect()
+        private bool ActivateStoneOfTheDarkMagicians()
         {
             return Bot.GetMonsterCount() <= 1;
         }
 
-        private bool 宝石Effect2()
+        private bool UseStoneWithOneFreeZone()
         {
             return Bot.GetMonsterCount() == 2;
         }

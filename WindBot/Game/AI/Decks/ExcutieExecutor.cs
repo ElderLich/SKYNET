@@ -13,94 +13,94 @@ namespace WindBot.Game.AI.Decks
     {
         public class CardId
         {
-            public const int 夜魔女 = 120231034;
-            public const int 光天女 = 120231031;
-            public const int 浮游女 = 120231033;
-            public const int 遥控女 = 120231035;
-            public const int 救火女 = 120235019; 
-            public const int 细剑女 = 120231032;
-            public const int 主存女 = 120231036;
-            public const int 花草女 = 120231037;
-            public const int 劈裂史莱姆 = 120222036;
+            public const int ExcutieLilius = 120231034;
+            public const int ExcutieLumiere = 120231031;
+            public const int ExcutieFloa = 120231033;
+            public const int ExcutieLucy = 120231035;
+            public const int ExecutieFlame = 120235019;
+            public const int ExcutieLeya = 120231032;
+            public const int ExcutieRAM = 120231036;
+            public const int ExcutiePlawtie = 120231037;
+            public const int SplitterSlime = 120222036;
 
-            public const int 紧急出动 = 120231039;
-            public const int 天之选别 = 120231065;       
-            public const int 紧急事态 = 120231040;
-            public const int 幻影咆哮 = 120235065;
+            public const int ExcutieScramble = 120231039;
+            public const int HeavenlySelection = 120231065;
+            public const int ExecutieEmergency = 120231040;
+            public const int PhantomRoar = 120235065;
 
         }
 
         public ExcutieExecutor(GameAI ai, Duel duel)
             : base(ai, duel)
         {
-            AddExecutor(ExecutorType.Activate, RushCardId.黑洞, 黑洞Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.傲慢之壶);
-            AddExecutor(ExecutorType.Activate, CardId.天之选别);
-            AddExecutor(ExecutorType.Activate, RushCardId.圣防, 圣防Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.捕获, 捕获Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.亚龙地狱, 亚龙地狱Effect);
-            AddExecutor(ExecutorType.Activate, CardId.紧急事态);
-            AddExecutor(ExecutorType.Activate, CardId.幻影咆哮);
+            AddExecutor(ExecutorType.Activate, RushCardId.DarkHole, ActivateDarkHole);
+            AddExecutor(ExecutorType.Activate, RushCardId.PotOfArrogance);
+            AddExecutor(ExecutorType.Activate, CardId.HeavenlySelection);
+            AddExecutor(ExecutorType.Activate, RushCardId.MirrorForce, ActivateMirrorForce);
+            AddExecutor(ExecutorType.Activate, RushCardId.ExcutieCapture, ActivateExcutieCapture);
+            AddExecutor(ExecutorType.Activate, RushCardId.DragonlionPitTrap, ActivateDragonlionPitTrap);
+            AddExecutor(ExecutorType.Activate, CardId.ExecutieEmergency);
+            AddExecutor(ExecutorType.Activate, CardId.PhantomRoar);
 
-            AddExecutor(ExecutorType.SpSummon, CardId.救火女, 救火女Sp);
-            AddExecutor(ExecutorType.SpSummon, CardId.夜魔女);
-            AddExecutor(ExecutorType.SpSummon, CardId.光天女);
-            AddExecutor(ExecutorType.SpSummon, CardId.细剑女);
-            AddExecutor(ExecutorType.SpSummon, CardId.救火女);
-            AddExecutor(ExecutorType.SpSummon, CardId.花草女);
-            AddExecutor(ExecutorType.Activate, CardId.紧急出动, 紧急出动Effect);
-            AddExecutor(ExecutorType.SpellSet, RushCardId.黑洞);
-            AddExecutor(ExecutorType.SpellSet, RushCardId.圣防);
-            AddExecutor(ExecutorType.SpellSet, RushCardId.傲慢之壶);
+            AddExecutor(ExecutorType.SpSummon, CardId.ExecutieFlame, SpecialSummonExecutieFlame);
+            AddExecutor(ExecutorType.SpSummon, CardId.ExcutieLilius);
+            AddExecutor(ExecutorType.SpSummon, CardId.ExcutieLumiere);
+            AddExecutor(ExecutorType.SpSummon, CardId.ExcutieLeya);
+            AddExecutor(ExecutorType.SpSummon, CardId.ExecutieFlame);
+            AddExecutor(ExecutorType.SpSummon, CardId.ExcutiePlawtie);
+            AddExecutor(ExecutorType.Activate, CardId.ExcutieScramble, ActivateExcutieScramble);
+            AddExecutor(ExecutorType.SpellSet, RushCardId.DarkHole);
+            AddExecutor(ExecutorType.SpellSet, RushCardId.MirrorForce);
+            AddExecutor(ExecutorType.SpellSet, RushCardId.PotOfArrogance);
 
-            AddExecutor(ExecutorType.Activate, CardId.花草女);
-            AddExecutor(ExecutorType.Activate, CardId.遥控女, 遥控女Effect1);
-            AddExecutor(ExecutorType.Activate, CardId.浮游女, 浮游女Effect);
-            AddExecutor(ExecutorType.Activate, CardId.光天女, 光天女Effect);
-            AddExecutor(ExecutorType.Activate, CardId.主存女, 主存女Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.海龙骑士, 海龙骑士Effect);
-            AddExecutor(ExecutorType.Activate, CardId.劈裂史莱姆, 劈裂史莱姆Effect);
+            AddExecutor(ExecutorType.Activate, CardId.ExcutiePlawtie);
+            AddExecutor(ExecutorType.Activate, CardId.ExcutieLucy, UseLucyOnAttackPositionMonster);
+            AddExecutor(ExecutorType.Activate, CardId.ExcutieFloa, ActivateExcutieFloa);
+            AddExecutor(ExecutorType.Activate, CardId.ExcutieLumiere, ActivateExcutieLumiere);
+            AddExecutor(ExecutorType.Activate, CardId.ExcutieRAM, ActivateExcutieRAM);
+            AddExecutor(ExecutorType.Activate, RushCardId.SeaDragonKnight, ActivateSeaDragonKnight);
+            AddExecutor(ExecutorType.Activate, CardId.SplitterSlime, ActivateSplitterSlime);
 
-            AddExecutor(ExecutorType.Summon, CardId.夜魔女, 超可爱summon);
-            AddExecutor(ExecutorType.Summon, CardId.浮游女, 超可爱summon);
-            AddExecutor(ExecutorType.Summon, CardId.浮游女, 超可爱summon3);
-            AddExecutor(ExecutorType.Summon, CardId.光天女, 超可爱summon);
-            AddExecutor(ExecutorType.Summon, RushCardId.幻影之龙);
-            AddExecutor(ExecutorType.Summon, CardId.救火女, 超可爱summon);
-            AddExecutor(ExecutorType.Summon, CardId.细剑女, 超可爱summon);
-            AddExecutor(ExecutorType.Summon, CardId.遥控女, 超可爱summon2);
-            AddExecutor(ExecutorType.Summon, CardId.主存女, 超可爱summon2);
+            AddExecutor(ExecutorType.Summon, CardId.ExcutieLilius, TributeForExcutie);
+            AddExecutor(ExecutorType.Summon, CardId.ExcutieFloa, TributeForExcutie);
+            AddExecutor(ExecutorType.Summon, CardId.ExcutieFloa, TributeForExcutieFloa);
+            AddExecutor(ExecutorType.Summon, CardId.ExcutieLumiere, TributeForExcutie);
+            AddExecutor(ExecutorType.Summon, RushCardId.MirageDragon);
+            AddExecutor(ExecutorType.Summon, CardId.ExecutieFlame, TributeForExcutie);
+            AddExecutor(ExecutorType.Summon, CardId.ExcutieLeya, TributeForExcutie);
+            AddExecutor(ExecutorType.Summon, CardId.ExcutieLucy, TributeForSupportExcutie);
+            AddExecutor(ExecutorType.Summon, CardId.ExcutieRAM, TributeForSupportExcutie);
 
-            AddExecutor(ExecutorType.Activate, CardId.紧急出动, 紧急出动Effect2);
-            AddExecutor(ExecutorType.Activate, CardId.救火女, 救火女Effect1);
-            AddExecutor(ExecutorType.MonsterSet, RushCardId.海龙骑士,海龙set);
-            AddExecutor(ExecutorType.MonsterSet, RushCardId.结界像,结界像set);
-            AddExecutor(ExecutorType.MonsterSet, CardId.劈裂史莱姆, 史莱姆set);
-            AddExecutor(ExecutorType.Summon, RushCardId.海龙骑士);
-            AddExecutor(ExecutorType.Summon, RushCardId.结界像);
-            AddExecutor(ExecutorType.Summon, CardId.劈裂史莱姆);
+            AddExecutor(ExecutorType.Activate, CardId.ExcutieScramble, UseScrambleFromHand);
+            AddExecutor(ExecutorType.Activate, CardId.ExecutieFlame, UseFlameToOvercomeMonster);
+            AddExecutor(ExecutorType.MonsterSet, RushCardId.SeaDragonKnight,SetSeaDragonKnight);
+            AddExecutor(ExecutorType.MonsterSet, RushCardId.BarrierStatueOfTheInferno,SetBarrierStatueOfTheInferno);
+            AddExecutor(ExecutorType.MonsterSet, CardId.SplitterSlime, SetSplitterSlime);
+            AddExecutor(ExecutorType.Summon, RushCardId.SeaDragonKnight);
+            AddExecutor(ExecutorType.Summon, RushCardId.BarrierStatueOfTheInferno);
+            AddExecutor(ExecutorType.Summon, CardId.SplitterSlime);
 
-            AddExecutor(ExecutorType.Activate, CardId.遥控女, 遥控女Effect2);
-            AddExecutor(ExecutorType.Activate, CardId.救火女, 救火女Effect2);
+            AddExecutor(ExecutorType.Activate, CardId.ExcutieLucy, UseLucyOnSetMonster);
+            AddExecutor(ExecutorType.Activate, CardId.ExecutieFlame, UseFlameForBattleDamage);
             //AddExecutor(ExecutorType.Activate, DefaultDontChainMyself);
             AddExecutor(ExecutorType.Repos, DefaultMonsterRepos);
 
-            AddExecutor(ExecutorType.Repos, CardId.救火女, 反转Repos);
-            AddExecutor(ExecutorType.Repos, CardId.光天女, 反转Repos);
-            AddExecutor(ExecutorType.Repos, CardId.夜魔女, 反转Repos);
-            AddExecutor(ExecutorType.Repos, CardId.花草女, 圣防Repos);
-            AddExecutor(ExecutorType.Repos, CardId.主存女, 圣防Repos);
-            AddExecutor(ExecutorType.Repos, CardId.细剑女, 圣防Repos);
-            AddExecutor(ExecutorType.Repos, CardId.救火女, 圣防Repos);
-            AddExecutor(ExecutorType.Repos, CardId.遥控女, 圣防Repos);
-            AddExecutor(ExecutorType.Repos, CardId.浮游女, 圣防Repos);
-            AddExecutor(ExecutorType.Repos, CardId.光天女, 圣防Repos);
-            AddExecutor(ExecutorType.Repos, CardId.夜魔女, 圣防Repos);
+            AddExecutor(ExecutorType.Repos, CardId.ExecutieFlame, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, CardId.ExcutieLumiere, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, CardId.ExcutieLilius, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, CardId.ExcutiePlawtie, RepositionAgainstBattleTraps);
+            AddExecutor(ExecutorType.Repos, CardId.ExcutieRAM, RepositionAgainstBattleTraps);
+            AddExecutor(ExecutorType.Repos, CardId.ExcutieLeya, RepositionAgainstBattleTraps);
+            AddExecutor(ExecutorType.Repos, CardId.ExecutieFlame, RepositionAgainstBattleTraps);
+            AddExecutor(ExecutorType.Repos, CardId.ExcutieLucy, RepositionAgainstBattleTraps);
+            AddExecutor(ExecutorType.Repos, CardId.ExcutieFloa, RepositionAgainstBattleTraps);
+            AddExecutor(ExecutorType.Repos, CardId.ExcutieLumiere, RepositionAgainstBattleTraps);
+            AddExecutor(ExecutorType.Repos, CardId.ExcutieLilius, RepositionAgainstBattleTraps);
             AddExecutor(ExecutorType.SummonOrSet, ImFeelingLazy);
             AddExecutor(ExecutorType.SpellSet);
         }
 
-   
+
 
         private bool flameResolved;
 
@@ -116,7 +116,7 @@ namespace WindBot.Game.AI.Decks
             if (chainIndex <= 0 || chainIndex > Duel.CurrentChainInfo.Count || Duel.NegatedChainIndexList.Contains(chainIndex))
                 return;
             ChainInfo link = Duel.CurrentChainInfo[chainIndex - 1];
-            if (link.ActivatePlayer == 0 && link.IsActivateCode(CardId.救火女))
+            if (link.ActivatePlayer == 0 && link.IsActivateCode(CardId.ExecutieFlame))
                 flameResolved = true;
         }
 
@@ -141,13 +141,13 @@ namespace WindBot.Game.AI.Decks
         }
 
         private static readonly int[] targets = new[] {
-                CardId.夜魔女, CardId.光天女, CardId.细剑女, CardId.救火女, CardId.浮游女,CardId.遥控女, CardId.主存女, CardId.花草女};
+                CardId.ExcutieLilius, CardId.ExcutieLumiere, CardId.ExcutieLeya, CardId.ExecutieFlame, CardId.ExcutieFloa,CardId.ExcutieLucy, CardId.ExcutieRAM, CardId.ExcutiePlawtie};
 
         private static readonly int[] tar = new[] {
-                CardId.花草女, CardId.主存女, CardId.遥控女, CardId.救火女, CardId.浮游女,CardId.光天女,CardId.细剑女};
+                CardId.ExcutiePlawtie, CardId.ExcutieRAM, CardId.ExcutieLucy, CardId.ExecutieFlame, CardId.ExcutieFloa,CardId.ExcutieLumiere,CardId.ExcutieLeya};
 
         private static readonly int[] tar2 = new[] {
-                CardId.花草女, CardId.主存女, CardId.遥控女, CardId.浮游女};
+                CardId.ExcutiePlawtie, CardId.ExcutieRAM, CardId.ExcutieLucy, CardId.ExcutieFloa};
         private int FlameAttack(bool summoning)
         {
             int count = Bot.MonsterZone.Count(c => c != null && c.IsFaceup() && c.Level >= 6)
@@ -155,35 +155,35 @@ namespace WindBot.Game.AI.Decks
             return (summoning ? Card.Data.Attack : Card.Attack) + 600 * (count + (summoning ? 1 : 0));
         }
 
-        private bool 救火女Sp()
+        private bool SpecialSummonExecutieFlame()
         {
             return !flameResolved && HasStrongerFaceupEnemy() && Util.GetBestAttack(Enemy) < FlameAttack(true);
         }
 
-        private static readonly int[] TributePriorities = { CardId.花草女, CardId.细剑女, CardId.救火女, CardId.夜魔女 };
+        private static readonly int[] TributePriorities = { CardId.ExcutiePlawtie, CardId.ExcutieLeya, CardId.ExecutieFlame, CardId.ExcutieLilius };
 
-        private bool 超可爱summon3()
+        private bool TributeForExcutieFloa()
         {
             return Bot.GetMonsterCount() <= 2 && Bot.HasInMonstersZone(TributePriorities);
         }
 
-        private bool 超可爱summon2()
+        private bool TributeForSupportExcutie()
         {
             return Bot.MonsterZone.Any(c => c != null && c.GetDefensePower() < 1500);
         }
 
-        private bool 超可爱summon()
+        private bool TributeForExcutie()
         {
             return Bot.MonsterZone.Any(c => c != null && c.GetDefensePower() < 1550);
         }
 
-        private bool 救火女Effect1()
+        private bool UseFlameToOvercomeMonster()
         {
             return Bot.Hand.Count > 0 && !flameResolved && HasStrongerFaceupEnemy()
                 && Util.GetBestAttack(Enemy) < FlameAttack(false);
         }
 
-        private bool 救火女Effect2()
+        private bool UseFlameForBattleDamage()
         {
             if (Bot.Hand.Count == 0 || flameResolved || HasStrongerFaceupEnemy())
                 return false;
@@ -194,7 +194,7 @@ namespace WindBot.Game.AI.Decks
             return Util.GetTotalAttackingMonsterAttack(0) + 100 <= power || Enemy.LifePoints + enemy.Attack <= power;
         }
 
-        private bool 光天女Effect()
+        private bool ActivateExcutieLumiere()
         {
             return Enemy.MonsterZone.Any(c => c != null && c.IsFaceup() && (c.Level == 7 || c.Level == 8));
         }
@@ -204,7 +204,7 @@ namespace WindBot.Game.AI.Decks
             ChainInfo link = Duel.GetCurrentSolvingChainInfo();
             if (link != null && link.ActivatePlayer == 0)
             {
-                if (link.IsActivateCode(CardId.光天女) && hint == HintMsg.ToDeck)
+                if (link.IsActivateCode(CardId.ExcutieLumiere) && hint == HintMsg.ToDeck)
                 {
                     // The two controllers can be offered together or in successive group prompts.
                     var enemy = cards.Where(c => c.Controller == 1).OrderByDescending(c => c.Attack).FirstOrDefault();
@@ -214,29 +214,29 @@ namespace WindBot.Game.AI.Decks
                     if (own != null) pair.Add(own);
                     return Util.CheckSelectCount(pair, cards, min, max);
                 }
-                if (link.IsActivateCode(CardId.劈裂史莱姆))
+                if (link.IsActivateCode(CardId.SplitterSlime))
                 {
-                    if (hint == Util.GetStringId(CardId.劈裂史莱姆, 1))
+                    if (hint == Util.GetStringId(CardId.SplitterSlime, 1))
                         return cards.OrderByDescending(c => c.Attack).Take(max).ToList();
                     if (hint == HintMsg.SpSummon)
-                        return new CardSelector(RushCardId.幻影之龙).Select(cards, min, max);
+                        return new CardSelector(RushCardId.MirageDragon).Select(cards, min, max);
                 }
             }
             return base.OnSelectCard(cards, min, max, hint, cancelable);
         }
 
-        private bool 主存女Effect()
+        private bool ActivateExcutieRAM()
         {
                 AI.SelectCard(tar);
                 AI.SelectNextCard(Enemy.GetSpells());
                 return true;
         }
-        private bool 浮游女Effect()
+        private bool ActivateExcutieFloa()
         {
             AI.SelectCard(targets);
             return true;
         }
-        private bool 遥控女Effect2()
+        private bool UseLucyOnSetMonster()
         {
             foreach (ClientCard mon in Enemy.GetMonsters())
                 if (mon.IsFacedown())
@@ -248,7 +248,7 @@ namespace WindBot.Game.AI.Decks
             return false;
         }
 
-        private bool 遥控女Effect1()
+        private bool UseLucyOnAttackPositionMonster()
         {
             ClientCard best = Util.GetBestBotMonster();
             if (best == null) return false;
@@ -261,7 +261,7 @@ namespace WindBot.Game.AI.Decks
             return true;
         }
 
-        private bool 紧急出动Effect()
+        private bool ActivateExcutieScramble()
         {
             if (!Bot.HasInGraveyard(targets) && (Bot.GetMonsterCount() != 0 || !Bot.HasInHand(targets)))
                 return false;
@@ -269,7 +269,7 @@ namespace WindBot.Game.AI.Decks
             return true;
         }
 
-        private bool 捕获Effect()
+        private bool ActivateExcutieCapture()
         {
             ClientCard enemy = Enemy.MonsterZone.Where(c => c != null && c.IsFaceup() && c.Level <= 8)
                 .OrderByDescending(c => c.Attack).FirstOrDefault();
@@ -279,15 +279,15 @@ namespace WindBot.Game.AI.Decks
             return true;
         }
 
-        private bool 紧急出动Effect2()
+        private bool UseScrambleFromHand()
         {
             if (!Bot.HasInHand(targets))
                 return false;
-            AI.SelectCard(CardId.夜魔女, CardId.光天女, CardId.细剑女);
+            AI.SelectCard(CardId.ExcutieLilius, CardId.ExcutieLumiere, CardId.ExcutieLeya);
             return true;
         }
 
-        private bool 劈裂史莱姆Effect()
+        private bool ActivateSplitterSlime()
         {
             ClientCard enemy = Enemy.MonsterZone.Where(c => c != null && c.IsFaceup()).OrderByDescending(c => c.Attack).FirstOrDefault();
             ClientCard own = Bot.MonsterZone.GetHighestAttackMonster();
@@ -295,30 +295,30 @@ namespace WindBot.Game.AI.Decks
                 return false;
             if (enemy.Attack > own.Attack && enemy.Attack <= own.Attack + 1000)
                 AI.SelectCard(tar);
-            else if ((Bot.HasInMonstersZone(CardId.花草女) || Bot.HasInMonstersZone(CardId.主存女)) && Bot.HasInGraveyard(RushCardId.幻影之龙))
-                AI.SelectCard(CardId.花草女, CardId.主存女);
-            else if (Bot.HasInMonstersZone(RushCardId.幻影之龙))
-                AI.SelectCard(RushCardId.幻影之龙);
+            else if ((Bot.HasInMonstersZone(CardId.ExcutiePlawtie) || Bot.HasInMonstersZone(CardId.ExcutieRAM)) && Bot.HasInGraveyard(RushCardId.MirageDragon))
+                AI.SelectCard(CardId.ExcutiePlawtie, CardId.ExcutieRAM);
+            else if (Bot.HasInMonstersZone(RushCardId.MirageDragon))
+                AI.SelectCard(RushCardId.MirageDragon);
             else
                 return false;
             return true;
         }
 
-        private bool 结界像set()
+        private bool SetBarrierStatueOfTheInferno()
         {
             return HasStrongerFaceupEnemy();
         }
 
-        private bool 海龙set()
+        private bool SetSeaDragonKnight()
         {
             if ((HasStrongerFaceupEnemy() || Duel.Turn == 1))
             {
                 if (Enemy.GetSpellCount() ==0 || Bot.GetSpellCount() < 2)
                 return true;
-            }         
+            }
             return false;
         }
-        private bool 史莱姆set()
+        private bool SetSplitterSlime()
         {
                 if ( Duel.Turn == 1 || !Bot.HasInMonstersZone(tar2))
                 return true;

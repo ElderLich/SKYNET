@@ -11,51 +11,51 @@ namespace WindBot.Game.AI
     {
         protected static class RushCardId
         {
-            public const int 海龙骑士 = 120199032;
-            public const int 斗牛士 = 120170035;
-            public const int 结界像 = 120226013;
-            public const int 终焰魔神 = 120231008;
-            public const int 最强战旗 = 120181001;
-            public const int 钢机神 = 120155015;
-            public const int 破灭之龙魔导士 = 120231049;
-            public const int 星战骑佩流安 = 120109014;
-            public const int 加百列热茶 = 120151039;
-            public const int 武枪 = 120231052;
+            public const int SeaDragonKnight = 120199032;
+            public const int SiestaTorero = 120170035;
+            public const int BarrierStatueOfTheInferno = 120226013;
+            public const int DoomblazeFiendOverlordDespairacion = 120231008;
+            public const int UltimateFlagMechAceBreaker = 120181001;
+            public const int SteelMechLordMirrorInnovator = 120155015;
+            public const int DestroyerOfDragonSorcerers = 120231049;
+            public const int PerionTheStarKnight = 120109014;
+            public const int AgarielTheFinestSushiFairy = 120151039;
+            public const int YamirulerTheDarkDelayerSupremeSoldierSpear = 120231052;
 
-            public const int 疾风弹 = 120203028;
-            public const int HMD = 120130041;
-            public const int 死苏 = 120194004;
-            public const int 死苏2 = 120195004;
-            public const int 死供 = 120151023;
-            public const int 强欲之壶 = 120181003;
-            public const int 傲慢之壶 = 120238006;
-            public const int 黑洞 = 120231069;
-            public const int 魔法筒 = 120232005;
-            public const int 圣防 = 120198003;
-            public const int 激流葬 = 120223105;
-            public const int 大灾害 = 120238028;
-            public const int 炸甲 = 120194005;
-            public const int 万能地雷 = 120234005;
-            public const int 万能地雷2 = 120237001;
-            public const int 落穴 = 120150019;
-            public const int 神鸟攻击 = 120247065;
-            public const int 攻击无力化 = 120249065;
-            public const int 沙尘防护罩 = 120263038;
-            public const int 狡猾 = 120272063;
-            public const int 第六感 = 120272064;
-            public const int 波纹防护罩 = 120274084;
-            public const int 强脱 = 120254032;
-            public const int 暗黑释放 = 120105013;
-            public const int 亚龙地狱 = 120231068;
-            public const int 捕获 = 120231041;
+            public const int BurstStreamOfDestruction = 120203028;
+            public const int DarkMagicAttack = 120130041;
+            public const int MonsterReborn = 120194004;
+            public const int MonsterRebornAlternateArt = 120195004;
+            public const int TributeToTheDoomed = 120151023;
+            public const int PotOfGreed = 120181003;
+            public const int PotOfArrogance = 120238006;
+            public const int DarkHole = 120231069;
+            public const int MagicCylinder = 120232005;
+            public const int MirrorForce = 120198003;
+            public const int TorrentialTribute = 120223105;
+            public const int MalevolentCatastrophe = 120238028;
+            public const int SakuretsuArmor = 120194005;
+            public const int WidespreadRuin = 120234005;
+            public const int WidespreadRuinAlternateArt = 120237001;
+            public const int TrapHole = 120150019;
+            public const int IcarusAttack = 120247065;
+            public const int NegateAttack = 120249065;
+            public const int QuakingMirrorForce = 120263038;
+            public const int TreacherousTrapHole = 120272063;
+            public const int SixthSense = 120272064;
+            public const int DrowningMirrorForce = 120274084;
+            public const int CompulsoryEvacuationDevice = 120254032;
+            public const int DarkRevelation = 120105013;
+            public const int DragonlionPitTrap = 120231068;
+            public const int ExcutieCapture = 120231041;
 
-            public const int 人造人 = 120155000;
-            public const int 狼人 = 120214001;
-            public const int 幻影之龙 = 120223102;
-            public const int 手枪龙 = 120208000;
-            public const int 伟大魔兽 = 120238019;
-            public const int 黑魔术师 = 120130000;
-            public const int 千年盾 = 120194001;
+            public const int Jinzo = 120155000;
+            public const int PitchBlackWarwolf = 120214001;
+            public const int MirageDragon = 120223102;
+            public const int BarrelDragon = 120208000;
+            public const int GreatMajuGarzett = 120238019;
+            public const int DarkMagician = 120130000;
+            public const int MillenniumShield = 120194001;
 
 
             public const int SevensRoadMage = 120130016;
@@ -216,16 +216,16 @@ namespace WindBot.Game.AI
             {
                 case 120195004:
                 case 129022671:
-                    return RushCardId.死苏;
+                    return RushCardId.MonsterReborn;
                 case 120197003:
                     return RushCardId.SevensRoadMage;
                 case 120239059:
                 case 129018890:
-                    return RushCardId.钢机神;
+                    return RushCardId.SteelMechLordMirrorInnovator;
                 case 129018567:
-                    return RushCardId.破灭之龙魔导士;
+                    return RushCardId.DestroyerOfDragonSorcerers;
                 case 129022509:
-                    return RushCardId.最强战旗;
+                    return RushCardId.UltimateFlagMechAceBreaker;
                 default:
                     return printedId;
             }
@@ -235,7 +235,7 @@ namespace WindBot.Game.AI
         {
             if (owner == 0 || cards.Count == 0 || max < 1)
                 return null;
-            if (owner == RushCardId.星战骑佩流安 && hint == Util.GetStringId(owner, 1))
+            if (owner == RushCardId.PerionTheStarKnight && hint == Util.GetStringId(owner, 1))
             {
                 // The script's subgroup must contain one face-up monster from each field.
                 // The core can offer the two picks together or as select/unselect steps.
@@ -255,18 +255,18 @@ namespace WindBot.Game.AI
                 return null;
             }
 
-            if (owner == RushCardId.钢机神 && hint == HintMsg.ToDeck)
+            if (owner == RushCardId.SteelMechLordMirrorInnovator && hint == HintMsg.ToDeck)
             {
                 // Returning one monster grants piercing. Otherwise each returned level adds 100 ATK.
-                int count = 钢机神1Effect() ? Math.Max(1, min) : Math.Min(3, max);
+                int count = ActivateMirrorInnovatorForPiercing() ? Math.Max(1, min) : Math.Min(3, max);
                 return cards.OrderByDescending(c => c.Level).Take(count).ToList();
             }
-            bool destroy = (owner == RushCardId.死供 || owner == RushCardId.最强战旗 || owner == RushCardId.手枪龙)
+            bool destroy = (owner == RushCardId.TributeToTheDoomed || owner == RushCardId.UltimateFlagMechAceBreaker || owner == RushCardId.BarrelDragon)
                 && hint == HintMsg.Destroy;
             bool statTarget = (owner == RushCardId.SevensRoadMage || owner == RushCardId.SparkheartsGirl || owner == RushCardId.AssaultCannon ||
-                owner == RushCardId.加百列热茶 || owner == RushCardId.破灭之龙魔导士) && hint == Util.GetStringId(owner, 1);
-            if (min > 1 || !(destroy || statTarget || (owner == RushCardId.斗牛士 && hint == HintMsg.Set)
-                || (owner == RushCardId.死苏 && hint == HintMsg.SpSummon)))
+                owner == RushCardId.AgarielTheFinestSushiFairy || owner == RushCardId.DestroyerOfDragonSorcerers) && hint == Util.GetStringId(owner, 1);
+            if (min > 1 || !(destroy || statTarget || (owner == RushCardId.SiestaTorero && hint == HintMsg.Set)
+                || (owner == RushCardId.MonsterReborn && hint == HintMsg.SpSummon)))
                 return null;
 
             ClientCard best = null;
@@ -298,80 +298,80 @@ namespace WindBot.Game.AI
 
         private static readonly int[] LegendTrapIds =
         {
-            RushCardId.圣防, RushCardId.落穴, RushCardId.炸甲,
-            RushCardId.魔法筒, RushCardId.万能地雷, RushCardId.万能地雷2,
-            RushCardId.大灾害, RushCardId.神鸟攻击, RushCardId.攻击无力化,
-            RushCardId.强脱, RushCardId.沙尘防护罩, RushCardId.狡猾,
-            RushCardId.第六感, RushCardId.波纹防护罩, RushCardId.激流葬
+            RushCardId.MirrorForce, RushCardId.TrapHole, RushCardId.SakuretsuArmor,
+            RushCardId.MagicCylinder, RushCardId.WidespreadRuin, RushCardId.WidespreadRuinAlternateArt,
+            RushCardId.MalevolentCatastrophe, RushCardId.IcarusAttack, RushCardId.NegateAttack,
+            RushCardId.CompulsoryEvacuationDevice, RushCardId.QuakingMirrorForce, RushCardId.TreacherousTrapHole,
+            RushCardId.SixthSense, RushCardId.DrowningMirrorForce, RushCardId.TorrentialTribute
         };
 
         private static readonly int[] BattleTrapSuppressors =
         {
-            RushCardId.人造人, RushCardId.狼人, RushCardId.武枪,
-            RushCardId.幻影之龙
+            RushCardId.Jinzo, RushCardId.PitchBlackWarwolf, RushCardId.YamirulerTheDarkDelayerSupremeSoldierSpear,
+            RushCardId.MirageDragon
         };
 
-        protected bool 手枪龙Effect()
+        protected bool ActivateBarrelDragon()
         {
             // The host asks for the target before tossing the three coins.
             return Enemy.GetMonsterCount() > 0;
         }
 
-        protected bool 星战骑佩流安Effect()
+        protected bool ActivatePerionTheStarKnight()
         {
             return Bot.MonsterZone.Any(c => c != null && c.IsFaceup()) &&
                 Enemy.MonsterZone.Any(c => c != null && c.IsFaceup());
         }
 
-        protected bool 加百列热茶Effect()
+        protected bool ActivateAgarielTheFinestSushiFairy()
         {
             return Bot.MonsterZone.Any(c => c != null && c.IsFaceup());
         }
 
-        protected bool 破灭之龙魔导士Effect()
+        protected bool ActivateDestroyerOfDragonSorcerers()
         {
             // The host offers four eligible graveyard cards together for the cost.
             return Bot.MonsterZone.Any(c => c != null && c.IsFaceup());
         }
 
-        protected bool 斗牛士Effect()
+        protected bool ActivateSiestaTorero()
         {
             return Enemy.MonsterZone.Any(c => c != null && c.IsFaceup() && c.IsAttack() && c.Level <= 8);
         }
 
-        protected bool 海龙骑士Effect()
+        protected bool ActivateSeaDragonKnight()
         {
             return Enemy.SpellZone.Any(c => c != null && c.IsFacedown());
         }
 
-        protected bool 耳语妖精Effect()
+        protected bool ActivateWhisperingFairy()
         {
             // The discard is paid before the opposing graveyard cards are offered.
             return Enemy.Graveyard.Any(c => c.IsMonster());
         }
 
-        protected bool 钢机神1Effect()
+        protected bool ActivateMirrorInnovatorForPiercing()
         {
             return Enemy.MonsterZone.Any(c => c != null && c.IsDefense()) && !HasFaceupRushThreat(2500);
         }
 
-        protected bool 最强战旗Effect()
+        protected bool ActivateAceBreakerAgainstThreat()
         {
             return HasFaceupRushThreat(1900);
         }
 
-        protected bool 最强战旗Eff()
+        protected bool ActivateAceBreakerAgainstBoss()
         {
             return HasFaceupRushThreat(2500);
         }
 
-        protected bool 反转Repos()
+        protected bool FlipFaceUp()
         {
             if (Card.IsFacedown())
                 return true;
             return false;
         }
-        protected bool 圣防Repos()
+        protected bool RepositionAgainstBattleTraps()
         {
 
             if (Enemy.GetSpellCountWithoutField() >= 1 && !Bot.HasInMonstersZone(BattleTrapSuppressors) && !Bot.HasDefendingMonster())
@@ -379,7 +379,7 @@ namespace WindBot.Game.AI
 
                 if (Bot.MonsterZone.GetMatchingCardsCount(card => card.IsAttack() && card.Level > 5) >= 2
                     && Enemy.Graveyard.GetMatchingCardsCount(card => (card.Race & (int)CardRace.SpellCaster) > 0) >= 4
-                    && Enemy.Graveyard.GetMatchingCardsCount(card => card.IsCode(RushCardId.暗黑释放)) < 3)
+                    && Enemy.Graveyard.GetMatchingCardsCount(card => card.IsCode(RushCardId.DarkRevelation)) < 3)
                     return true;
                 if (Bot.MonsterZone.GetMatchingCardsCount(card => card.IsAttack()
                     && card.Attack >= Enemy.LifePoints) >= 2
@@ -389,26 +389,26 @@ namespace WindBot.Game.AI
             }
             return false;
         }
-        protected bool 死苏Effect()
+        protected bool ActivateMonsterReborn()
         {
             return Enemy.Graveyard.Any(c => c.Level > 6) || Bot.Graveyard.Any(c => c.Level > 6);
         }
 
-        protected bool HMDEffect()
+        protected bool ActivateDarkMagicAttack()
         {
             return Enemy.GetSpellCount()  >= 2;
         }
-        protected bool 黑洞Effect()
+        protected bool ActivateDarkHole()
         {
-            return (HasStrongerFaceupEnemy() && Util.GetTotalAttackingMonsterAttack(1) >= 3000 && !Enemy.HasInMonstersZone(RushCardId.终焰魔神, faceUp: true)) || Enemy.GetMonsterCount() == 3;
+            return (HasStrongerFaceupEnemy() && Util.GetTotalAttackingMonsterAttack(1) >= 3000 && !Enemy.HasInMonstersZone(RushCardId.DoomblazeFiendOverlordDespairacion, faceUp: true)) || Enemy.GetMonsterCount() == 3;
         }
-        protected bool 疾风弹Effect()
+        protected bool ActivateBurstStreamOfDestruction()
         {
-            return (Util.GetTotalAttackingMonsterAttack(1) >= 3000 && !Enemy.HasInMonstersZone(RushCardId.终焰魔神, faceUp: true)) || Enemy.GetMonsterCount() == 3 ;
+            return (Util.GetTotalAttackingMonsterAttack(1) >= 3000 && !Enemy.HasInMonstersZone(RushCardId.DoomblazeFiendOverlordDespairacion, faceUp: true)) || Enemy.GetMonsterCount() == 3 ;
         }
-        protected bool 死供Effect()
+        protected bool ActivateTributeToTheDoomed()
         {
-            return TributeToTheDoomed(1900) && !Enemy.HasInMonstersZone(RushCardId.终焰魔神, faceUp: true);
+            return TributeToTheDoomed(1900) && !Enemy.HasInMonstersZone(RushCardId.DoomblazeFiendOverlordDespairacion, faceUp: true);
         }
 
         protected bool TributeToTheDoomed(int minimumThreat)
@@ -432,20 +432,20 @@ namespace WindBot.Game.AI
             return false;
         }
 
-        protected bool 魔法筒Effect()
+        protected bool ActivateMagicCylinder()
         {
             ClientCard attacker = Enemy.BattlingMonster;
             return attacker != null && (Bot.LifePoints <= attacker.Attack || Enemy.LifePoints <= attacker.Attack ||
                 attacker.Attack > 1800) && DefaultUniqueTrap();
         }
 
-        protected bool 圣防Effect()
+        protected bool ActivateMirrorForce()
         {
             if (Util.GetTotalAttackingMonsterAttack(1) >= 1900 && (Enemy.GetMonsters().GetImmuneTrapMonster() == null)) return true;
             if (Util.GetTotalAttackingMonsterAttack(1) - Util.GetTotalAttackingMonsterAttack(0) > Bot.LifePoints && !Bot.HasDefendingMonster()) return true;
             return false;
         }
-        protected bool 亚龙地狱Effect()
+        protected bool ActivateDragonlionPitTrap()
         {
             int enemySixes = 0;
             foreach (ClientCard monster in Enemy.MonsterZone)
@@ -458,21 +458,21 @@ namespace WindBot.Game.AI
                 || enemySixes > Bot.MonsterZone.Count(c => c != null && c.IsFaceup() && c.Level == 6));
         }
 
-        protected bool 落穴Effect()
+        protected bool ActivateTrapHole()
         {
             foreach (ClientCard n in Duel.LastSummonedCards)
             {
-                if (n.Attack >= 1900 && !n.IsCode(RushCardId.武枪)) return true;
-                if (Util.GetTotalAttackingMonsterAttack(1) - Util.GetTotalAttackingMonsterAttack(0) > Bot.LifePoints && !Bot.HasDefendingMonster() && !n.IsCode(RushCardId.武枪)) return true;
+                if (n.Attack >= 1900 && !n.IsCode(RushCardId.YamirulerTheDarkDelayerSupremeSoldierSpear)) return true;
+                if (Util.GetTotalAttackingMonsterAttack(1) - Util.GetTotalAttackingMonsterAttack(0) > Bot.LifePoints && !Bot.HasDefendingMonster() && !n.IsCode(RushCardId.YamirulerTheDarkDelayerSupremeSoldierSpear)) return true;
             }
             return false;
         }
-        protected bool 激流葬Effect()
+        protected bool ActivateTorrentialTribute()
             {
                 return !Util.HasChainedTrap(0) && Util.IsAllEnemyBetter(true) && (Enemy.GetMonsters().GetImmuneTrapMonster() == null) || Enemy.GetMonsterCount() == 3;
             }
 
-        protected bool 炸甲Effect()
+        protected bool ActivateSakuretsuArmor()
         {
             ClientCard attacker = Enemy.BattlingMonster;
             return attacker != null && ((attacker.Attack > 2000 && Enemy.GetMonsters().GetImmuneTrapMonster() == null)
@@ -492,7 +492,7 @@ namespace WindBot.Game.AI
             return false;
         }
 
-        protected bool 伟大魔兽Sum()
+        protected bool SummonGreatMajuGarzett()
         {
             int tributecount = 1;
             int maxAttack = 0;

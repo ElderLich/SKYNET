@@ -13,114 +13,114 @@ namespace WindBot.Game.AI.Decks
     {
         public class CardId
         {
-            public const int 青眼白龙 = 120120000;
-            public const int 破坏之剑士 = 120170000;
-            public const int 连击龙 = 120110001;
-            public const int 人造人 = 120155000;
-            public const int 千年盾 = 120194001; 
-            public const int 血腥魔兽人 = 120194002;
-            public const int 圣精灵 = 120194003;
-            public const int 小手枪龙 = 120223101;
-            public const int 狼人 = 120214001;
-            public const int 海龙骑士 = 120199032;
-            public const int 成金恐龙王 = 120151010;       
-            public const int 机器栗子 = 120120017;
-            public const int 斗牛士 = 120170035;
-            public const int 凤凰龙 = 120110009;
-            public const int 死苏 = 120194004;            
-            public const int 成金哥布林 = 120151018;
-            public const int 强欲之壶 = 120181003;
-            public const int 贪欲之壶 = 120217100;
-            public const int 工厂 = 120214003;
-            public const int 古之规则 = 120214010;
-            public const int 对死者的供奉 = 120151023;
-            public const int 落穴 = 120150019;
-            public const int 圣防 = 120198003;
-            public const int 炸甲 = 120194005;
-            public const int 暗黑释放 = 120105013;
+            public const int BlueEyesWhiteDragon = 120120000;
+            public const int BusterBlader = 120170000;
+            public const int MultistrikeDragonDragias = 120110001;
+            public const int Jinzo = 120155000;
+            public const int MillenniumShield = 120194001;
+            public const int VorseRaider = 120194002;
+            public const int MysticalElf = 120194003;
+            public const int TwinBarrelDragon = 120223101;
+            public const int PitchBlackWarwolf = 120214001;
+            public const int SeaDragonKnight = 120199032;
+            public const int RitzyKingRex = 120151010;
+            public const int Kuribot = 120120017;
+            public const int SiestaTorero = 120170035;
+            public const int PhoenixDragon = 120110009;
+            public const int MonsterReborn = 120194004;
+            public const int UpstartGoblin = 120151018;
+            public const int PotOfGreed = 120181003;
+            public const int PotOfAvarice = 120217100;
+            public const int DarkFactoryOfMassProduction = 120214003;
+            public const int AncientRules = 120214010;
+            public const int TributeToTheDoomed = 120151023;
+            public const int TrapHole = 120150019;
+            public const int MirrorForce = 120198003;
+            public const int SakuretsuArmor = 120194005;
+            public const int DarkRevelation = 120105013;
         }
 
         public TheLegendExecutor(GameAI ai, Duel duel)
             : base(ai, duel)
         {
-            AddExecutor(ExecutorType.Activate, RushCardId.HMD, HMDEffect);
-            AddExecutor(ExecutorType.Activate, RushCardId.手枪龙, 手枪龙Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.黑洞, 黑洞Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.疾风弹, 疾风弹Effect);
-            AddExecutor(ExecutorType.Activate, CardId.小手枪龙, 小手枪龙Effect);            
-            AddExecutor(ExecutorType.Activate, CardId.海龙骑士,new海龙骑士Effect);
-            AddExecutor(ExecutorType.Activate, CardId.强欲之壶);
-            AddExecutor(ExecutorType.Activate, CardId.成金哥布林);
-            AddExecutor(ExecutorType.Activate, CardId.贪欲之壶);
-            AddExecutor(ExecutorType.Activate, CardId.成金恐龙王, 成金恐龙王Effect);
-            AddExecutor(ExecutorType.Activate, CardId.机器栗子);
-            AddExecutor(ExecutorType.Repos, CardId.机器栗子, 栗子summon2);
-            AddExecutor(ExecutorType.Activate, CardId.连击龙);
-            AddExecutor(ExecutorType.Activate, CardId.斗牛士, 斗牛士Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.DarkMagicAttack, ActivateDarkMagicAttack);
+            AddExecutor(ExecutorType.Activate, RushCardId.BarrelDragon, ActivateBarrelDragon);
+            AddExecutor(ExecutorType.Activate, RushCardId.DarkHole, ActivateDarkHole);
+            AddExecutor(ExecutorType.Activate, RushCardId.BurstStreamOfDestruction, ActivateBurstStreamOfDestruction);
+            AddExecutor(ExecutorType.Activate, CardId.TwinBarrelDragon, ActivateTwinBarrelDragon);
+            AddExecutor(ExecutorType.Activate, CardId.SeaDragonKnight,UseSeaDragonKnightOnSetBackrow);
+            AddExecutor(ExecutorType.Activate, CardId.PotOfGreed);
+            AddExecutor(ExecutorType.Activate, CardId.UpstartGoblin);
+            AddExecutor(ExecutorType.Activate, CardId.PotOfAvarice);
+            AddExecutor(ExecutorType.Activate, CardId.RitzyKingRex, ActivateRitzyKingRex);
+            AddExecutor(ExecutorType.Activate, CardId.Kuribot);
+            AddExecutor(ExecutorType.Repos, CardId.Kuribot, SummonKuribotWithOneMonster);
+            AddExecutor(ExecutorType.Activate, CardId.MultistrikeDragonDragias);
+            AddExecutor(ExecutorType.Activate, CardId.SiestaTorero, ActivateSiestaTorero);
             AddExecutor(ExecutorType.SpSummon);
-            AddExecutor(ExecutorType.Repos, CardId.斗牛士, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, CardId.小手枪龙, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, CardId.狼人, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, CardId.海龙骑士, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Summon, CardId.青眼白龙, RushMonsterSummon);
-            AddExecutor(ExecutorType.Summon, RushCardId.手枪龙, RushMonsterSummon);
-            AddExecutor(ExecutorType.Summon, RushCardId.黑魔术师, RushMonsterSummon);
-            AddExecutor(ExecutorType.Summon, CardId.破坏之剑士, RushMonsterSummon);
-            AddExecutor(ExecutorType.SummonOrSet, CardId.连击龙, RushMonsterSummon);
-            AddExecutor(ExecutorType.SummonOrSet, CardId.人造人, RushMonsterSummon);
-            AddExecutor(ExecutorType.Summon, CardId.机器栗子,栗子summon);            
-            AddExecutor(ExecutorType.Activate, CardId.古之规则, 古之规则Effect);
-            AddExecutor(ExecutorType.Activate, CardId.死苏, 死苏Effect);
-            AddExecutor(ExecutorType.Activate, CardId.工厂, 工厂Effect);
-            AddExecutor(ExecutorType.MonsterSet, CardId.斗牛士, Monsterset);
-            AddExecutor(ExecutorType.Summon, CardId.海龙骑士);
-            AddExecutor(ExecutorType.Summon, CardId.斗牛士);
-            AddExecutor(ExecutorType.Summon, CardId.小手枪龙);
-            AddExecutor(ExecutorType.Summon, CardId.狼人);
-            AddExecutor(ExecutorType.Activate, CardId.凤凰龙);
-            AddExecutor(ExecutorType.Activate, CardId.对死者的供奉, 死供Effect);
-            AddExecutor(ExecutorType.Repos, CardId.青眼白龙, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, RushCardId.手枪龙, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, CardId.破坏之剑士, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, CardId.连击龙, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, CardId.人造人, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, CardId.青眼白龙, 反转Repos);
-            AddExecutor(ExecutorType.Repos, RushCardId.手枪龙, 反转Repos);
-            AddExecutor(ExecutorType.Repos, RushCardId.黑魔术师, 反转Repos);
-            AddExecutor(ExecutorType.Repos, CardId.小手枪龙, 反转Repos);
-            AddExecutor(ExecutorType.Repos, CardId.狼人, 反转Repos);
-            AddExecutor(ExecutorType.MonsterSet, CardId.千年盾, RushMonsterSummon);
-            AddExecutor(ExecutorType.Repos, CardId.成金恐龙王, 成金恐龙王Summon);
-            AddExecutor(ExecutorType.Summon, CardId.成金恐龙王, 成金恐龙王Summon);
-            AddExecutor(ExecutorType.SummonOrSet, CardId.血腥魔兽人);
-            AddExecutor(ExecutorType.Summon, CardId.凤凰龙, 凤凰龙summon);
-            AddExecutor(ExecutorType.SpellSet, CardId.圣防);
-            AddExecutor(ExecutorType.SpellSet, CardId.落穴);
-            AddExecutor(ExecutorType.Activate, CardId.落穴, 落穴Effect);
-            AddExecutor(ExecutorType.Activate, CardId.圣防, 圣防Effect);
-            AddExecutor(ExecutorType.Activate, CardId.炸甲, 炸甲Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.魔法筒, 魔法筒Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.激流葬, 激流葬Effect);
-            AddExecutor(ExecutorType.SpellSet, CardId.对死者的供奉);
-            AddExecutor(ExecutorType.MonsterSet, CardId.圣精灵);
-            AddExecutor(ExecutorType.MonsterSet, CardId.凤凰龙);
-            
-            AddExecutor(ExecutorType.MonsterSet, CardId.机器栗子);
-            AddExecutor(ExecutorType.MonsterSet, CardId.成金恐龙王);
-            AddExecutor(ExecutorType.Activate, RushCardId.破灭之龙魔导士, 破灭之龙魔导士Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.星战骑佩流安, 星战骑佩流安Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.加百列热茶, 加百列热茶Effect);
+            AddExecutor(ExecutorType.Repos, CardId.SiestaTorero, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Repos, CardId.TwinBarrelDragon, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Repos, CardId.PitchBlackWarwolf, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Repos, CardId.SeaDragonKnight, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Summon, CardId.BlueEyesWhiteDragon, RushMonsterSummon);
+            AddExecutor(ExecutorType.Summon, RushCardId.BarrelDragon, RushMonsterSummon);
+            AddExecutor(ExecutorType.Summon, RushCardId.DarkMagician, RushMonsterSummon);
+            AddExecutor(ExecutorType.Summon, CardId.BusterBlader, RushMonsterSummon);
+            AddExecutor(ExecutorType.SummonOrSet, CardId.MultistrikeDragonDragias, RushMonsterSummon);
+            AddExecutor(ExecutorType.SummonOrSet, CardId.Jinzo, RushMonsterSummon);
+            AddExecutor(ExecutorType.Summon, CardId.Kuribot,SummonKuribotOnEmptyField);
+            AddExecutor(ExecutorType.Activate, CardId.AncientRules, ActivateAncientRules);
+            AddExecutor(ExecutorType.Activate, CardId.MonsterReborn, ActivateMonsterReborn);
+            AddExecutor(ExecutorType.Activate, CardId.DarkFactoryOfMassProduction, ActivateDarkFactoryOfMassProduction);
+            AddExecutor(ExecutorType.MonsterSet, CardId.SiestaTorero, Monsterset);
+            AddExecutor(ExecutorType.Summon, CardId.SeaDragonKnight);
+            AddExecutor(ExecutorType.Summon, CardId.SiestaTorero);
+            AddExecutor(ExecutorType.Summon, CardId.TwinBarrelDragon);
+            AddExecutor(ExecutorType.Summon, CardId.PitchBlackWarwolf);
+            AddExecutor(ExecutorType.Activate, CardId.PhoenixDragon);
+            AddExecutor(ExecutorType.Activate, CardId.TributeToTheDoomed, ActivateTributeToTheDoomed);
+            AddExecutor(ExecutorType.Repos, CardId.BlueEyesWhiteDragon, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Repos, RushCardId.BarrelDragon, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Repos, CardId.BusterBlader, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Repos, CardId.MultistrikeDragonDragias, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Repos, CardId.Jinzo, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Repos, CardId.BlueEyesWhiteDragon, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, RushCardId.BarrelDragon, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, RushCardId.DarkMagician, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, CardId.TwinBarrelDragon, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, CardId.PitchBlackWarwolf, FlipFaceUp);
+            AddExecutor(ExecutorType.MonsterSet, CardId.MillenniumShield, RushMonsterSummon);
+            AddExecutor(ExecutorType.Repos, CardId.RitzyKingRex, SummonRitzyKingRex);
+            AddExecutor(ExecutorType.Summon, CardId.RitzyKingRex, SummonRitzyKingRex);
+            AddExecutor(ExecutorType.SummonOrSet, CardId.VorseRaider);
+            AddExecutor(ExecutorType.Summon, CardId.PhoenixDragon, SummonPhoenixDragon);
+            AddExecutor(ExecutorType.SpellSet, CardId.MirrorForce);
+            AddExecutor(ExecutorType.SpellSet, CardId.TrapHole);
+            AddExecutor(ExecutorType.Activate, CardId.TrapHole, ActivateTrapHole);
+            AddExecutor(ExecutorType.Activate, CardId.MirrorForce, ActivateMirrorForce);
+            AddExecutor(ExecutorType.Activate, CardId.SakuretsuArmor, ActivateSakuretsuArmor);
+            AddExecutor(ExecutorType.Activate, RushCardId.MagicCylinder, ActivateMagicCylinder);
+            AddExecutor(ExecutorType.Activate, RushCardId.TorrentialTribute, ActivateTorrentialTribute);
+            AddExecutor(ExecutorType.SpellSet, CardId.TributeToTheDoomed);
+            AddExecutor(ExecutorType.MonsterSet, CardId.MysticalElf);
+            AddExecutor(ExecutorType.MonsterSet, CardId.PhoenixDragon);
+
+            AddExecutor(ExecutorType.MonsterSet, CardId.Kuribot);
+            AddExecutor(ExecutorType.MonsterSet, CardId.RitzyKingRex);
+            AddExecutor(ExecutorType.Activate, RushCardId.DestroyerOfDragonSorcerers, ActivateDestroyerOfDragonSorcerers);
+            AddExecutor(ExecutorType.Activate, RushCardId.PerionTheStarKnight, ActivatePerionTheStarKnight);
+            AddExecutor(ExecutorType.Activate, RushCardId.AgarielTheFinestSushiFairy, ActivateAgarielTheFinestSushiFairy);
             AddExecutor(ExecutorType.Activate, DefaultDontChainMyself);
-            AddExecutor(ExecutorType.Repos, CardId.青眼白龙, 圣防Repos);
-            AddExecutor(ExecutorType.Repos, CardId.破坏之剑士, 圣防Repos);
-            AddExecutor(ExecutorType.SummonOrSet, RushMonsterSummon);                               
+            AddExecutor(ExecutorType.Repos, CardId.BlueEyesWhiteDragon, RepositionAgainstBattleTraps);
+            AddExecutor(ExecutorType.Repos, CardId.BusterBlader, RepositionAgainstBattleTraps);
+            AddExecutor(ExecutorType.SummonOrSet, RushMonsterSummon);
             AddExecutor(ExecutorType.SpellSet);
             //AddExecutor(ExecutorType.Activate, CardId.sionmax, sionmaxEffect);
- 
+
         }
 
         private static readonly int[] TributeMonsters = {
-            CardId.连击龙, CardId.青眼白龙, RushCardId.黑魔术师, RushCardId.手枪龙, CardId.人造人, CardId.破坏之剑士
+            CardId.MultistrikeDragonDragias, CardId.BlueEyesWhiteDragon, RushCardId.DarkMagician, RushCardId.BarrelDragon, CardId.Jinzo, CardId.BusterBlader
         };
 
         public bool Monsterset()
@@ -128,69 +128,69 @@ namespace WindBot.Game.AI.Decks
             return Duel.Turn == 1 || !Bot.HasInHand(TributeMonsters);
         }
 
-        private bool 成金恐龙王Effect()
+        private bool ActivateRitzyKingRex()
         {
-            AI.SelectCard(CardId.成金哥布林);
+            AI.SelectCard(CardId.UpstartGoblin);
             return true;
         }
-        private bool 古之规则Effect()
+        private bool ActivateAncientRules()
         {
-            if (Bot.HasInHand(RushCardId.黑魔术师) && Bot.HasInHandOrInSpellZone(RushCardId.HMD))
-                AI.SelectCard(RushCardId.黑魔术师);
+            if (Bot.HasInHand(RushCardId.DarkMagician) && Bot.HasInHandOrInSpellZone(RushCardId.DarkMagicAttack))
+                AI.SelectCard(RushCardId.DarkMagician);
             else
-                AI.SelectCard(CardId.青眼白龙, RushCardId.黑魔术师);
+                AI.SelectCard(CardId.BlueEyesWhiteDragon, RushCardId.DarkMagician);
             return true;
         }
 
-        private bool 工厂Effect()
+        private bool ActivateDarkFactoryOfMassProduction()
         {
             // Dark Factory returns two Normal Monsters in one selection.
-            if (Bot.HasInGraveyard(CardId.青眼白龙) && Bot.HasInHandOrInSpellZone(RushCardId.疾风弹))
-                AI.SelectCard(CardId.青眼白龙, CardId.血腥魔兽人, CardId.圣精灵, RushCardId.黑魔术师);
-            else if (Bot.HasInGraveyard(RushCardId.黑魔术师) && Bot.HasInHandOrInSpellZone(RushCardId.HMD))
-                AI.SelectCard(RushCardId.黑魔术师, CardId.血腥魔兽人, CardId.圣精灵, CardId.青眼白龙);
+            if (Bot.HasInGraveyard(CardId.BlueEyesWhiteDragon) && Bot.HasInHandOrInSpellZone(RushCardId.BurstStreamOfDestruction))
+                AI.SelectCard(CardId.BlueEyesWhiteDragon, CardId.VorseRaider, CardId.MysticalElf, RushCardId.DarkMagician);
+            else if (Bot.HasInGraveyard(RushCardId.DarkMagician) && Bot.HasInHandOrInSpellZone(RushCardId.DarkMagicAttack))
+                AI.SelectCard(RushCardId.DarkMagician, CardId.VorseRaider, CardId.MysticalElf, CardId.BlueEyesWhiteDragon);
             else
-                AI.SelectCard(CardId.血腥魔兽人, CardId.圣精灵, CardId.青眼白龙, RushCardId.黑魔术师);
+                AI.SelectCard(CardId.VorseRaider, CardId.MysticalElf, CardId.BlueEyesWhiteDragon, RushCardId.DarkMagician);
             return true;
         }
 
-        private bool 成金恐龙王Summon()
+        private bool SummonRitzyKingRex()
         {
             if (Enemy.GetHandCount() < 1) return true;
             return false;
         }
-        private bool 栗子summon()
+        private bool SummonKuribotOnEmptyField()
         {
-            if (Bot.HasInGraveyard(CardId.机器栗子) && Bot.GetMonstersInMainZone().Count == 0)
+            if (Bot.HasInGraveyard(CardId.Kuribot) && Bot.GetMonstersInMainZone().Count == 0)
                     return true;
             return false;
         }
-        private bool 栗子summon2()
+        private bool SummonKuribotWithOneMonster()
         {
-            if (Bot.HasInGraveyard(CardId.机器栗子) && Bot.GetMonstersInMainZone().Count == 1)
+            if (Bot.HasInGraveyard(CardId.Kuribot) && Bot.GetMonstersInMainZone().Count == 1)
                 return true;
             return false;
         }
-        private bool 凤凰龙summon()
+        private bool SummonPhoenixDragon()
         {
-            if (Bot.HasInGraveyard(new[] { CardId.连击龙, CardId.青眼白龙 }) && 
-                Bot.MonsterZone.GetMatchingCardsCount(card => card.Level > 4) < 2 && 
+            if (Bot.HasInGraveyard(new[] { CardId.MultistrikeDragonDragias, CardId.BlueEyesWhiteDragon }) &&
+                Bot.MonsterZone.GetMatchingCardsCount(card => card.Level > 4) < 2 &&
                 (Bot.MonsterZone.GetMatchingCardsCount(card => card.Level < 5) + Bot.Hand.GetMatchingCardsCount(card => card.IsMonster() && card.Level < 5)) <= 2)
             {
                 return true;
-            }                
+            }
             return false;
         }
-        private bool new海龙骑士Effect()
+        private bool UseSeaDragonKnightOnSetBackrow()
         {
             ClientCard selected = Enemy.SpellZone.FirstOrDefault(c => c != null && c.IsFacedown());
             if (selected == null)
                 return false;
-            AI.SelectCard(RushCardId.手枪龙, CardId.海龙骑士, CardId.青眼白龙,CardId.狼人, RushCardId.黑魔术师, CardId.圣精灵, CardId.小手枪龙, CardId.血腥魔兽人, CardId.机器栗子);
+            AI.SelectCard(RushCardId.BarrelDragon, CardId.SeaDragonKnight, CardId.BlueEyesWhiteDragon,CardId.PitchBlackWarwolf, RushCardId.DarkMagician, CardId.MysticalElf, CardId.TwinBarrelDragon, CardId.VorseRaider, CardId.Kuribot);
             AI.SelectNextCard(selected);
             return true;
         }
-        private bool 小手枪龙Effect()
+        private bool ActivateTwinBarrelDragon()
         {
             ClientCard target = Util.GetOneEnemyBetterThanMyBest(true, true);
             if (target == null)

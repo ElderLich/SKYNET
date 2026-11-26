@@ -12,71 +12,71 @@ namespace WindBot.Game.AI.Decks
     {
         public class CardId
         {
-            public const int 超级恐龙王 = 120130029;
-            public const int 凶怒甲龙 = 120231056;
-            public const int 巨身多角龙 = 120130005;
-            public const int 荒野盗龙 = 120151012;
-            public const int 名流雷龙 = 120151013;
-            public const int 抑龙 = 120151011;
-            public const int 机械镰刀盗龙 = 120151009;
-            public const int 成金恐龙王 = 120151010;
-            public const int 侏罗纪世界 = 120151015;
-            public const int 奇迹的共进化 = 120151016;
-            public const int 成金哥布林 = 120151018;
-            public const int 恐龙粉碎 = 120151017;
-            public const int 超越进化 = 120151019;
-            public const int 恐力重压 = 120151020;
-            public const int 大恐龙驾L = 120151005;
-            public const int 大恐龙驾R = 120151007;
-            public const int 大恐龙驾 = 120151006;
+            public const int SuperKingRex = 120130029;
+            public const int RageWreckerDragonAngerogue = 120231056;
+            public const int Megazowler = 120130005;
+            public const int Uraby = 120151012;
+            public const int Celebrontosaurus = 120151013;
+            public const int SupressaurusSternptera = 120151011;
+            public const int MechTherizinoraptor = 120151009;
+            public const int RitzyKingRex = 120151010;
+            public const int JurassicWorld = 120151015;
+            public const int CoevolutionaryMiracle = 120151016;
+            public const int UpstartGoblin = 120151018;
+            public const int DinosaurCrush = 120151017;
+            public const int AscendingEvolution = 120151019;
+            public const int DinomicPressure = 120151020;
+            public const int DynamicDinoDynamixL = 120151005;
+            public const int DynamicDinoDynamixR = 120151007;
+            public const int DynamicDinoDynamix = 120151006;
         }
 
         public DinocarriageDynarmixExecutor(GameAI ai, Duel duel)
             : base(ai, duel)
         {
-            AddExecutor(ExecutorType.SpSummon, CardId.大恐龙驾, MAXsummon);
-            AddExecutor(ExecutorType.Activate, CardId.大恐龙驾, 大恐龙驾Effect);
-            AddExecutor(ExecutorType.Activate, CardId.成金哥布林);
-            AddExecutor(ExecutorType.Activate, CardId.抑龙);
-            AddExecutor(ExecutorType.Activate, CardId.成金恐龙王, 成金恐龙王Effect);
-            AddExecutor(ExecutorType.Activate, CardId.机械镰刀盗龙, 机械镰刀盗龙Effect);
+            AddExecutor(ExecutorType.SpSummon, CardId.DynamicDinoDynamix, MAXsummon);
+            AddExecutor(ExecutorType.Activate, CardId.DynamicDinoDynamix, ActivateDynamicDinoDynamix);
+            AddExecutor(ExecutorType.Activate, CardId.UpstartGoblin);
+            AddExecutor(ExecutorType.Activate, CardId.SupressaurusSternptera);
+            AddExecutor(ExecutorType.Activate, CardId.RitzyKingRex, ActivateRitzyKingRex);
+            AddExecutor(ExecutorType.Activate, CardId.MechTherizinoraptor, ActivateMechTherizinoraptor);
 
-            AddExecutor(ExecutorType.Summon, CardId.大恐龙驾L, MAXLsummon);
-            AddExecutor(ExecutorType.Summon, CardId.大恐龙驾R, MAXRsummon);
-            AddExecutor(ExecutorType.Activate, CardId.奇迹的共进化, 奇迹的共进化Effect);
-            AddExecutor(ExecutorType.Repos, CardId.大恐龙驾L, 共进化repos);
-            AddExecutor(ExecutorType.Repos, CardId.大恐龙驾R, 共进化repos);
-            AddExecutor(ExecutorType.Repos, CardId.抑龙, 共进化repos);
-            AddExecutor(ExecutorType.Repos, CardId.机械镰刀盗龙, 共进化repos);
-            AddExecutor(ExecutorType.Repos, CardId.成金恐龙王, 共进化repos);
-            AddExecutor(ExecutorType.Repos, CardId.名流雷龙, 共进化repos);
-            AddExecutor(ExecutorType.Repos, CardId.荒野盗龙, 共进化repos);
-            AddExecutor(ExecutorType.Summon, CardId.巨身多角龙, RushMonsterSummon);
-            AddExecutor(ExecutorType.Summon, CardId.超级恐龙王, RushMonsterSummon);
-            AddExecutor(ExecutorType.Summon, CardId.凶怒甲龙, RushMonsterSummon);
-            AddExecutor(ExecutorType.Activate, CardId.超级恐龙王, 超级恐龙王Effect);
-            AddExecutor(ExecutorType.Summon, CardId.机械镰刀盗龙);
-            AddExecutor(ExecutorType.Summon, CardId.抑龙, 抑龙Summon);
-            AddExecutor(ExecutorType.Summon, CardId.成金恐龙王, 成金恐龙王Summon);
-            AddExecutor(ExecutorType.Activate, CardId.恐龙粉碎, 恐龙粉碎Effect);
-            AddExecutor(ExecutorType.SummonOrSet, CardId.荒野盗龙, RushMonsterSummon);
-            AddExecutor(ExecutorType.SummonOrSet, CardId.名流雷龙, RushMonsterSummon);
+            AddExecutor(ExecutorType.Summon, CardId.DynamicDinoDynamixL, MAXLsummon);
+            AddExecutor(ExecutorType.Summon, CardId.DynamicDinoDynamixR, MAXRsummon);
+            AddExecutor(ExecutorType.Activate, CardId.CoevolutionaryMiracle, ActivateCoevolutionaryMiracle);
+            AddExecutor(ExecutorType.Repos, CardId.DynamicDinoDynamixL, RepositionCoevolutionaryMiracle);
+            AddExecutor(ExecutorType.Repos, CardId.DynamicDinoDynamixR, RepositionCoevolutionaryMiracle);
+            AddExecutor(ExecutorType.Repos, CardId.SupressaurusSternptera, RepositionCoevolutionaryMiracle);
+            AddExecutor(ExecutorType.Repos, CardId.MechTherizinoraptor, RepositionCoevolutionaryMiracle);
+            AddExecutor(ExecutorType.Repos, CardId.RitzyKingRex, RepositionCoevolutionaryMiracle);
+            AddExecutor(ExecutorType.Repos, CardId.Celebrontosaurus, RepositionCoevolutionaryMiracle);
+            AddExecutor(ExecutorType.Repos, CardId.Uraby, RepositionCoevolutionaryMiracle);
+            AddExecutor(ExecutorType.Summon, CardId.Megazowler, RushMonsterSummon);
+            AddExecutor(ExecutorType.Summon, CardId.SuperKingRex, RushMonsterSummon);
+            AddExecutor(ExecutorType.Summon, CardId.RageWreckerDragonAngerogue, RushMonsterSummon);
+            AddExecutor(ExecutorType.Activate, CardId.SuperKingRex, ActivateSuperKingRex);
+            AddExecutor(ExecutorType.Summon, CardId.MechTherizinoraptor);
+            AddExecutor(ExecutorType.Summon, CardId.SupressaurusSternptera, SummonSupressaurusSternptera);
+            AddExecutor(ExecutorType.Summon, CardId.RitzyKingRex, SummonRitzyKingRex);
+            AddExecutor(ExecutorType.Activate, CardId.DinosaurCrush, ActivateDinosaurCrush);
+            AddExecutor(ExecutorType.SummonOrSet, CardId.Uraby, RushMonsterSummon);
+            AddExecutor(ExecutorType.SummonOrSet, CardId.Celebrontosaurus, RushMonsterSummon);
 
-            AddExecutor(ExecutorType.MonsterSet, RushCardId.千年盾, RushMonsterSummon);
-            AddExecutor(ExecutorType.MonsterSet, CardId.大恐龙驾L, MAXLset);
-            AddExecutor(ExecutorType.MonsterSet, CardId.大恐龙驾R, MAXRset);
-            AddExecutor(ExecutorType.MonsterSet, CardId.抑龙);
-            AddExecutor(ExecutorType.MonsterSet, CardId.成金恐龙王);
-            AddExecutor(ExecutorType.MonsterSet, CardId.名流雷龙, monsterset);
-            AddExecutor(ExecutorType.Activate, CardId.侏罗纪世界);
-            AddExecutor(ExecutorType.Activate, CardId.凶怒甲龙);
-            AddExecutor(ExecutorType.Activate, RushCardId.圣防, 圣防Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.魔法筒, 魔法筒Effect);
-            AddExecutor(ExecutorType.Activate, CardId.恐力重压);
-            AddExecutor(ExecutorType.Activate, CardId.超越进化, 超越进化Effect);
+            AddExecutor(ExecutorType.MonsterSet, RushCardId.MillenniumShield, RushMonsterSummon);
+            AddExecutor(ExecutorType.MonsterSet, CardId.DynamicDinoDynamixL, MAXLset);
+            AddExecutor(ExecutorType.MonsterSet, CardId.DynamicDinoDynamixR, MAXRset);
+            AddExecutor(ExecutorType.MonsterSet, CardId.SupressaurusSternptera);
+            AddExecutor(ExecutorType.MonsterSet, CardId.RitzyKingRex);
+            AddExecutor(ExecutorType.MonsterSet, CardId.Celebrontosaurus, monsterset);
+            AddExecutor(ExecutorType.Activate, CardId.JurassicWorld);
+            AddExecutor(ExecutorType.Activate, CardId.RageWreckerDragonAngerogue);
+            AddExecutor(ExecutorType.Activate, RushCardId.MirrorForce, ActivateMirrorForce);
+            AddExecutor(ExecutorType.Activate, RushCardId.MagicCylinder, ActivateMagicCylinder);
+            AddExecutor(ExecutorType.Activate, CardId.DinomicPressure);
+            AddExecutor(ExecutorType.Activate, CardId.AscendingEvolution, ActivateAscendingEvolution);
             AddExecutor(ExecutorType.SpellSet);
             AddExecutor(ExecutorType.Repos, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, 圣防Repos);
+            AddExecutor(ExecutorType.Repos, RepositionAgainstBattleTraps);
             //AddExecutor(ExecutorType.Activate, DefaultDontChainMyself);
         }
         protected override bool UseGenericRushChoices { get { return false; } }
@@ -86,7 +86,7 @@ namespace WindBot.Game.AI.Decks
             if (AI.HaveSelectedCards())
                 return null;
             if (hint == Util.GetStringId(120000000, 1) && cards.All(c => c.Controller == 0 &&
-                c.Location == CardLocation.Hand && (c.IsCode(CardId.大恐龙驾L) || c.IsCode(CardId.大恐龙驾R))))
+                c.Location == CardLocation.Hand && (c.IsCode(CardId.DynamicDinoDynamixL) || c.IsCode(CardId.DynamicDinoDynamixR))))
             {
                 // RD.MaximumSummonTarget can offer the two pieces in successive subgroup prompts.
                 var pieces = new List<ClientCard>(2);
@@ -101,26 +101,26 @@ namespace WindBot.Game.AI.Decks
             }
 
             ChainInfo link = Duel.GetCurrentSolvingChainInfo();
-            if (link != null && link.ActivatePlayer == 0 && link.IsActivateCode(CardId.恐龙粉碎) &&
+            if (link != null && link.ActivatePlayer == 0 && link.IsActivateCode(CardId.DinosaurCrush) &&
                 hint == HintMsg.Destroy && min == 1 && max == 1 && cards.Count > 0)
             {
-                CardLocation preferred = Bot.HasInMonstersZone(CardId.大恐龙驾) ? CardLocation.MonsterZone : CardLocation.SpellZone;
+                CardLocation preferred = Bot.HasInMonstersZone(CardId.DynamicDinoDynamix) ? CardLocation.MonsterZone : CardLocation.SpellZone;
                 ClientCard target = cards.FirstOrDefault(c => c.Controller == 1 && c.IsFacedown() && c.Location == preferred)
                     ?? cards.FirstOrDefault(c => c.Controller == 1 && c.IsFacedown());
                 if (target != null)
                     return new[] { target };
             }
-            if (link != null && link.ActivatePlayer == 0 && link.IsActivateCode(CardId.奇迹的共进化) &&
+            if (link != null && link.ActivatePlayer == 0 && link.IsActivateCode(CardId.CoevolutionaryMiracle) &&
                 hint == HintMsg.SpSummon && min == 1 && max == 1)
             {
-                int preferred = Bot.HasInGraveyard(CardId.巨身多角龙) || Bot.HasInGraveyard(CardId.荒野盗龙)
-                    ? CardId.超级恐龙王 : CardId.凶怒甲龙;
+                int preferred = Bot.HasInGraveyard(CardId.Megazowler) || Bot.HasInGraveyard(CardId.Uraby)
+                    ? CardId.SuperKingRex : CardId.RageWreckerDragonAngerogue;
                 var dinosaur = cards.FirstOrDefault(c => c.IsCode(preferred))
-                    ?? cards.FirstOrDefault(c => c.IsCode(CardId.凶怒甲龙, CardId.超级恐龙王));
+                    ?? cards.FirstOrDefault(c => c.IsCode(CardId.RageWreckerDragonAngerogue, CardId.SuperKingRex));
                 if (dinosaur != null)
                     return new[] { dinosaur };
             }
-            if (link != null && link.ActivatePlayer == 0 && link.IsActivateCode(CardId.大恐龙驾) &&
+            if (link != null && link.ActivatePlayer == 0 && link.IsActivateCode(CardId.DynamicDinoDynamix) &&
                 hint == HintMsg.Destroy && min == 1 && max <= 2 && max >= min)
             {
                 var targets = cards.Where(c => c.Controller == 1 && c.Location == CardLocation.MonsterZone)
@@ -131,19 +131,19 @@ namespace WindBot.Game.AI.Decks
             return base.OnSelectCard(cards, min, max, hint, cancelable);
         }
 
-        private static readonly int[] MaximumPieces = { CardId.大恐龙驾L, CardId.大恐龙驾R };
+        private static readonly int[] MaximumPieces = { CardId.DynamicDinoDynamixL, CardId.DynamicDinoDynamixR };
 
-        private bool 大恐龙驾Effect()
+        private bool ActivateDynamicDinoDynamix()
         {
-            AI.SelectCard(CardId.抑龙, CardId.名流雷龙, CardId.荒野盗龙, CardId.巨身多角龙,
-                CardId.成金恐龙王, CardId.机械镰刀盗龙, CardId.凶怒甲龙, CardId.超级恐龙王,
-                CardId.大恐龙驾, CardId.大恐龙驾L, CardId.大恐龙驾R);
+            AI.SelectCard(CardId.SupressaurusSternptera, CardId.Celebrontosaurus, CardId.Uraby, CardId.Megazowler,
+                CardId.RitzyKingRex, CardId.MechTherizinoraptor, CardId.RageWreckerDragonAngerogue, CardId.SuperKingRex,
+                CardId.DynamicDinoDynamix, CardId.DynamicDinoDynamixL, CardId.DynamicDinoDynamixR);
             return true;
         }
 
         private bool MAXsummon()
         {
-            return !Bot.HasInMonstersZone(CardId.大恐龙驾);
+            return !Bot.HasInMonstersZone(CardId.DynamicDinoDynamix);
         }
 
         public bool monsterset()
@@ -153,71 +153,71 @@ namespace WindBot.Game.AI.Decks
                 return true;
             }
             else if (Bot.HasInHand(new[] {
-                CardId.巨身多角龙,
-                CardId.超级恐龙王,
-                CardId.凶怒甲龙,
+                CardId.Megazowler,
+                CardId.SuperKingRex,
+                CardId.RageWreckerDragonAngerogue,
                 }))
                 return false;
             return true;
         }
 
-        private bool 抑龙Summon()
+        private bool SummonSupressaurusSternptera()
         {
             if (Duel.Turn == 1) return false;
                 if (Enemy.GetHandCount() > 1)  return true;
             return false;
         }
-        private bool 成金恐龙王Summon()
+        private bool SummonRitzyKingRex()
         {
-            if (Enemy.GetHandCount() < 1) return true;            
+            if (Enemy.GetHandCount() < 1) return true;
             return false;
         }
 
-        private bool 成金恐龙王Effect()
-        {           
-            AI.SelectCard(CardId.成金哥布林);
+        private bool ActivateRitzyKingRex()
+        {
+            AI.SelectCard(CardId.UpstartGoblin);
             return true;
         }
-        private bool 奇迹的共进化Effect()
+        private bool ActivateCoevolutionaryMiracle()
         {
-            if (Bot.HasInMonstersZone(CardId.大恐龙驾))
+            if (Bot.HasInMonstersZone(CardId.DynamicDinoDynamix))
                 return false;
-            bool hasBoss = Bot.HasInHand(CardId.超级恐龙王);
-            bool canRevive = Bot.HasInGraveyard(CardId.巨身多角龙) || Bot.HasInGraveyard(CardId.荒野盗龙);
+            bool hasBoss = Bot.HasInHand(CardId.SuperKingRex);
+            bool canRevive = Bot.HasInGraveyard(CardId.Megazowler) || Bot.HasInGraveyard(CardId.Uraby);
             int maxLevel = hasBoss && canRevive ? 6 : 4;
-            if ((!hasBoss && !Bot.HasInHand(CardId.凶怒甲龙)) || !Bot.MonsterZone.Any(c => c != null &&
+            if ((!hasBoss && !Bot.HasInHand(CardId.RageWreckerDragonAngerogue)) || !Bot.MonsterZone.Any(c => c != null &&
                 c.IsFaceup() && c.HasRace(CardRace.Dinosaur) && c.Level <= maxLevel))
                 return false;
-            AI.SelectCard(CardId.大恐龙驾L, CardId.大恐龙驾R, CardId.抑龙, CardId.名流雷龙, CardId.荒野盗龙, CardId.巨身多角龙);
+            AI.SelectCard(CardId.DynamicDinoDynamixL, CardId.DynamicDinoDynamixR, CardId.SupressaurusSternptera, CardId.Celebrontosaurus, CardId.Uraby, CardId.Megazowler);
             return true;
         }
 
-        private bool 机械镰刀盗龙Effect()
+        private bool ActivateMechTherizinoraptor()
         {
-            if (Bot.Hand.GetCardCount(CardId.大恐龙驾) >= 2) AI.SelectCard(CardId.大恐龙驾);
+            if (Bot.Hand.GetCardCount(CardId.DynamicDinoDynamix) >= 2) AI.SelectCard(CardId.DynamicDinoDynamix);
             else
-            if (Bot.Hand.GetCardCount(CardId.大恐龙驾L) >= 2) AI.SelectCard(CardId.大恐龙驾L);
+            if (Bot.Hand.GetCardCount(CardId.DynamicDinoDynamixL) >= 2) AI.SelectCard(CardId.DynamicDinoDynamixL);
             else
-            if (Bot.Hand.GetCardCount(CardId.大恐龙驾R) >= 2) AI.SelectCard(CardId.大恐龙驾R);
+            if (Bot.Hand.GetCardCount(CardId.DynamicDinoDynamixR) >= 2) AI.SelectCard(CardId.DynamicDinoDynamixR);
             else
-            if (Bot.Hand.GetCardCount(CardId.超级恐龙王) >= 2) AI.SelectCard(CardId.超级恐龙王);
+            if (Bot.Hand.GetCardCount(CardId.SuperKingRex) >= 2) AI.SelectCard(CardId.SuperKingRex);
             else
                 AI.SelectCard(
-                    CardId.抑龙,
-                    CardId.名流雷龙,
-                    CardId.荒野盗龙,
-                    CardId.巨身多角龙,
-                    CardId.成金恐龙王,
-                    CardId.机械镰刀盗龙
+                    CardId.SupressaurusSternptera,
+                    CardId.Celebrontosaurus,
+                    CardId.Uraby,
+                    CardId.Megazowler,
+                    CardId.RitzyKingRex,
+                    CardId.MechTherizinoraptor
                     );
             return true;
         }
         private static readonly int[] DuplicateDiscardPriority =
         {
-            CardId.侏罗纪世界, CardId.大恐龙驾, CardId.大恐龙驾R, CardId.大恐龙驾L, CardId.巨身多角龙
+            CardId.JurassicWorld, CardId.DynamicDinoDynamix, CardId.DynamicDinoDynamixR, CardId.DynamicDinoDynamixL, CardId.Megazowler
         };
 
-        private bool 恐龙粉碎Effect()
+        private bool ActivateDinosaurCrush()
         {
             foreach (int id in DuplicateDiscardPriority)
             {
@@ -227,54 +227,54 @@ namespace WindBot.Game.AI.Decks
                     return true;
                 }
             }
-            AI.SelectCard(CardId.成金恐龙王, CardId.抑龙, CardId.奇迹的共进化, CardId.名流雷龙,
-                CardId.超级恐龙王, CardId.恐力重压, CardId.超越进化, CardId.恐龙粉碎, CardId.荒野盗龙);
+            AI.SelectCard(CardId.RitzyKingRex, CardId.SupressaurusSternptera, CardId.CoevolutionaryMiracle, CardId.Celebrontosaurus,
+                CardId.SuperKingRex, CardId.DinomicPressure, CardId.AscendingEvolution, CardId.DinosaurCrush, CardId.Uraby);
             return true;
         }
-        private bool 超越进化Effect()
+        private bool ActivateAscendingEvolution()
         {
             AI.SelectCard(
-                CardId.大恐龙驾,
-                CardId.超级恐龙王,
-                CardId.凶怒甲龙
+                CardId.DynamicDinoDynamix,
+                CardId.SuperKingRex,
+                CardId.RageWreckerDragonAngerogue
                 );
             return true;
         }
-        private bool 超级恐龙王Effect()
+        private bool ActivateSuperKingRex()
         {
             AI.SelectCard(
-                   CardId.巨身多角龙,
-                   CardId.荒野盗龙,
-                   CardId.名流雷龙
+                   CardId.Megazowler,
+                   CardId.Uraby,
+                   CardId.Celebrontosaurus
                    );
             return true;
         }
-        private bool 共进化repos()
+        private bool RepositionCoevolutionaryMiracle()
         {
-            if (Bot.HasInHandOrInSpellZone(CardId.奇迹的共进化) && (Bot.Hand.GetCardCount(CardId.凶怒甲龙) + Bot.Hand.GetCardCount(CardId.超级恐龙王) >= 1))
+            if (Bot.HasInHandOrInSpellZone(CardId.CoevolutionaryMiracle) && (Bot.Hand.GetCardCount(CardId.RageWreckerDragonAngerogue) + Bot.Hand.GetCardCount(CardId.SuperKingRex) >= 1))
                 return true;
             return false;
         }
         private bool MAXLsummon()
         {
-            if (Bot.Hand.GetCardCount(CardId.大恐龙驾L) >= 2 && Bot.HasInHandOrInSpellZone(CardId.奇迹的共进化) && (Bot.Hand.GetCardCount(CardId.凶怒甲龙) + Bot.Hand.GetCardCount(CardId.超级恐龙王) >= 1))
+            if (Bot.Hand.GetCardCount(CardId.DynamicDinoDynamixL) >= 2 && Bot.HasInHandOrInSpellZone(CardId.CoevolutionaryMiracle) && (Bot.Hand.GetCardCount(CardId.RageWreckerDragonAngerogue) + Bot.Hand.GetCardCount(CardId.SuperKingRex) >= 1))
                 return true;
             return false;
         }
         private bool MAXRsummon()
         {
-            if (Bot.Hand.GetCardCount(CardId.大恐龙驾R) >= 2 && Bot.HasInHandOrInSpellZone(CardId.奇迹的共进化) && (Bot.Hand.GetCardCount(CardId.凶怒甲龙)+ Bot.Hand.GetCardCount(CardId.超级恐龙王) >= 1))
+            if (Bot.Hand.GetCardCount(CardId.DynamicDinoDynamixR) >= 2 && Bot.HasInHandOrInSpellZone(CardId.CoevolutionaryMiracle) && (Bot.Hand.GetCardCount(CardId.RageWreckerDragonAngerogue)+ Bot.Hand.GetCardCount(CardId.SuperKingRex) >= 1))
                 return true;
             return false;
         }
         private bool MAXLset()
         {
-            if (Bot.Hand.GetCardCount(CardId.大恐龙驾L) < 2) return false;
+            if (Bot.Hand.GetCardCount(CardId.DynamicDinoDynamixL) < 2) return false;
             return true;
         }
         private bool MAXRset()
         {
-            if (Bot.Hand.GetCardCount(CardId.大恐龙驾R) < 2) return false;
+            if (Bot.Hand.GetCardCount(CardId.DynamicDinoDynamixR) < 2) return false;
             return true;
         }
 

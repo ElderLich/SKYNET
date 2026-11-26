@@ -772,7 +772,7 @@ namespace WindBot.Game.AI
                 // Retaliating "C" loses its own-effect flag when it leaves the Monster Zone or is set face-down (RESETS_STANDARD).
                 if ((currentLocation & (int)CardLocation.MonsterZone) == 0 || card.IsFacedown())
                     retaliatingCSummonedByOwnEffect.Remove(card);
-                // 用发动快照识别卡名，避免 RelatedCard 离场后 Id 变化
+                // Use the activation snapshot because the source card can change identity when it leaves the field.
                 ChainInfo currentSolvingChain = Duel.GetCurrentSolvingChainInfo();
                 if (currentSolvingChain != null && currentLocation == (int)CardLocation.Removed)
                 {

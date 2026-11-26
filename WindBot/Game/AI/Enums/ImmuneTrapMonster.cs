@@ -1,39 +1,39 @@
 namespace WindBot.Game.AI.Enums
 {
     /// <summary>
-    /// Cards that are immune trap destroy.
+    /// Rush monsters checked by the trap destruction heuristic.
     /// </summary>
 
     public enum ImmuneTrapMonster
     {
-        幻龙重骑 = 120155022,
-        幻龙重骑2 = 120283151,
-        天帝龙树 = 120150011,
-        天帝龙树2 = 120260005,
-        大连击龙 = 120210002,
-        超魔机神 = 120150002,
-        超魔机神2 = 120231005,
-        超魔辉兽 = 120217002,
-        超魔辉兽2 = 120239005,
-        超魔轨道 = 120239002,
-        灰霸炎神 = 120170015,
-        大恐龙驾 = 120151006,
-        终焰魔神 = 120231007,
-        焰魔神 = 120231011,
-        深渊杀戮者 = 120249023,
-        三日月之剑豪将军 = 120196033,
-        剑黎 = 120246080,
-        新种掠夺萝卜 = 120228035,
-        武枪 = 120231052,
-        苍救之幻影 = 120235041,
-        流星黑龙兽 = 120253047,
-        极乐鹰巨人 = 120227001,
-        鹰身三姐妹 = 120247002,
-        火轰岚凰 = 120249016,
-        三角美人 = 120279001,
-        钢击龙F = 120217004,
-        彩光超 = 120217024,
-        穿越侍变星 = 120245002,
+        WyrmExcavatorTheHeavyCavalryDraco = 120155022,
+        WyrmExcavatorTheHeavyCavalryDracoAlternateArt = 120283151,
+        YggdragoTheSkyEmperor = 120150011,
+        YggdragoTheSkyEmperorAlternateArt = 120260005,
+        MegaMultistrikeDragonDragiasBurst = 120210002,
+        SupremeMachineMagnumOverlord = 120150002,
+        SupremeMachineMagnumOverlordAlternateArt = 120231005,
+        SupremeBeasteamMagnumOverlord = 120217002,
+        SupremeBeasteamMagnumOverlordAlternateArt = 120239005,
+        SupremeRailartilleryMagnumOverlord = 120239002,
+        HyperEngineVastVulcan = 120170015,
+        DynamicDinoDynamix = 120151006,
+        DoomblazeFiendOverlordDespairacionL = 120231007,
+        BlazeFiendOverlordsBeelucitaroth = 120231011,
+        AbysslayerLeviaknight = 120249023,
+        CrescentMoonSwordmaster = 120196033,
+        DarkSwordMagician = 120246080,
+        NeoPlandish = 120228035,
+        YamirulerTheDarkDelayerSupremeSoldierSpear = 120231052,
+        DulkmuaThePhantomSkysavior = 120235041,
+        MeteorBlackDrake = 120253047,
+        VoidvelgElysium = 120227001,
+        HarpieLadySisters = 120247002,
+        RoaringFirestormVolcalizePhoenix = 120249016,
+        HarpieLadySistersTriangleBeauty = 120279001,
+        SolidStrikeDragonMetagiastarF = 120217004,
+        OmegaGuitarnaTheShiningMegastar = 120217024,
+        TransamVariableLinac = 120245002,
     }
 
 }

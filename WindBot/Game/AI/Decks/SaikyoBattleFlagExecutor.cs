@@ -12,118 +12,118 @@ namespace WindBot.Game.AI.Decks
     {
         public class CardId
         {
-            public const int 最强战旗 = 120181001;
-            public const int 钢机神 = 120155015;
-            public const int 连击龙 = 120110001;
-            public const int 恶德 = 120183024;
-            public const int 旗兽 = 120193002;
-            public const int 社员 = 120183002;
+            public const int UltimateFlagMechAceBreaker = 120181001;
+            public const int SteelMechLordMirrorInnovator = 120155015;
+            public const int MultistrikeDragonDragias = 120110001;
+            public const int WorkerWarriorSinisterCEO = 120183024;
+            public const int UltimateFlagBeastAvantWolf = 120193002;
+            public const int WorkerWarriorNewRecruit = 120183002;
 
-            public const int 成金恐龙王 = 120151010;
-            public const int 捕鸟蛛 = 120224010;       
-            public const int 突击坦克 = 120183031;
-            public const int 工匠无人机 = 120183030;
-            public const int 双角兽 = 120181011;
-            public const int 瞄准鹰 = 120193003;
-            public const int 死苏 = 120194004;            
-            public const int 世纪末兽机界 = 120130039;
-            public const int 铁之重击 = 120183054;
-            public const int 对死者的供奉 = 120151023;
-            public const int 七抽 = 120199052;
+            public const int RitzyKingRex = 120151010;
+            public const int Tapanchula = 120224010;
+            public const int AssaultCannon = 120183031;
+            public const int CrafterDrone = 120183030;
+            public const int UltimateFlagBeastSurgeBicorn = 120181011;
+            public const int UltimateFlagBeastAimEagle = 120193003;
+            public const int MonsterReborn = 120194004;
+            public const int ApocalypseBeastGearWorld = 120130039;
+            public const int BarrageOfSteel = 120183054;
+            public const int TributeToTheDoomed = 120151023;
+            public const int ShipOfSevenTreasures = 120199052;
 
-            public const int 兽之拳 = 120155060;
-            public const int 减俸 = 120183062;
-            public const int 左迁 = 120183063;
-            public const int 冻结 = 120183064;
-            public const int 暗黑释放 = 120105013;
+            public const int BeastGearSecretArtPrimalFist = 120155060;
+            public const int SalarySlash = 120183062;
+            public const int BattleDemotion = 120183063;
+            public const int ForeverFreeze = 120183064;
+            public const int DarkRevelation = 120105013;
         }
 
         public SaikyoBattleFlagExecutor(GameAI ai, Duel duel)
             : base(ai, duel)
         {
-            AddExecutor(ExecutorType.Activate, RushCardId.黑洞, 黑洞Effect);
+            AddExecutor(ExecutorType.Activate, RushCardId.DarkHole, ActivateDarkHole);
             AddExecutor(ExecutorType.SpSummon);
-            AddExecutor(ExecutorType.Activate, CardId.铁之重击);           
-            AddExecutor(ExecutorType.Activate, CardId.成金恐龙王);
-            AddExecutor(ExecutorType.Activate, CardId.捕鸟蛛);
-            AddExecutor(ExecutorType.Activate, CardId.恶德, 恶德Effect);            
-            AddExecutor(ExecutorType.Activate, CardId.最强战旗, 最强战旗Eff);           
-            AddExecutor(ExecutorType.Activate, CardId.突击坦克);
-            AddExecutor(ExecutorType.Activate, CardId.瞄准鹰, 瞄准鹰Effect);
-            AddExecutor(ExecutorType.Activate, CardId.双角兽, 双角兽Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.手枪龙, 手枪龙Effect);
-            AddExecutor(ExecutorType.Repos, CardId.双角兽, 双角兽summon);
-            AddExecutor(ExecutorType.Repos, CardId.瞄准鹰, 瞄准鹰summon);
-            AddExecutor(ExecutorType.Repos, CardId.最强战旗, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, CardId.钢机神, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, RushCardId.手枪龙, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Repos, CardId.恶德, DefaultMonsterRepos);
-            AddExecutor(ExecutorType.Summon, CardId.最强战旗, DefaultDoubleSummon);
-            AddExecutor(ExecutorType.Summon, CardId.钢机神, DefaultDoubleSummon);
-            AddExecutor(ExecutorType.Summon, CardId.恶德, DefaultDoubleSummon);
+            AddExecutor(ExecutorType.Activate, CardId.BarrageOfSteel);
+            AddExecutor(ExecutorType.Activate, CardId.RitzyKingRex);
+            AddExecutor(ExecutorType.Activate, CardId.Tapanchula);
+            AddExecutor(ExecutorType.Activate, CardId.WorkerWarriorSinisterCEO, ActivateWorkerWarriorSinisterCEO);
+            AddExecutor(ExecutorType.Activate, CardId.UltimateFlagMechAceBreaker, ActivateAceBreakerAgainstBoss);
+            AddExecutor(ExecutorType.Activate, CardId.AssaultCannon);
+            AddExecutor(ExecutorType.Activate, CardId.UltimateFlagBeastAimEagle, ActivateUltimateFlagBeastAimEagle);
+            AddExecutor(ExecutorType.Activate, CardId.UltimateFlagBeastSurgeBicorn, ActivateUltimateFlagBeastSurgeBicorn);
+            AddExecutor(ExecutorType.Activate, RushCardId.BarrelDragon, ActivateBarrelDragon);
+            AddExecutor(ExecutorType.Repos, CardId.UltimateFlagBeastSurgeBicorn, SummonUltimateFlagBeastSurgeBicorn);
+            AddExecutor(ExecutorType.Repos, CardId.UltimateFlagBeastAimEagle, SummonUltimateFlagBeastAimEagle);
+            AddExecutor(ExecutorType.Repos, CardId.UltimateFlagMechAceBreaker, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Repos, CardId.SteelMechLordMirrorInnovator, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Repos, RushCardId.BarrelDragon, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Repos, CardId.WorkerWarriorSinisterCEO, DefaultMonsterRepos);
+            AddExecutor(ExecutorType.Summon, CardId.UltimateFlagMechAceBreaker, DefaultDoubleSummon);
+            AddExecutor(ExecutorType.Summon, CardId.SteelMechLordMirrorInnovator, DefaultDoubleSummon);
+            AddExecutor(ExecutorType.Summon, CardId.WorkerWarriorSinisterCEO, DefaultDoubleSummon);
 
-            AddExecutor(ExecutorType.Repos, CardId.成金恐龙王, 瞄准鹰成金恐龙王summon);
-            AddExecutor(ExecutorType.Repos, CardId.突击坦克, 瞄准鹰坦克summon);
-            AddExecutor(ExecutorType.Repos, CardId.双角兽, 瞄准鹰双角兽summon);
-            AddExecutor(ExecutorType.Summon, CardId.双角兽, 瞄准鹰双角兽summon);
-            AddExecutor(ExecutorType.Summon, CardId.成金恐龙王, 瞄准鹰成金恐龙王summon);
-            AddExecutor(ExecutorType.Summon, CardId.突击坦克, 瞄准鹰坦克summon);
-            AddExecutor(ExecutorType.Summon, CardId.瞄准鹰, 瞄准鹰summon);
-            AddExecutor(ExecutorType.Summon, CardId.瞄准鹰, 瞄准鹰summon2);
-            AddExecutor(ExecutorType.Summon, CardId.瞄准鹰, 瞄准鹰summon3);
+            AddExecutor(ExecutorType.Repos, CardId.RitzyKingRex, SummonRitzyKingRexForAimEagle);
+            AddExecutor(ExecutorType.Repos, CardId.AssaultCannon, SummonAssaultCannonForAimEagle);
+            AddExecutor(ExecutorType.Repos, CardId.UltimateFlagBeastSurgeBicorn, SummonSurgeBicornForAimEagle);
+            AddExecutor(ExecutorType.Summon, CardId.UltimateFlagBeastSurgeBicorn, SummonSurgeBicornForAimEagle);
+            AddExecutor(ExecutorType.Summon, CardId.RitzyKingRex, SummonRitzyKingRexForAimEagle);
+            AddExecutor(ExecutorType.Summon, CardId.AssaultCannon, SummonAssaultCannonForAimEagle);
+            AddExecutor(ExecutorType.Summon, CardId.UltimateFlagBeastAimEagle, SummonUltimateFlagBeastAimEagle);
+            AddExecutor(ExecutorType.Summon, CardId.UltimateFlagBeastAimEagle, SummonAimEagleWithSecondCopy);
+            AddExecutor(ExecutorType.Summon, CardId.UltimateFlagBeastAimEagle, SummonAimEagleBeforeMaterial);
 
-            AddExecutor(ExecutorType.Summon, RushCardId.手枪龙, RushMonsterSummon);
-            AddExecutor(ExecutorType.Summon, CardId.最强战旗, RushMonsterSummon);
-            AddExecutor(ExecutorType.Summon, CardId.钢机神, RushMonsterSummon);
-            AddExecutor(ExecutorType.Summon, CardId.恶德, RushMonsterSummon);
+            AddExecutor(ExecutorType.Summon, RushCardId.BarrelDragon, RushMonsterSummon);
+            AddExecutor(ExecutorType.Summon, CardId.UltimateFlagMechAceBreaker, RushMonsterSummon);
+            AddExecutor(ExecutorType.Summon, CardId.SteelMechLordMirrorInnovator, RushMonsterSummon);
+            AddExecutor(ExecutorType.Summon, CardId.WorkerWarriorSinisterCEO, RushMonsterSummon);
 
-            AddExecutor(ExecutorType.Summon, CardId.双角兽, 双角兽summon);
-            AddExecutor(ExecutorType.Summon, CardId.捕鸟蛛, 捕鸟蛛summon);
-            AddExecutor(ExecutorType.Summon, CardId.成金恐龙王, 成金恐龙王Summon);
+            AddExecutor(ExecutorType.Summon, CardId.UltimateFlagBeastSurgeBicorn, SummonUltimateFlagBeastSurgeBicorn);
+            AddExecutor(ExecutorType.Summon, CardId.Tapanchula, SummonTapanchula);
+            AddExecutor(ExecutorType.Summon, CardId.RitzyKingRex, SummonRitzyKingRex);
 
-            AddExecutor(ExecutorType.Summon, CardId.最强战旗, DefaultOverSummon);
-            AddExecutor(ExecutorType.Summon, CardId.钢机神, DefaultOverSummon);
-            AddExecutor(ExecutorType.Activate, CardId.死苏, 死苏effect);
-            AddExecutor(ExecutorType.Activate, CardId.最强战旗, 最强战旗Effect);
-            AddExecutor(ExecutorType.Activate, CardId.对死者的供奉, 死供Effect);
-            AddExecutor(ExecutorType.Activate, CardId.钢机神, 钢机神1Effect);
-            AddExecutor(ExecutorType.Activate, CardId.钢机神, 钢机神3Effect);
-            AddExecutor(ExecutorType.MonsterSet, CardId.成金恐龙王);            
-            AddExecutor(ExecutorType.Activate, CardId.工匠无人机,无人机Effect);
-                
-            AddExecutor(ExecutorType.MonsterSet, CardId.工匠无人机);
-            AddExecutor(ExecutorType.MonsterSet, CardId.突击坦克);
-            AddExecutor(ExecutorType.MonsterSet, CardId.捕鸟蛛);
-            AddExecutor(ExecutorType.Summon, CardId.工匠无人机, 无人机summon);
-            AddExecutor(ExecutorType.Summon, CardId.突击坦克, 突击坦克summon);
-            AddExecutor(ExecutorType.MonsterSet, CardId.旗兽);
-            AddExecutor(ExecutorType.MonsterSet, CardId.社员);
-            AddExecutor(ExecutorType.MonsterSet, CardId.瞄准鹰);
-            AddExecutor(ExecutorType.MonsterSet, CardId.双角兽);
-            AddExecutor(ExecutorType.Activate, CardId.世纪末兽机界, DefaultField);
-            AddExecutor(ExecutorType.Activate, CardId.兽之拳, 兽之拳Effect);
-            AddExecutor(ExecutorType.Activate, CardId.左迁, 左迁1Effect); 
-            AddExecutor(ExecutorType.Activate, CardId.减俸);
-            AddExecutor(ExecutorType.Activate, CardId.左迁);
-            AddExecutor(ExecutorType.Activate, CardId.兽之拳);
-            AddExecutor(ExecutorType.Activate, CardId.冻结,冻结Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.魔法筒, 魔法筒Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.炸甲, 炸甲Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.落穴, 落穴Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.激流葬, 激流葬Effect);
-            AddExecutor(ExecutorType.Activate, RushCardId.圣防, 圣防Effect);
+            AddExecutor(ExecutorType.Summon, CardId.UltimateFlagMechAceBreaker, DefaultOverSummon);
+            AddExecutor(ExecutorType.Summon, CardId.SteelMechLordMirrorInnovator, DefaultOverSummon);
+            AddExecutor(ExecutorType.Activate, CardId.MonsterReborn, ReviveHighAttackMonster);
+            AddExecutor(ExecutorType.Activate, CardId.UltimateFlagMechAceBreaker, ActivateAceBreakerAgainstThreat);
+            AddExecutor(ExecutorType.Activate, CardId.TributeToTheDoomed, ActivateTributeToTheDoomed);
+            AddExecutor(ExecutorType.Activate, CardId.SteelMechLordMirrorInnovator, ActivateMirrorInnovatorForPiercing);
+            AddExecutor(ExecutorType.Activate, CardId.SteelMechLordMirrorInnovator, ActivateMirrorInnovatorAfterOpeningTurn);
+            AddExecutor(ExecutorType.MonsterSet, CardId.RitzyKingRex);
+            AddExecutor(ExecutorType.Activate, CardId.CrafterDrone,ActivateCrafterDrone);
+
+            AddExecutor(ExecutorType.MonsterSet, CardId.CrafterDrone);
+            AddExecutor(ExecutorType.MonsterSet, CardId.AssaultCannon);
+            AddExecutor(ExecutorType.MonsterSet, CardId.Tapanchula);
+            AddExecutor(ExecutorType.Summon, CardId.CrafterDrone, SummonCrafterDrone);
+            AddExecutor(ExecutorType.Summon, CardId.AssaultCannon, SummonAssaultCannon);
+            AddExecutor(ExecutorType.MonsterSet, CardId.UltimateFlagBeastAvantWolf);
+            AddExecutor(ExecutorType.MonsterSet, CardId.WorkerWarriorNewRecruit);
+            AddExecutor(ExecutorType.MonsterSet, CardId.UltimateFlagBeastAimEagle);
+            AddExecutor(ExecutorType.MonsterSet, CardId.UltimateFlagBeastSurgeBicorn);
+            AddExecutor(ExecutorType.Activate, CardId.ApocalypseBeastGearWorld, DefaultField);
+            AddExecutor(ExecutorType.Activate, CardId.BeastGearSecretArtPrimalFist, ActivateBeastGearSecretArtPrimalFist);
+            AddExecutor(ExecutorType.Activate, CardId.BattleDemotion, ActivateBattleDemotion);
+            AddExecutor(ExecutorType.Activate, CardId.SalarySlash);
+            AddExecutor(ExecutorType.Activate, CardId.BattleDemotion);
+            AddExecutor(ExecutorType.Activate, CardId.BeastGearSecretArtPrimalFist);
+            AddExecutor(ExecutorType.Activate, CardId.ForeverFreeze,ActivateForeverFreeze);
+            AddExecutor(ExecutorType.Activate, RushCardId.MagicCylinder, ActivateMagicCylinder);
+            AddExecutor(ExecutorType.Activate, RushCardId.SakuretsuArmor, ActivateSakuretsuArmor);
+            AddExecutor(ExecutorType.Activate, RushCardId.TrapHole, ActivateTrapHole);
+            AddExecutor(ExecutorType.Activate, RushCardId.TorrentialTribute, ActivateTorrentialTribute);
+            AddExecutor(ExecutorType.Activate, RushCardId.MirrorForce, ActivateMirrorForce);
 
             AddExecutor(ExecutorType.Activate, DefaultDontChainMyself);
             AddExecutor(ExecutorType.SummonOrSet, RushMonsterSummon);
-            AddExecutor(ExecutorType.Activate, CardId.七抽, 七抽Effect);
-            AddExecutor(ExecutorType.Repos, DefaultMonsterRepos);           
+            AddExecutor(ExecutorType.Activate, CardId.ShipOfSevenTreasures, ActivateShipOfSevenTreasures);
+            AddExecutor(ExecutorType.Repos, DefaultMonsterRepos);
             AddExecutor(ExecutorType.SpellSet, DefaultSpellSet);
-            AddExecutor(ExecutorType.Activate, CardId.世纪末兽机界, DefaultField2);
-            AddExecutor(ExecutorType.Repos, CardId.钢机神, 反转Repos);
-            AddExecutor(ExecutorType.Repos, CardId.最强战旗, 反转Repos);
-            AddExecutor(ExecutorType.Repos, CardId.恶德, 反转Repos);
-            AddExecutor(ExecutorType.Repos, CardId.最强战旗, 圣防Repos);
-            AddExecutor(ExecutorType.Repos, CardId.钢机神, 圣防Repos);
+            AddExecutor(ExecutorType.Activate, CardId.ApocalypseBeastGearWorld, DefaultField2);
+            AddExecutor(ExecutorType.Repos, CardId.SteelMechLordMirrorInnovator, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, CardId.UltimateFlagMechAceBreaker, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, CardId.WorkerWarriorSinisterCEO, FlipFaceUp);
+            AddExecutor(ExecutorType.Repos, CardId.UltimateFlagMechAceBreaker, RepositionAgainstBattleTraps);
+            AddExecutor(ExecutorType.Repos, CardId.SteelMechLordMirrorInnovator, RepositionAgainstBattleTraps);
         }
 
         private readonly HashSet<ClientCard> _doubleTributes = new HashSet<ClientCard>();
@@ -134,7 +134,7 @@ namespace WindBot.Game.AI.Decks
         {
             base.OnChaining(player, card);
             _payingEagleCost = false;
-            if (player == 0 && card.IsCode(CardId.双角兽))
+            if (player == 0 && card.IsCode(CardId.UltimateFlagBeastSurgeBicorn))
                 _resolvingBicorn = card;
         }
 
@@ -202,7 +202,7 @@ namespace WindBot.Game.AI.Decks
 
         private static readonly int[] EagleSummonPriority =
         {
-            RushCardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德, CardId.旗兽, CardId.社员
+            RushCardId.BarrelDragon, CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator, CardId.WorkerWarriorSinisterCEO, CardId.UltimateFlagBeastAvantWolf, CardId.WorkerWarriorNewRecruit
         };
 
         public override IList<ClientCard> OnSelectCard(IList<ClientCard> cards, int min, int max, int hint, bool cancelable)
@@ -220,7 +220,7 @@ namespace WindBot.Game.AI.Decks
             ChainInfo link = Duel.GetCurrentSolvingChainInfo();
             if (link != null && link.ActivatePlayer == 0)
             {
-                if (link.IsActivateCode(CardId.瞄准鹰) && hint == HintMsg.SpSummon && min == 1 && max == 1)
+                if (link.IsActivateCode(CardId.UltimateFlagBeastAimEagle) && hint == HintMsg.SpSummon && min == 1 && max == 1)
                 {
                     foreach (int id in EagleSummonPriority)
                     {
@@ -229,7 +229,7 @@ namespace WindBot.Game.AI.Decks
                             return new[] { machine };
                     }
                 }
-                if (link.IsActivateCode(CardId.左迁) && hint == HintMsg.PosChange && min == 1 && max == 1)
+                if (link.IsActivateCode(CardId.BattleDemotion) && hint == HintMsg.PosChange && min == 1 && max == 1)
                 {
                     ClientCard attacker = Enemy.BattlingMonster;
                     if (attacker != null && attacker.Attack > 2000 && cards.Contains(attacker))
@@ -239,7 +239,7 @@ namespace WindBot.Game.AI.Decks
                     if (target != null)
                         return new[] { target };
                 }
-                if (link.IsActivateCode(CardId.恶德) && hint == HintMsg.Set && max > 0)
+                if (link.IsActivateCode(CardId.WorkerWarriorSinisterCEO) && hint == HintMsg.Set && max > 0)
                 {
                     var traps = new List<ClientCard>(2);
                     foreach (int id in TrapPriority)
@@ -255,19 +255,19 @@ namespace WindBot.Game.AI.Decks
             return base.OnSelectCard(cards, min, max, hint, cancelable);
         }
 
-        private static readonly int[] TrapPriority = { CardId.左迁, CardId.减俸 };
+        private static readonly int[] TrapPriority = { CardId.BattleDemotion, CardId.SalarySlash };
 
         private bool DefaultOverSummon()
         {
-            if (Bot.Hand.Count >= 6 && Bot.HasInMonstersZone(CardId.恶德)) return true;
+            if (Bot.Hand.Count >= 6 && Bot.HasInMonstersZone(CardId.WorkerWarriorSinisterCEO)) return true;
             else return false;
         }
-        private bool 左迁1Effect()
+        private bool ActivateBattleDemotion()
         {
             return Enemy.BattlingMonster != null && Enemy.BattlingMonster.Attack > 2000;
         }
 
-        private bool 冻结Effect()
+        private bool ActivateForeverFreeze()
         {
             foreach (ClientCard monster in Bot.GetMonsters())
             {
@@ -285,22 +285,22 @@ namespace WindBot.Game.AI.Decks
             AI.SelectCard(Bot.MonsterZone.GetLowestAttackMonster());
             return true;
         }
-        private bool 钢机神3Effect()
+        private bool ActivateMirrorInnovatorAfterOpeningTurn()
         {
             return Duel.Turn != 1;
         }
-        private bool 恶德Effect()
+        private bool ActivateWorkerWarriorSinisterCEO()
         {
             AI.SelectCard(CardLocation.Hand);
             return true;
         }
-        private bool 兽之拳Effect()
+        private bool ActivateBeastGearSecretArtPrimalFist()
         {
             ClientCard attacker = Enemy.BattlingMonster;
             return attacker != null && attacker.HasRace(CardRace.Dragon | CardRace.Fairy | CardRace.SpellCaster);
         }
 
-        private bool 死苏effect()
+        private bool ReviveHighAttackMonster()
         {
             return Bot.Graveyard.Any(IsRevivalTarget) || Enemy.Graveyard.Any(IsRevivalTarget);
         }
@@ -309,87 +309,87 @@ namespace WindBot.Game.AI.Decks
         {
             return card.IsMonster() && card.Attack >= 2000 && card.IsCanRevive();
         }
-        private bool 成金恐龙王Summon()
+        private bool SummonRitzyKingRex()
         {
             if (Enemy.GetHandCount() < 1) return true;
             return false;
         }
-        private bool 突击坦克summon()
+        private bool SummonAssaultCannon()
         {
             if (Bot.MonsterZone.GetMatchingCardsCount(card => (card.Race & (int)CardRace.Machine) > 0) == 2 || Util.GetOneEnemyBetterThanMyBest(true, true) == null) return true;
             return false;
         }
-        private bool 捕鸟蛛summon()
+        private bool SummonTapanchula()
         {
-            if (Bot.HasInGraveyard(new[] { CardId.旗兽, CardId.社员 }) && Enemy.GetSpellCount()  >= 2)
+            if (Bot.HasInGraveyard(new[] { CardId.UltimateFlagBeastAvantWolf, CardId.WorkerWarriorNewRecruit }) && Enemy.GetSpellCount()  >= 2)
                 return true;
             return false;
         }
-        private bool 双角兽summon()
+        private bool SummonUltimateFlagBeastSurgeBicorn()
         {
-            if (Bot.Graveyard.GetMatchingCardsCount(card => (card.Race & (int)CardRace.Machine) > 0) >= 3 && Bot.HasInHand(new[] { CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && !Bot.HasInMonstersZone(new[] { CardId.最强战旗, CardId.钢机神 })) 
+            if (Bot.Graveyard.GetMatchingCardsCount(card => (card.Race & (int)CardRace.Machine) > 0) >= 3 && Bot.HasInHand(new[] { CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator, CardId.WorkerWarriorSinisterCEO }) && !Bot.HasInMonstersZone(new[] { CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator }))
                 return true;
             return false;
         }
-        private bool 双角兽Effect()
-        {            
-            if (Bot.HasInHand(new[] { CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && !Bot.HasInMonstersZone(new[] { CardId.最强战旗, CardId.钢机神 }))
+        private bool ActivateUltimateFlagBeastSurgeBicorn()
+        {
+            if (Bot.HasInHand(new[] { CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator, CardId.WorkerWarriorSinisterCEO }) && !Bot.HasInMonstersZone(new[] { CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator }))
             {
-                AI.SelectCard(CardId.瞄准鹰, CardId.捕鸟蛛, CardId.双角兽, CardId.工匠无人机, CardId.突击坦克, CardId.社员, CardId.旗兽, CardId.恶德, CardId.钢机神, CardId.最强战旗);
+                AI.SelectCard(CardId.UltimateFlagBeastAimEagle, CardId.Tapanchula, CardId.UltimateFlagBeastSurgeBicorn, CardId.CrafterDrone, CardId.AssaultCannon, CardId.WorkerWarriorNewRecruit, CardId.UltimateFlagBeastAvantWolf, CardId.WorkerWarriorSinisterCEO, CardId.SteelMechLordMirrorInnovator, CardId.UltimateFlagMechAceBreaker);
                 return true;
             }
             return false;
         }
-        private bool 瞄准鹰双角兽summon()
+        private bool SummonSurgeBicornForAimEagle()
         {
-            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
+            if (Bot.HasInMonstersZone(CardId.UltimateFlagBeastAimEagle) && Bot.HasInHand(new[] { CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator, CardId.WorkerWarriorSinisterCEO }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                 return true;
             return false;
         }
-        private bool 瞄准鹰坦克summon()
+        private bool SummonAssaultCannonForAimEagle()
         {
-            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { RushCardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
+            if (Bot.HasInMonstersZone(CardId.UltimateFlagBeastAimEagle) && Bot.HasInHand(new[] { RushCardId.BarrelDragon, CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator, CardId.WorkerWarriorSinisterCEO }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                 return true;
             return false;
         }
-        private bool 瞄准鹰成金恐龙王summon()
+        private bool SummonRitzyKingRexForAimEagle()
         {
-            if (Bot.HasInMonstersZone(CardId.瞄准鹰) && Bot.HasInHand(new[] { RushCardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
+            if (Bot.HasInMonstersZone(CardId.UltimateFlagBeastAimEagle) && Bot.HasInHand(new[] { RushCardId.BarrelDragon, CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator, CardId.WorkerWarriorSinisterCEO }) && Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                 return true;
             return false;
         }
-        private bool 瞄准鹰summon()
-        {           
+        private bool SummonUltimateFlagBeastAimEagle()
+        {
           foreach (ClientCard m in Bot.GetMonsters())
                if (m.HasAttribute(CardAttribute.Light) && m.Level <= 4 && m.IsFaceup())
-              if (Bot.HasInHand(new[] { RushCardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }))
+              if (Bot.HasInHand(new[] { RushCardId.BarrelDragon, CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator, CardId.WorkerWarriorSinisterCEO }))
              if (Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
-              return true;           
+              return true;
             return false;
         }
-        private bool 瞄准鹰summon2()
+        private bool SummonAimEagleWithSecondCopy()
         {
-            if (Bot.Hand.GetCardCount(CardId.瞄准鹰) >= 2 )
-                if (Bot.HasInHand(new[] { RushCardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }))
+            if (Bot.Hand.GetCardCount(CardId.UltimateFlagBeastAimEagle) >= 2 )
+                if (Bot.HasInHand(new[] { RushCardId.BarrelDragon, CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator, CardId.WorkerWarriorSinisterCEO }))
                   if (Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
-                             return true;           
+                             return true;
             return false;
         }
-        private bool 瞄准鹰summon3()
+        private bool SummonAimEagleBeforeMaterial()
         {
-                     if (Bot.HasInHand(CardId.双角兽) || Bot.HasInHand(CardId.突击坦克) || Bot.HasInHand(CardId.成金恐龙王))
-                if (Bot.HasInHand(new[] { RushCardId.手枪龙, CardId.最强战旗, CardId.钢机神, CardId.恶德 }))
+                     if (Bot.HasInHand(CardId.UltimateFlagBeastSurgeBicorn) || Bot.HasInHand(CardId.AssaultCannon) || Bot.HasInHand(CardId.RitzyKingRex))
+                if (Bot.HasInHand(new[] { RushCardId.BarrelDragon, CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator, CardId.WorkerWarriorSinisterCEO }))
                             if (Enemy.MonsterZone.Any(card => card != null && card.IsFaceup() && card.Level >= 7))
                                 return true;
             return false;
         }
-        private bool 瞄准鹰Effect()
+        private bool ActivateUltimateFlagBeastAimEagle()
         {
             _payingEagleCost = Bot.MonsterZone.GetMatchingCardsCount(c => c.IsFaceup() &&
                 c.Level <= 4 && c.HasAttribute(CardAttribute.Light)) >= 2 && Bot.HasInHand(EagleSummonPriority);
             return _payingEagleCost;
         }
-        private bool 七抽Effect()
+        private bool ActivateShipOfSevenTreasures()
         {
             if (!Bot.HasInHand(SevenTreasuresPriority))
                 return false;
@@ -397,8 +397,8 @@ namespace WindBot.Game.AI.Decks
             return true;
         }
 
-        private static readonly int[] SevenTreasuresPriority = { CardId.恶德, CardId.钢机神, CardId.最强战旗, RushCardId.手枪龙 };
-        private bool 无人机Effect()
+        private static readonly int[] SevenTreasuresPriority = { CardId.WorkerWarriorSinisterCEO, CardId.SteelMechLordMirrorInnovator, CardId.UltimateFlagMechAceBreaker, RushCardId.BarrelDragon };
+        private bool ActivateCrafterDrone()
         {
             int fodder = Bot.MonsterZone.GetMatchingCardsCount(c => c.Level < 5)
                 + Bot.Hand.GetMatchingCardsCount(c => c.IsMonster() && c.Level < 5);
@@ -406,23 +406,23 @@ namespace WindBot.Game.AI.Decks
             {
                 int bosses = Bot.Hand.GetMatchingCardsCount(c => c.Level > 5);
                 if (bosses > 2)
-                    AI.SelectCard(CardId.最强战旗, CardId.钢机神, CardId.恶德, RushCardId.手枪龙);
+                    AI.SelectCard(CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator, CardId.WorkerWarriorSinisterCEO, RushCardId.BarrelDragon);
                 else if (bosses == 1 && fodder == 1)
-                    AI.SelectCard(CardId.最强战旗, CardId.钢机神, RushCardId.手枪龙, CardId.恶德);
+                    AI.SelectCard(CardId.UltimateFlagMechAceBreaker, CardId.SteelMechLordMirrorInnovator, RushCardId.BarrelDragon, CardId.WorkerWarriorSinisterCEO);
                 else
                     return false;
             }
             else
-                AI.SelectCard(CardId.瞄准鹰, CardId.突击坦克, CardId.工匠无人机, CardId.社员, CardId.旗兽);
+                AI.SelectCard(CardId.UltimateFlagBeastAimEagle, CardId.AssaultCannon, CardId.CrafterDrone, CardId.WorkerWarriorNewRecruit, CardId.UltimateFlagBeastAvantWolf);
             return true;
         }
-        private bool 无人机summon()
+        private bool SummonCrafterDrone()
         {
             if (Bot.Hand.GetMatchingCardsCount(card => (card.Race & (int)CardRace.Machine) > 0) >=1 || Util.GetOneEnemyBetterThanMyBest(true, true) == null)
                 return true;
             return false;
         }
-        
+
         private bool DefaultField2()
         {
             if (Bot.GetHandCount() >= 2)
