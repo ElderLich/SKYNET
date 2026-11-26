@@ -126,5 +126,7 @@ formatting. New core source requires explicit project inclusion. Preserve user
 changes and use explicit staged paths. The owner requests a commit with a clear
 title and descriptive body for each completed update and pushes to the private
 SKYNET repository; companion game commits remain local unless separately asked.
-Update README with capabilities and actual limits. Do not add standalone design
+Keep build, play and training instructions in the [README](README.md). Update the
+[policy notes](Research/PolicyNotes.md) for detailed card coverage, dated
+experiment results and research limits. Do not add standalone design
 documents unless requested. Read AGENTS.local.md/AGENTS.user.md when present.
