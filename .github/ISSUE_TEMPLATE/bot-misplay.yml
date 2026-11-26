@@ -1,0 +1,37 @@
+name: Bot misplay
+description: Report a move, target, or prompt where a bot made the wrong choice.
+title: "[Misplay] "
+body:
+  - type: input
+    id: deck
+    attributes:
+      label: Which bot was playing?
+      description: Use the name shown in the bot menu or its executor registration.
+      placeholder: "Bakura - Destiny Board"
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What happened?
+      description: Describe the turn, the cards involved and the move the bot made or passed up. If you have a replay, include the turn or timestamp.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should the bot have done?
+      description: Name the move or target you expected and what it would have achieved in that position.
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: Where did you see this?
+      description: Include the simulator or bot version and duel format if you know them.
+      placeholder: "MDPro4 Solo, Rush Duel"
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Replay, deck list or screenshot
+      description: Attach what you have, or describe how to reach the same position. You can submit the report without an attachment.
