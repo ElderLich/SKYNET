@@ -18,6 +18,10 @@ This repository has three independent source folders:
 - `Arena/`: the comparison dashboard and dedicated-server tools. Read
   `Arena/AGENTS.md` before changing it. Bootstrap/process tools live in `Arena/Tools`.
 
+`DeckWorkshop/` supplies the versioned card databases, Lua snapshots, provenance
+and preparation tools used by Arena’s Deck Workshop. Its [guide](DeckWorkshop/README.md)
+explains which inputs work offline and which require a compatible duel host.
+
 These folders share this repository's Git history, not compiled C# source or
 mutable duel state. Do not merge the two agents' decision/callback lifecycles.
 Expedition gameplay, progression and campaign content remain outside scope.
@@ -71,6 +75,7 @@ frozen; no automatic checkpoint promotion.
 Preserve user changes and use explicit staged paths. The owner requests a commit
 with a clear title and descriptive body for each completed update and a push to
 the private SKYNET repository. Companion game commits remain local unless asked.
-Update the relevant README with capabilities, exact run commands and actual
-limits. Do not add standalone design documents unless requested. Read
+Use the root [README](README.md) to direct readers to each project. Update the
+owning guide with prerequisites, working directory, exact commands and actual
+limits. When moving a section, update its inbound links and heading fragments. Do not add standalone design documents unless requested. Read
 `AGENTS.local.md` and `AGENTS.user.md` when present.

@@ -1,117 +1,58 @@
-# MDPro4 duel AI workspace
+# MDPro4 Duel AI
 
-Three separate projects live here. Normal WindBot development and the experimental
-SKYNET training project have their own source trees, solutions and executables.
+Write a bot for a favorite deck, train an experimental duel policy, or compare two builds over real matches. **WindBot** runs deck-specific C# executors. **SKYNET** chooses among legal offers using shared card knowledge. **Arena** hosts the deck workbench and records match results for either bot.
 
-| Folder | Purpose | Start here |
-| --- | --- | --- |
-| `WindBot/` | Normal WindBot, with its original deck executors, names, launcher and `WindBot.exe` | [WindBot build and run instructions](WindBot/README.md) |
-| `SKYNET/` | Experimental general duel AI, reviewed expert modes, episode collection and offline learning; produces `SKYNET.exe` | [SKYNET capabilities and training](SKYNET/README.md) |
-| `Arena/` | Browser console for comparing bots and recording results; includes dedicated-server setup tools | [Arena setup and running instructions](Arena/README.md) |
+| What do you want to do? | Start here |
+| --- | --- |
+| Play against an existing bot | [Build WindBot and select a deck](WindBot/README.md#build-and-check-on-windows-or-linux) |
+| Write or improve a deck executor | [Authoring guide](WindBot/Guides/ExecutorAuthoring.md) · [Copyable request](WindBot/Guides/ExecutorAuthoring.md#copyable-starter-prompt) · [C# starter template](WindBot/Templates/RdaPlannerExecutor.cs.template) |
+| Understand the cards in a `.ydk` file | [Explore Deck Workshop](DeckWorkshop/README.md) |
+| Collect training episodes or evaluate a candidate | [Run SKYNET](SKYNET/README.md#build-and-run) · [Training workflow](SKYNET/README.md#can-it-teach-itself) |
+| Compare two bots or investigate a loss | [Set up Arena](Arena/README.md) · [Read WindBot duel traces](WindBot/README.md#duel-traces) |
 
-All three folders share this Git repository. Work on normal executors in
-`WindBot/`; train and evaluate the general AI in `SKYNET/`; compare frozen
-versions in `Arena/`. Each bot keeps its own executable, resources and duel state.
+## First visit? Open the example deck
 
-For new normal executors, start with the
-[RDA-based template](WindBot/Templates/RdaPlannerExecutor.cs.template) and
-[authoring guide](WindBot/Guides/ExecutorAuthoring.md). Existing executors can be
-improved in place. The template supplies planning structure; card effects and
-selection callbacks still need script-backed implementation and testing.
+On Windows, install Node.js 24 and double-click [Skynet Arena.cmd](<Arena/Skynet Arena.cmd>). On first launch it installs dependencies and builds the dashboard. Open [Deck Workshop on localhost](http://127.0.0.1:3000/#workshop) and select **Explore the RDA deck**. Choose a card, then an effect in the center graph to see the Lua that implements it. The sample works offline once the dashboard and bundled data are installed. [Linux and manual setup](Arena/README.md#start)
 
-For a ready-to-copy request, use the
-[new executor or improvement prompt](WindBot/Guides/ExecutorAuthoring.md#copyable-starter-prompt).
+[![Deck Workshop showing Power Vice Dragon in the Crimson King deck, its effect graph, and the card inspector](DeckWorkshop/Images/rda-workshop.png)](DeckWorkshop/README.md)
+
+Workshop can analyze Standard and Rush decks. For Standard decks it can also export a single C# executor starter. The starter enters WindBot under a `Test` registration with its model disabled until you implement the card decisions. [Export and integrate a starter](DeckWorkshop/README.md#integrate-a-standard-starter)
 
 ## Build the bots
 
-Run from this directory in a Visual Studio Developer PowerShell with the .NET
-Framework 4.8 targeting pack installed:
+From the repository root, use a Visual Studio Developer PowerShell with the .NET Framework 4.8 targeting pack installed.
 
 ```powershell
 msbuild WindBot/WindBot.sln /p:Configuration=Release /p:Platform="Any CPU"
 msbuild SKYNET/Skynet.sln /p:Configuration=Release /p:Platform="Any CPU"
 ```
 
-The outputs are `WindBot/bin/Release/WindBot.exe`,
-`WindBot/BotWrapper/bin/Release/Bot.exe`, and `SKYNET/bin/Release/SKYNET.exe`.
-Each bot has its own `Decks` and `Dialogs` resources. Supply an explicit compatible
-`cards.cdb` with `DbPath=...`. Standard and Rush database/script snapshots are
-bundled under `DeckWorkshop/Data/`; the duel server is configured separately.
-The selected database must match that server's scripts and rules.
+| Build output | Use it for |
+| --- | --- |
+| `WindBot/bin/Release/WindBot.exe` | Join a compatible duel host with a registered deck. [Run and check WindBot](WindBot/README.md) |
+| `WindBot/BotWrapper/bin/Release/Bot.exe` | Launch a normal bot through the game's English roster. [Launcher layout](WindBot/README.md#botwrapper) |
+| `SKYNET/bin/Release/SKYNET.exe` | Run the general policy or a frozen expert. [SKYNET options and examples](SKYNET/README.md) |
 
-For automatic MSBuild discovery, Linux/Mono prerequisites and offline checks,
-see [WindBot's portable workflow](WindBot/README.md#build-and-check-on-windows-or-linux).
-
-## Deck Workshop
-
-Open Arena's **Deck Workshop** (`http://127.0.0.1:3000/#workshop`) to import a
-`.ydk`, explore card/effect/Lua graphs and categorized RelatedCards links, export
-a combined card-text/script report, and generate an RDA-first executor starter.
-The included Standard and Rush snapshots work without the original game folders;
-Edison is excluded. Rush supports research and reports, while Standard supports
-starter generation. See [setup, data provenance and limits](DeckWorkshop/README.md).
-
-Generated starters are `Test` executors with disabled models. Implement the card
-semantics and prompts, build, run offline checks, then validate against an explicit
-compatible duel host before comparing frozen versions in Arena.
-
-## Run Arena
-
-With Node.js installed (Node.js 24 is the validated runtime):
+WindBot's Python launcher can discover MSBuild on Windows or use Mono on Linux. To verify a build before joining a duel, run these commands from the repository root. Give each check a new output directory.
 
 ```powershell
-cd Arena
-npm ci --no-audit --no-fund
-.\Start-SkynetArena.ps1
+python WindBot/Tools/bot_tool.py build --configuration Release
+python WindBot/Tools/bot_tool.py check --configuration Release --database DeckWorkshop/Data/standard/cards.cdb --deck WindBot/Decks/AI_TheCrimsonKing.ydk --registration TheCrimsonKing --output Artifacts/first-windbot-check
 ```
 
-Open <http://127.0.0.1:3000>. Later, `Arena/Skynet Arena.cmd` starts the same console.
-The launcher builds the frontend if needed. Actual matches also require a dedicated
-compatible `arena-srvpro` server and configured bot/database paths in **Settings**;
-starting the dashboard alone does not start a duel server. See the
-[complete Arena instructions](Arena/README.md) for normal WindBot, native SKYNET
-and local server setup. Arena comparisons keep SKYNET training disabled; opt-in
-episode collection and offline training are documented in `SKYNET/README.md`.
+## From a build to a match
 
-## Dialogs and bot roster
+- **Play one duel.** Start a compatible host, select its matching card database and scripts, and connect the bot. A registration check verifies the deck and database locally. [WindBot connection example](WindBot/README.md#join-a-duel)
+- **Compare builds.** Configure Arena's dedicated `arena-srvpro` server and both participant profiles in **Settings**. Keep binaries, decks, database and opponents fixed for a comparison. Arena takes match outcomes from the server rankings. [Arena setup and scoring](Arena/README.md)
+- **Train a policy.** SKYNET collects episodes only when explicitly enabled. Train a candidate offline and select it explicitly for fresh, frozen evaluation. [SKYNET training and evaluation](SKYNET/README.md#can-it-teach-itself)
 
-Both bot projects include the dialog JSON files supplied from
-`D:\Programs\GitHub\MDPro4_Data\Data\Windbot\Dialogs`.
-`default.json` is a byte-for-byte alias of `Universal.EN.json`, because the supplied
-folder has no default file and both original clients use that name by default.
-The normal launcher uses the supplied English bot roster from
-`D:\Programs\GitHub\MDPro4_Data\Data\locales\en-US\bot.conf`, stored here as
-`WindBot/BotWrapper/bot.conf`, extended with the new executor entries. These are versioned copies, so a fresh checkout does
-not need those external paths. They are not live links to the data repository.
-Source paths and hashes are recorded in
-[`WindBot/resource-provenance.json`](WindBot/resource-provenance.json).
+## Where files belong
 
-`bot.conf` is the normal WindBot roster, not SKYNET's configuration file. Arena can
-use it for normal WindBot and use explicit deck profiles for SKYNET. Original bot
-and dialog names are preserved.
+| Files | Location |
+| --- | --- |
+| Registered WindBot decks and their checks | One `*Executor.cs` per deck in [Game/AI/Decks](WindBot/Game/AI/Decks/). Put deck-specific fixtures and launchers under [Tools/Executors](WindBot/Tools/Executors/). |
+| Card data and scripts | [Deck Workshop snapshots](DeckWorkshop/README.md#included-data-and-provenance) include Standard and Rush. Use inputs matching the live host's rules and scripts. |
+| Normal bot roster and dialogs | [BotWrapper/bot.conf](WindBot/BotWrapper/bot.conf) lists normal WindBot registrations. Both bots ship their own dialogs, with `default.json` copied from `Universal.EN.json`. [Resource origins and hashes](WindBot/resource-provenance.json) |
+| Local results | Put logs and validation receipts in ignored `Artifacts/`. Arena saves settings and history in `Arena/data/` by default. |
 
-## Validation
-
-```powershell
-python SKYNET/Tools/Skynet/test_learning.py
-python SKYNET/Tools/Skynet/test_ygo_agent_inspection.py
-python SKYNET/Tools/Skynet/test_ygo_agent_shadow.py
-python SKYNET/Tools/Skynet/test_demonstrations.py
-python Arena/Tools/test_arena_process_owner.py
-cd Arena
-npm test
-npm run build
-```
-
-Normal-bot checks, fixed-hand combo fixtures and the latest measured executor
-results are documented in [WindBot's README](WindBot/README.md). Preserve a
-baseline executable before changing behavior, then compare it with a frozen
-candidate using the same decks, database, scripts and opponents. Use a Debug
-WindBot build with `Debug=True` when diagnosing decisions from duel traces.
-
-Arena stores settings and results in `Arena/data/` by default. Select the exact
-runtime paths in Settings; rebuilding a different directory does not update a
-saved path. Local logs and test receipts belong under ignored `Artifacts/`.
-
-WindBot/YGOSharp attribution and licenses are retained. SKYNET's current coverage,
-learning limits and research provenance remain documented in its own README.
+Contributor instructions are available for the [workspace](AGENTS.md), [WindBot](WindBot/AGENTS.md), [SKYNET](SKYNET/AGENTS.md), and [Arena](Arena/AGENTS.md). WindBot and SKYNET retain the original WindBot/YGOSharp attribution. [License](LICENSE)
