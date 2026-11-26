@@ -5,7 +5,7 @@ Write a bot for a favorite deck, train an experimental duel policy, or compare t
 | What do you want to do? | Start here |
 | --- | --- |
 | Play against an existing bot | [Build WindBot and select a deck](WindBot/README.md#build-and-check-on-windows-or-linux) |
-| Write or improve a deck executor | [Authoring guide](WindBot/Guides/ExecutorAuthoring.md) · [Copyable request](WindBot/Guides/ExecutorAuthoring.md#copyable-starter-prompt) · [C# starter template](WindBot/Templates/RdaPlannerExecutor.cs.template) |
+| Write or improve a deck executor | [Submit an executor](CONTRIBUTING.md) · [Authoring guide](WindBot/Guides/ExecutorAuthoring.md) · [Copyable request](WindBot/Guides/ExecutorAuthoring.md#copyable-starter-prompt) · [C# starter template](WindBot/Templates/RdaPlannerExecutor.cs.template) |
 | Understand the cards in a `.ydk` file | [Explore Deck Workshop](DeckWorkshop/README.md) |
 | Collect training episodes or evaluate a candidate | [Run SKYNET](SKYNET/README.md#build-and-run) · [Training workflow](SKYNET/README.md#can-it-teach-itself) |
 | Compare two bots or investigate a loss | [Set up Arena](Arena/README.md) · [Read WindBot duel traces](WindBot/README.md#duel-traces) |
