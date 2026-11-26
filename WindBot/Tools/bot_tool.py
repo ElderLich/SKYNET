@@ -296,6 +296,8 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    # Preserve the child exit code when a redirected Windows console cannot encode a card name.
+    sys.stdout.reconfigure(errors="backslashreplace")
     try:
         sys.exit(main())
     except KeyboardInterrupt:
