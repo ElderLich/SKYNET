@@ -1,86 +1,127 @@
 # Skynet Arena
 
-An English experiment dashboard for **MDPro4 AI Systems**. Compare normal WindBot
-executors and SKYNET policies, watch experiment progress, inspect process output,
-and export results. Configuration and history persist in SQLite. This folder is
-independent of the sibling `WindBot/` and `SKYNET/` source projects.
+Compare duel bots, run a deck against a roster, or inspect a `.ydk` before
+writing its executor. Arena serves a local browser dashboard and stores your
+settings, match scores and experiment history in SQLite.
 
-Derived from [WindBot Arena](https://github.com/mercury233/windbot-arena), pinned
-at `371e62de0b0b29a8f097f84293e9f8f0f15a7509`. Original file hashes and provenance
-are in [UPSTREAM.json](UPSTREAM.json); Git tracks our changes after import.
-Upstream package metadata declares MIT; its snapshot has no separate LICENSE
-file. Upstream attribution remains applicable.
+| I want to… | Start here | What I need |
+| --- | --- | --- |
+| Explore cards, Lua and related cards | [Deck Workshop](#deck-workshop) | Node.js 24 and a deck |
+| Play a normal WindBot matchup | [Normal WindBot setup](#normal-windbot-setup) | Built WindBot, roster, matching card database and dedicated SRVPro |
+| Compare a frozen SKYNET policy or expert | [Configure a SKYNET comparison](#configure-a-skynet-comparison) | Built SKYNET, deck profiles and dedicated SRVPro |
+| Inspect decisions from a match | [Structured duel traces](#structured-duel-traces) | A local WindBot with trace support |
+| Run Shaddoll against Lightsworn | [Shaddoll one-click challenge](#shaddoll-2025-one-click-challenge) | Windows, Release WindBot and a prepared local server |
 
 ## Start
 
-Install Node.js 24 (validated), then **double-click `Skynet Arena.cmd`**.
-It installs missing dependencies, builds the interface, starts Arena and opens
-your default browser. A second double-click reopens an existing default instance.
-Keep the console open while using Arena; press Ctrl+C to stop it. Internet access
-is needed when dependencies must be installed. The launcher leaves failures
-visible instead of closing immediately.
+On Windows, install Node.js 24 and double-click **[Skynet Arena.cmd](Skynet%20Arena.cmd)**.
+On first use it installs dependencies, builds the dashboard and opens the local
+console. Keep the console open and press **Ctrl+C** there to stop Arena. A
+second double-click reopens the default instance. [Open Arena](http://127.0.0.1:3000)
 
-To start Arena with structured normal-WindBot duel logging already enabled,
-double-click **`Duel Log Arena.bat`**. It starts or reuses the prepared loopback
-SRVPro on ports `17911`/`17922`, verifies the authenticated room-count API,
-builds the current WindBot Release, starts or reuses Arena, applies the generated
-local server credential, enables traces for every Local WindBot agent, and opens
-the browser. Logs default to `../Artifacts/windbot-duel-traces`; override the
-absolute non-root destination or skip rebuilds from Command Prompt when needed:
+For a manual launch on Windows or Linux, open a terminal **in `Arena/`**.
+Install dependencies on first use and when the lockfile changes.
+
+```sh
+npm ci
+npm run build
+npm start
+```
+
+In Windows PowerShell, `.\Start-SkynetArena.ps1 -Build -Port 3137` starts the
+dashboard on another port. After an update, restart the Node server and reload
+the page. If Windows reports `EPERM` on `better_sqlite3.node`, stop Arena
+consoles using this checkout, rerun `npm ci`, then start again.
+
+## Deck Workshop
+
+Open **Deck Workshop** and import or paste a `.ydk`. Select a card to read its
+text and numbered Lua, follow its script links, or browse categorized
+RelatedCards relationships. Export the combined text and Lua report. This
+works without building a bot or preparing a duel server. [Open the local Workshop](http://127.0.0.1:3000/#workshop)
+
+| Bundled format | What you can do |
+| --- | --- |
+| Standard | Analyze a deck, export a report, and generate a starter executor, deck and provenance manifest. |
+| Rush | Analyze cards, scripts and deck relationships, and export a report. |
+
+The Standard starter uses the RDA template, registers as `Test`, and ships with
+its model disabled. Implement its card effects and test it before comparing it
+in Arena. The snapshot excludes Edison. If a request returns HTML where the
+Workshop expects JSON, restart the backend and use its own URL or the configured
+Vite proxy. [Workshop sources, refresh commands and generation limits](../DeckWorkshop/README.md)
+
+## Normal WindBot setup
+
+1. Build a Release runtime. From the repository root in Developer PowerShell,
+   use the commands below for the bundled Standard snapshot. Use a database
+   that matches the scripts on your chosen duel server.
+
+   ```powershell
+   msbuild WindBot/WindBot.sln /t:Build /p:Configuration=Release /p:Platform="Any CPU"
+   Copy-Item -LiteralPath DeckWorkshop/Data/standard/cards.cdb -Destination WindBot/bin/Release/cards.cdb
+   ```
+
+2. In **Settings → Agents**, select the candidate and baseline runtimes. A fresh
+   installation points both at `WindBot/bin/Release` and the English
+   `WindBot/BotWrapper/bot.conf` on ports 2399 and 2398. To compare versions,
+   point the baseline at a separately preserved build. Each runtime needs its
+   own decks, dependencies and dialogs.
+3. In **Settings → SRVPro**, select a dedicated server and enter its duel port,
+   management port and administrative credentials. You can also
+   [prepare a dedicated server on Windows](#dedicated-local-server-windows).
+4. Create a small **Regression** with a deck available to both participants.
+   **Match order & activity** shows accepted launches. Once the rankings come
+   in, open the matchup for wins and disconnects.
+
+Local WindBot mode launches the executable directly on Windows and uses Mono on
+Linux. The normal bot's guide lists the compiler, Mono and SQLite prerequisites
+and explains its roster and dialog sources.
+[WindBot build and runtime guide](../WindBot/README.md#build-and-check-on-windows-or-linux)
+
+### Structured duel traces
+
+In **Settings → Agents**, enable **Structured duel traces** for a **Local WindBot**,
+enter an absolute non-root directory and start an experiment. Each participant
+writes client-visible JSONL under `<root>/<experiment>/<room>/<participant>/`.
+The room and `matchOrder` identify the accepted match on the dashboard.
+`duelNumber` orders duels within a match and `recordedAt` gives the event's UTC
+time.
+
+On Windows, **[Duel Log Arena.bat](Duel%20Log%20Arena.bat)** builds the
+workspace Release, starts or verifies a prepared server, and enables traces for
+agents already configured as Local WindBot. Select the local server reported by
+the launcher when creating the experiment. The default output is the workspace's
+`Artifacts/windbot-duel-traces/`. Example commands from `Arena/`:
 
 ```bat
 "Duel Log Arena.bat" -TraceDirectory "D:\Arena-Traces"
 "Duel Log Arena.bat" -SkipWindBotBuild -SkipArenaBuild
 ```
 
-The launcher only enables local normal-WindBot tracing. Remote WindBot and
-native SKYNET agents are left unchanged. It uses the already prepared dedicated
-runtime under `Artifacts/arena-server-v2`; it does not download or build the
-native room host. If that staged runtime is missing, the launcher stops with an
-explicit error instead of starting an Arena instance that cannot run duels.
-
-Commands are optional. For a manual PowerShell start:
+Run the analyzer from the repository root. It orders captures by start time and
+exports a summary and decision table.
 
 ```powershell
-cd Arena
-npm ci
-.\Start-SkynetArena.ps1
+python WindBot/Tools/analyze_traces.py --traces D:/Arena-Traces --output D:/Arena-Traces/analysis.json --decisions-csv D:/Arena-Traces/decisions.csv
 ```
-
-Open **http://127.0.0.1:3000**. The launcher builds the interface if necessary.
-Use `-Build` after frontend changes, or `-Port 3137` for another port.
-
-In **Command Prompt**, run `"Skynet Arena.cmd"`; the `.ps1` command above is for
-**PowerShell**. `npm ci` is needed for installation or dependency updates, not
-every launch. Stop every Arena console using this checkout with **Ctrl+C** before
-running it. On Windows, a running server locks `better_sqlite3.node`, causing
-`EPERM: operation not permitted, unlink`. A failed install can leave other packages
-missing: after stopping those servers, rerun `npm ci`, then launch Arena again.
-There is no need to delete your SQLite database or run as Administrator for this
-file-lock problem.
-
-```powershell
-.\Start-SkynetArena.ps1 -Build -Port 3137
-```
-
-You can also run `npm run build` and `npm start` directly on Windows or Linux.
-Model files and server credentials are not shipped. Standard and Rush database
-and script snapshots are included in `../DeckWorkshop/Data/`.
 
 ### Shaddoll 2025 one-click challenge
 
-Double-click **`Shaddoll 2025 Arena.cmd`** to build the normal WindBot Release
-runtime, copy the versioned Standard card database, run the focused Shaddoll
-checks, start the prepared loopback-only duel server, apply its generated Arena
-credentials without printing them, open Arena, and start a Challenge.
-The English MDPro4 roster defines LV3 as **Normal**. The launcher defaults to one
-best-of-three match against Lightsworn and records the result in SQLite. It opens
-separate consoles for Arena and the dedicated server; keep both open during the
-match. The prepared runtime lives under ignored `Arena/Artifacts/arena-server-v2`
-and uses only `127.0.0.1`, ports `17911`/`17922`. It never changes the installed
-game, firewall or global services.
+On Windows, double-click **[Shaddoll 2025 Arena.cmd](Shaddoll%202025%20Arena.cmd)**.
+It builds the workspace's normal WindBot Release, supplies the Standard database
+if the runtime needs one, and runs Shaddoll's runtime and focused checks.
+Select this Release runtime and its English catalog as Arena's candidate.
+The launcher verifies the dedicated server and starts one best-of-three match
+against Lightsworn. Keep the Arena console open until settlement. Results
+appear in the dashboard and SQLite.
 
-Optional Command Prompt examples:
+Both specialized launchers require Python on PATH and a prepared local
+runtime in `Arena/Artifacts/arena-server-v2`. To use another prepared runtime,
+pass `-ServerRuntime "D:\path\to\runtime"`. Its manifest supplies both ports.
+The launchers reuse a matching server profile or add one. They preserve other
+server profiles, agent modes and baseline paths. The hidden server supervisor
+has its own [stop procedure](#dedicated-local-server-windows).
 
 ```bat
 "Shaddoll 2025 Arena.cmd" -GamesPerOpponent 3
@@ -88,148 +129,100 @@ Optional Command Prompt examples:
 "Shaddoll 2025 Arena.cmd" -PreflightOnly -SkipBuild -SkipChecks
 ```
 
-`-OpponentDeck` accepts only LV3 roster entries. Pass multiple names to run more
-Normal opponents. Keep both consoles open until the run ends; Ctrl+C stops only
-the processes owned by that console.
-
-## Deck Workshop
-
-Choose **Deck Workshop** in the top navigation, or open
-**http://127.0.0.1:3000/#workshop**. Import/paste a `.ydk` to browse card text,
-effect callbacks, numbered Lua source, literal script links and categorized
-RelatedCards relationships. Export the combined text/Lua report or generate a
-Standard RDA starter with its deck and provenance manifest. Analysis requires no
-duel server. The Workshop never changes bot source, settings or training state.
-
-The two CDBs and extracted scripts are versioned for fresh checkouts, with Edison
-excluded. Rush analysis/report export is supported; Rush executor generation is
-disabled. The generated Standard model starts disabled and its registration is
-`Test`. See [Deck Workshop instructions](../DeckWorkshop/README.md) for source
-provenance, refresh commands, generation and analysis limits.
-
-After updating Arena, stop and restart the running Node server, then reload the
-browser. Rebuilding the frontend alone does not reload backend routes. If Workshop
-reports an HTML/non-JSON API response, an older backend or a static-only frontend
-server may be serving the page. Use the Arena server's URL, or the configured Vite
-development proxy. On Windows, restart with `.\Start-SkynetArena.ps1 -Build`
-(retain your existing `-Port` and `-Database` options when set).
-
-On Linux, install the Mono/compiler/SQLite prerequisites in
-[WindBot's README](../WindBot/README.md#build-and-check-on-windows-or-linux), then
-use `npm ci`, `npm run build`, and `npm start` here. Local normal-WindBot mode
-launches `mono WindBot.exe` on non-Windows hosts; Windows launches the executable
-directly. Remote WindBot remains supported. This change does not add Mono launch
-support to the separate native SKYNET mode. Linux command construction is tested;
-Linux execution was unavailable locally because WSL could not start.
-
-## Normal WindBot setup
-
-Build the restored normal project from the workspace root:
+Preflight performs setup and checks the selected server and roster without
+creating a run. To select several opponents, use PowerShell. The English MDPro4
+roster marks **Normal** entries `AI_LV3`. The runner accepts Standard opponents
+at that level.
 
 ```powershell
-msbuild WindBot/WindBot.sln /t:Build /p:Configuration=Release /p:Platform="Any CPU"
-Copy-Item -LiteralPath 'DeckWorkshop/Data/standard/cards.cdb' `
-  -Destination WindBot/bin/Release/cards.cdb
+.\Start-Shaddoll2025Arena.ps1 -OpponentDeck @('Lightsworn', 'SkyStriker')
 ```
-
-The database copy is an ignored local runtime input; use the database matching
-that server's scripts. The normal build includes decks, SQLite dependencies and
-dialogs. `WindBot/Dialogs/` is the snapshot from
-`D:/Programs/GitHub/MDPro4_Data/Data/Windbot/Dialogs`, with `default.json` as a
-copy of `Universal.EN.json`. `WindBot/BotWrapper/bot.conf` is the English catalog
-from `D:/Programs/GitHub/MDPro4_Data/Data/locales/en-US/bot.conf`.
-
-A new Arena database starts with **Local WindBot** for both participants, the
-absolute sibling `WindBot/bin/Release` runtime, the English
-`WindBot/BotWrapper/bot.conf` catalog, and distinct HTTP ports 2399 and 2398.
-Both initially run the same binary. For a useful version comparison, build and
-preserve a separate baseline runtime, then set its directory in **Settings →
-Agents → Baseline agent**. Existing saved settings are preserved; update any old
-executable or deck paths manually after moving a checkout. Dialogs are resolved
-inside each selected runtime's `Dialogs/` directory.
-
-Configure the dedicated SRVPro under **Settings → SRVPro** before starting a
-small regression. Arena starts and retires its own WindBot HTTP servers; a
-manually started server belongs in **Remote WindBot** mode. Remote catalogs
-accept the same English `bot.conf` as pasted content or a configured URL. Catalog
-entries with quoted names and deck names are supported; the manual deck-picker
-entry is excluded. Full display labels and deck registrations are retained;
-overlong participant names use a stable hash suffix to fit WindBot's 19 UTF-16
-unit wire limit without splitting surrogate pairs.
-
-To collect structured evidence for normal-WindBot development, open **Settings
-→ Agents**, select **Local WindBot**, enable **Structured duel traces**, and set
-an absolute non-root output directory. New experiments pass an isolated trace
-directory to each participant and produce JSONL under
-`<root>/<experiment>/<room>/<participant>/`. Capture is opt-in, does not enable
-training, and records only client-visible information. Analyze the resulting
-tree from the workspace root:
-
-```powershell
-python WindBot/Tools/analyze_traces.py `
-  --traces D:/Arena-Traces `
-  --output D:/Arena-Traces/analysis.json `
-  --decisions-csv D:/Arena-Traces/decisions.csv
-```
-
-Each successful Arena room launch appears on the web under **Match order &
-activity** as `Match #N`, with its room, participants and acceptance time. The
-same `matchOrder` and `roomName` are written into every WindBot JSONL row;
-`duelNumber` orders duels inside a best-of-three match, and `recordedAt` is the
-UTC timestamp for the individual row. The analyzer sorts captures by their start
-timestamp and adds `startOrder`, so concurrent runs can be compared without
-relying on file names.
 
 ## Configure a SKYNET comparison
 
-1. Build `../SKYNET/Skynet.sln` in Release with Visual Studio MSBuild.
-2. In **Settings → Agents**, select **SKYNET** for the candidate.
-3. Enter the absolute `SKYNET.exe` path and a compatible `cards.cdb`.
-4. Add a profile: a unique matchup ID, a display name (up to 17 characters),
-   an absolute `.ydk` path, a decision policy, and optional frozen model weights.
-5. Configure the baseline with the same matchup ID. For a first integration
-   comparison, use `../SKYNET/Decks/AI_ExpertOldSchool.ydk` for both participants,
-   `skynet` for the candidate and `expert-oldschool` for the baseline.
-6. In **Settings → SRVPro**, configure an already running, dedicated
-   [arena-srvpro](https://github.com/mercury233/arena-srvpro) instance.
-7. Select **Regression**, choose the matching profile and start a small run.
+1. Build `SKYNET/Skynet.sln` in Release. In **Settings → Agents**, select
+   **SKYNET** for the candidate and enter its executable and matching database.
+2. Create a profile with a unique matchup ID, display name (up to 17
+   characters), absolute `.ydk` path, policy and optional frozen model.
+3. Set the same matchup ID on the baseline. For a first run, use
+   `SKYNET/Decks/AI_ExpertOldSchool.ydk` on both sides, candidate `skynet`,
+   and baseline `expert-oldschool`. Another frozen baseline pairs
+   `expert-swordsoul` with `SKYNET/Decks/AI_ExpertSwordsoul.ydk`.
+4. Configure a dedicated SRVPro and start a small **Regression**. To examine
+   general-policy choices, enable **Decision explanations** before the next run
+   and open **Candidate output** or **Baseline output**.
 
-To inspect choices, open **Settings → Agents → Candidate agent**, enable
-**Decision explanations**, save, then start a new experiment. Click the visible
-**Candidate output** button under **CANDIDATE AGENT** at the top of Arena.
-The panel also links back to agent settings. **Baseline output** opens the
-corresponding baseline log.
+Evaluation disables training and chat. Expert policies run their own decision
+lifecycle and take no model. Explanations are bounded recent output for the
+general policy. Restarting Arena clears this buffer. For research on the compact
+Swordsoul route, freeze both binaries and decklists before a comparison.
+[SKYNET policies, training and evaluation](../SKYNET/README.md)
 
-Explanations report choices, alternatives, exclusions and scores for the general
-policy, capped per duel. They are off by default, apply only to new duels, and
-do not enable training. Expert executors do not provide these scores. Output is
-a bounded recent buffer from the current Arena session: restarting Arena clears
-it, and choosing an old experiment does not reload its earlier output. Existing
-settings and result history are upgraded automatically; previously saved
-explanation choices are preserved.
-`../SKYNET/Decks/AI_SkynetSwordsoul.ydk` supplies a compact modern research route;
-compare it with the same deck and an explicitly preserved previous binary before drawing
-strength conclusions. It is not a full Swordsoul/Tenyi executor.
+## Participant modes
 
-The included OldSchool executor is a simple historical baseline. For a stronger
-comparison, choose **Expert · Swordsoul baseline** in the baseline profile and
-provide the absolute path to `../SKYNET/Decks/AI_ExpertSwordsoul.ydk`. This
-compatibility mode runs the executor's complete decision and selection lifecycle; it cannot load a learned
-model. Match candidate and baseline profile IDs to compare them, and record both
-deck lists when they differ. Expert decisions still require review before use
-as training demonstrations.
+| Mode | What Arena runs | Where to configure the deck |
+| --- | --- | --- |
+| Local WindBot | An owned HTTP server for that runtime | The runtime's local English `bot.conf` |
+| Remote WindBot | Calls a manually managed WindBot HTTP endpoint | Paste its `bot.conf` or supply its catalog URL |
+| SKYNET | One owned `SKYNET.exe` per match participant | A native profile with explicit deck and policy paths |
 
-Native launch profiles configure participants. They do not yet author card
-effects, combo routes or strategy goals. Those remain separate SKYNET work.
+Give two WindBot endpoints distinct addresses or ports. WindBot's HTTP server
+defaults to `127.0.0.1`. For **Remote WindBot** on another machine, launch it
+there with `ServerMode=true` and `ServerBindAddress=<private-interface-IP>`,
+then enter that private address and service port in Arena. Restrict access to
+the trusted network because WindBot accepts unauthenticated launch requests.
+Structured trace destinations belong to local agents.
+
+Native profiles share capacity by executable path (2–32, default 4). The
+stricter active limit wins and the total cap is 32. Arena reserves all seats for
+a room together. Its per-process deadline (10–3600 seconds, default 300)
+includes queueing and the entire match.
+
+## Experiments and results
+
+| Experiment | Matchup and scoring |
+| --- | --- |
+| Regression | Candidate versus baseline on a shared deck or profile ID. Win rate divides candidate wins by total wins. |
+| Challenge | One challenger versus selected opponents. Bulk selection skips itself. |
+| Ranking | Repeatedly samples candidate deck pairs until stopped. |
+| Tag smoke test | WindBot-only tag duels. Counts track launches and per-deck appearances. |
+
+Standard runs exclude `AI_RD*` Rush profiles. Each dedicated SRVPro accepts one
+experiment at a time. Different instances can run in parallel. Regression,
+Challenge and Ranking use best-of-three `M#` rooms. API fields such as
+`gamesPerMatchup` count **matches** for these modes. The dashboard gets wins
+from cumulative SRVPro rankings and reports disconnects separately. A generic
+duel server or a standalone native smoke fixture lacks these management APIs.
+[Read-only results API](API.md)
+
+<details>
+<summary>Recorded OldSchool comparisons</summary>
+
+| Run | Outcome |
+| --- | --- |
+| Four-match integration pilot | 2–2 |
+| Initial 20-match mirror on 2026-10-20 | General SKYNET 2–18 against the OldSchool expert |
+| Updated shared card behaviors, 20 matches per opponent | 18–2 against previous SKYNET and 9–11 against the OldSchool expert |
+
+The 20-match runs used shuffled decks without a fixed seed and recorded zero
+disconnects. Weights stayed frozen. These observations apply to the recorded
+decks, versions and match conditions. Use both seats, varied decks and larger
+held-out comparisons for strength evaluation. [Evaluation inputs and receipts](../SKYNET/Catalog/expert-baselines.json)
+
+</details>
 
 ## Dedicated local server (Windows)
 
 Arena's explicit bootstrap uses pinned
 [arena-srvpro](https://github.com/mercury233/arena-srvpro) commit
 `af87d3a8c4269c105144a67221728aa25a747910` and its single locked `deepmerge`
-dependency. The official source archive SHA256 is
-`c6779f6d7d226bae22fa27f4eb0b860d6d5a27a575b5d430baca158918e24d37`.
-Upstream is AGPL-3.0; its source and license remain in the staged runtime.
+dependency. The recorded source archive has this SHA-256 digest.
+
+```text
+c6779f6d7d226bae22fa27f4eb0b860d6d5a27a575b5d430baca158918e24d37
+```
+
+The staged runtime includes the upstream source and AGPL-3.0 license.
 The bootstrap verifies the complete allowlisted runtime file set before patching
 only listener addresses, the native host name and its parent-process guard.
 
@@ -256,13 +249,11 @@ search neighboring directories.
    ```
 
 2. Build the owned `SKYNET_DUEL_HOST.exe` with explicit engine and data inputs.
-   It accepts exactly the native API's twelve room arguments, loads only its
-   staged library, rejects external expansion/script environment overrides and
-   remains alive until that native room retires. Its v2 receipt also supports an
-   installed MDPro4 `ygoserver.dll`: the host replaces that exact module's
-   `WS2_32!bind` import before `start_server` and rewrites only IPv4
-   `INADDR_ANY` listeners to `127.0.0.1`. The receipt binds both executable
-   hashes, and the staged server rejects a mismatched host or library.
+   It accepts twelve native room arguments and lives for the room's lifetime.
+   For a trusted installed MDPro4 `ygoserver.dll`, skip step 1 and pass that DLL
+   to `-ServerLibrary`. The v3 host permits only IPv4 loopback through the DLL's
+   Winsock bind import and redirects wildcard requests to `127.0.0.1`. Its
+   receipt pairs the executable and DLL hashes.
 
    ```powershell
    ./Tools/Build-DuelHost.ps1 `
@@ -273,19 +264,22 @@ search neighboring directories.
    ```
 
 3. Supply the exact upstream source checkout/archive, then stage a fresh ignored
-   runtime. Existing directories are never overwritten.
+   runtime. The example uses the source-build receipt. For an installed DLL,
+   set `--native-library` to `Artifacts/arena-host/ygoserver.dll` and
+   `--native-receipt` to `Artifacts/arena-host/host-receipt.json`. Rebuild an
+   older v2 host to use its receipt for new staging.
 
    ```powershell
    python Tools/arena_server.py prepare `
-     --source-root Artifacts/arena-srvpro-source --runtime-dir Artifacts/arena-server `
+     --source-root Artifacts/arena-srvpro-source --runtime-dir Artifacts/arena-server-v2 `
      --native-host Artifacts/arena-host/SKYNET_DUEL_HOST.exe `
      --native-library Artifacts/arena-native/source/bin/release/x64/ygoserver.dll `
      --native-receipt Artifacts/arena-native/arena-native-receipt.json `
      --database D:/YourGame/Data/locales/en-US/cards.cdb `
      --scripts D:/YourGame/Data/script.zip
-   npm --prefix Artifacts/arena-server ci --ignore-scripts --no-audit --no-fund
+   npm --prefix Artifacts/arena-server-v2 ci --ignore-scripts --no-audit --no-fund
    python Tools/arena_server.py serve `
-     --runtime-dir Artifacts/arena-server --node D:/YourNode/node.exe --minutes 60
+     --runtime-dir Artifacts/arena-server-v2 --node D:/YourNode/node.exe --minutes 60
    ```
 
 4. In Arena's SRVPro settings, enter host `127.0.0.1`, duel port `17911`,
@@ -302,115 +296,46 @@ workspace. It never relocates or overwrites an existing staged runtime.
 The supervisor accepts authenticated Arena reboots, bounds its duration/restarts
 and log size, and uses a private Windows job to retire its process tree on exit
 or abrupt supervisor termination. An exclusive lease prevents duplicate owners.
-Create `stop.request` inside the selected runtime to stop it; remove that exact
+Create `stop.request` inside the selected runtime to stop it. Remove that exact
 file explicitly before a later restart. A stale lease after forced termination
 requires checking that its recorded supervisor has exited before removing it.
 There is no global service, firewall change or installed-game replacement.
 
 This bootstrap enables shuffling and disables deck legality checks for unrestricted
 research comparisons. It does not expose the core RNG seed. Record these settings
-with results; this is not a tournament-format benchmark. Native hosts reject
+with results because they affect comparisons. Native hosts reject
 `YGOPRO_EXPANSIONS` and `YGOPRO_EXTRA_SCRIPT` overrides so staged input hashes
 remain meaningful.
 
-## Participant modes
-
-| Mode | Behavior |
-| --- | --- |
-| SKYNET | Direct, owned `SKYNET.exe` process for each match participant; no HTTP bridge |
-| Local WindBot | Arena owns a WindBot Server process and reads its `bot.conf` |
-| Remote WindBot | Connects to a manually started WindBot Server; catalog is pasted or fetched from a configured URL |
-
-Candidate and baseline can use different modes. WindBot HTTP endpoints must be
-distinct. Native SKYNET profiles accept `skynet`, `expert-oldschool` or
-`expert-swordsoul`; an expert cannot use a learned model. Evaluation always
-forces training and chat off.
-
-SKYNET process limits are 2–32 (default 4), shared by executable path; when slots
-share an executable, the stricter active limit applies. A global cap of 32
-applies across executable paths. Room reservations
-take all required seats together, avoiding partial-slot deadlocks. A 10–3600
-second deadline (default 300) bounds queueing and process lifetime. Failed,
-cancelled or expired launches release their owned children; unrelated bots
-are never killed. Output buffers are bounded.
-
-## Experiments and results
-
-- **Regression:** candidate versus baseline on matching profile IDs.
-- **Challenge:** one chosen profile versus a list of opponents.
-- Bulk Standard experiments exclude `AI_RD*` Rush Duel profiles and, in
-  Challenge mode, exclude the challenger itself. Explicitly selecting a Rush
-  profile is rejected before any room or bot process is launched.
-- **Ranking:** continuously sample candidate deck pairs until stopped.
-- **Tag smoke test:** WindBot-only stability checks; native SKYNET tag play is
-  disabled until its lifecycle is validated.
-
-Arena requires the dedicated SRVPro management and cumulative-score APIs.
-The local bootstrap above provides those APIs around a separately built MDPro4
-native room host. Running the standalone
-`../SKYNET/Tools/Skynet/native_smoke.py` fixture alone does not provide these
-management APIs.
-
-Wins come from SRVPro scores. A successful process exit is not a win. Regression
-win rate is candidate wins divided by candidate plus baseline wins; disconnects
-are shown separately. Each SRVPro instance runs one experiment at a time.
-Different dedicated instances can run concurrently.
-
-Regression, Challenge and Ranking use `M#` best-of-three match rooms. Their
-counts and win rates refer to matches, while Tag reports launched tag duels
-and per-deck appearances. API keys such as `gamesPerMatchup` retain their
-historical names. Native process deadlines cover the whole match.
-
-The initial local run on 2026-10-20 completed 20 shuffled OldSchool mirror-deck
-matches: general SKYNET won 2 and the explicit OldSchool expert won 18, with no
-recorded disconnects. All clients/native rooms retired. The separately recorded
-four-match integration pilot finished 2–2. These unrestricted, unseeded runs
-establish a baseline, not model improvement; see the parent
-[evaluation receipt](../SKYNET/Catalog/expert-baselines.json) for exact inputs and
-the initial card-coverage gaps.
-
-After the four shared card behaviors were added, two fresh 20-match runs used
-the same deck and preserved baseline executable: updated SKYNET won **18–2
-against previous SKYNET** and **9–11 against the OldSchool expert**, with zero
-recorded disconnects in either run. Weights stayed frozen; no learning or
-checkpoint promotion occurred. These small unseeded comparisons remain separate
-from the initial baseline and correctness fixtures. They show progress on this
-deck, not general competitive strength.
-
-Process-fixture tests and native fixed-order duels verify plumbing and cleanup.
-They do not establish strength. For strength evaluation, use varied decks,
-both seats, controlled versions, sufficient completed matches, and separate
-held-out comparisons before promoting a model.
-
-The read-only results contract is documented in [API.md](API.md).
-
 ## Local data and hosting
 
-| Environment variable | Default | Purpose |
+| Variable | Default | Use |
 | --- | --- | --- |
-| `SKYNET_ARENA_HOST` | `127.0.0.1` | HTTP bind address |
-| `SKYNET_ARENA_PORT` | `3000` | UI and API port |
-| `SKYNET_ARENA_DATABASE` | `data/arena.sqlite` | SQLite path, relative to Arena or absolute |
+| `SKYNET_ARENA_HOST` | `127.0.0.1` | Dashboard and API bind address |
+| `SKYNET_ARENA_PORT` | `3000` | HTTP port |
+| `SKYNET_ARENA_DATABASE` | `data/arena.sqlite` | SQLite path relative to Arena, or absolute |
 
-The former `WINDBOT_ARENA_*` variables remain fallback aliases. Business settings
-belong in the UI and SQLite. Database migrations preserve earlier configuration
-and history; native SKYNET settings are additive.
-
-The application has no built-in login. Keep the default loopback binding for
-local use; a shared deployment needs authenticated reverse-proxy access.
-Enable SSE streaming without proxy buffering and persist/backup `data/`.
-The included PM2 example also binds to localhost.
+The former `WINDBOT_ARENA_*` variables remain fallback aliases. Back up
+`data/` to preserve settings and history. Migrations run on startup. The local
+console has no built-in login. For shared hosting, use an authenticated reverse
+proxy and enable unbuffered SSE. The PM2 example binds to localhost.
 
 ## Development
 
-```powershell
+Run these from `Arena/`.
+
+```sh
 npm run dev
 npm test
 npm run build
 python Tools/test_arena_process_owner.py
 ```
 
-Tests use owned process fixtures and mocked SRVPro responses. They do not restart
-a real duel server. Native SKYNET launch tests use Node as a harmless executable
-fixture; actual binary/protocol completion is checked separately by the parent
-project's native-duel tool.
+The tests cover scheduling with mocked SRVPro responses and check process
+ownership with controlled children. A completed match on a compatible dedicated
+host provides separate protocol evidence.
+
+Arena derives from [WindBot Arena](https://github.com/mercury233/windbot-arena)
+at commit `371e62de0b0b29a8f097f84293e9f8f0f15a7509`. The upstream package
+declares MIT. The imported snapshot records its original file hashes.
+[Import provenance](UPSTREAM.json) · [Contributor instructions](AGENTS.md)
