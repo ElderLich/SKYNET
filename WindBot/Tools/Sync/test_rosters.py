@@ -6,7 +6,7 @@ import unittest
 from rosters import plan_rosters, validate_rosters
 
 
-def entry(title, command, description, flags="SUPPORT_MASTER_RULE_2020"):
+def entry(title, command, description, flags="AI_LV2 SUPPORT_MASTER_RULE_2020"):
     return f"!{title}\n{command}\n{description}\n{flags}\n"
 
 

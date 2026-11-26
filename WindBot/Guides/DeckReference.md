@@ -60,6 +60,8 @@ These imports use the English `Universal.EN` dialog. Dark Magician the Dragon Kn
 | Odion | `Odion` | Supplied personal source and deck |
 | Bakura - Destiny Board | `DestinyBoard` | Workspace implementation; unrestricted, selected prerelease Necrofear |
 
+For Solo random draft, Bakura and Dragon Knight start at `AI_LV2`. Bakura won four of its 80 recorded final-version matches. Dragon Knight has a recorded completion against OldSchool and limited matchup evidence. Metalmorph and Odion start at `AI_LV3` based on their mixed results against RDA and Swordsoul. These are provisional menu tiers. [Recorded match comparisons](#recorded-validation-and-arena-results)
+
 The pinned upstream revisions were unreviewed at import. The
 [upstream receipt](../executor-provenance.json) records exact revisions, script
 evidence, local compatibility changes and focused checks. The

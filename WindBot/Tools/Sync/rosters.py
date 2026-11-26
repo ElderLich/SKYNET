@@ -161,6 +161,9 @@ def validate_rosters(windbot_root):
                 raise ValueError(f"{roster.path}: missing localized description for {key}")
             if entry.flags != reference.flags:
                 raise ValueError(f"{roster.path}: menu flags for {key} differ from English")
+            if key.startswith("deck:") and not any(re.fullmatch(r"AI_(LV[1-9]\d*|RD[1-9]\d*|WILD|ANTI_META)", flag)
+                                                   for flag in entry.flags):
+                raise ValueError(f"{roster.path}: missing Solo difficulty or specialty group for {key}")
             gameplay_keys = (entry.arguments.keys() | reference.arguments.keys()) - {"name", "dialog"}
             if any(entry.arguments.get(k) != reference.arguments.get(k) for k in gameplay_keys):
                 raise ValueError(f"{roster.path}: launch arguments for {key} differ from English")

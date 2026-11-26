@@ -41,9 +41,9 @@ class SyncTests(unittest.TestCase):
             "Game/AI/Decks/BakuraExecutor.cs": '[Deck("DestinyBoard", "AI_DestinyBoard")]\n',
             "Decks/AI_DestinyBoard.ydk": "#main\n123\n#extra\n!side\n",
             "Dialogs/Universal.EN.json": "{}\n",
-            "BotWrapper/bot.conf": "!Bakura\nDeck=DestinyBoard Dialog=Universal.EN\nFiends\nSUPPORT_MASTER_RULE_2020\n",
+            "BotWrapper/bot.conf": "!Bakura\nDeck=DestinyBoard Dialog=Universal.EN\nFiends\nAI_LV2 SUPPORT_MASTER_RULE_2020\n",
             "BotWrapper/locales/fr-FR/bot.conf":
-                "!Bakura\nDeck=DestinyBoard Dialog=Universal.EN\nDémons\nSUPPORT_MASTER_RULE_2020\n",
+                "!Bakura\nDeck=DestinyBoard Dialog=Universal.EN\nDémons\nAI_LV2 SUPPORT_MASTER_RULE_2020\n",
         }
         for name, content in fixture.items():
             file = source / name
