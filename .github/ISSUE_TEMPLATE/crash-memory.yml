@@ -1,0 +1,47 @@
+name: Crash or memory growth
+description: Report a crash, freeze, or memory use that keeps rising while playing against bots.
+title: "[Stability] "
+body:
+  - type: dropdown
+    id: symptom
+    attributes:
+      label: What did you observe?
+      options:
+        - The game or bot closed unexpectedly
+        - The game or bot stopped responding
+        - Memory usage kept increasing
+        - Memory increased before a freeze or crash
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Game or bot version and operating system
+      description: Include how you launched the bot. Give whatever details you know.
+      placeholder: "MDPro4 Solo on Windows 11, game version unknown"
+    validations:
+      required: true
+  - type: input
+    id: deck
+    attributes:
+      label: Which bot or deck were you playing against?
+      placeholder: "Rush Dragon Dragears"
+  - type: textarea
+    id: sequence
+    attributes:
+      label: When did it happen?
+      description: Describe what you did before the problem appeared. Did it happen at launch, during one duel, after returning to the menu, or across rematches?
+    validations:
+      required: true
+  - type: input
+    id: process
+    attributes:
+      label: Which process crashed or used more memory?
+      description: If you checked Task Manager or Activity Monitor, copy the process name you saw.
+      placeholder: "MDPro4, WindBot.exe, or the Arena server"
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Memory readings, error message or logs
+      description: If available, give readings with units and when you took them, including after leaving the duel. You can also paste the crash message or attach a screenshot or log.
+      placeholder: "Before the first duel … / after five rematches … / back at the menu …"
