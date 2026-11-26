@@ -171,8 +171,6 @@ namespace WindBot.Game.AI.Decks
          }
 
 
-       // protected override IList<ClientCard> OnSelectTribute(IList<ClientCard> cards, int min, int max)
-
         protected bool SummonGreatMajuGarzettWithWyrm()
         {
             int[] materials = new[] { CardId.ConstructorDemolisherWyrmDrakeCrush, CardId.ConstructorWyrmBuildragon, CardId.WyrmExcavatorTheHeavyCavalryDraco, CardId.ConstructorSkyWyrmGantryDragon };
@@ -185,16 +183,7 @@ namespace WindBot.Game.AI.Decks
         }
         private bool SummonConstructorAmbush()
         {
-            if (Card.Level < 5 && (Card.Race & (int)CardRace.Wyrm) > 0 &&
-                Bot.HasInSpellZone(CardId.ConstructorAmbush) && !IsUpperMonSummon())
-            {
-                IList<ClientCard> lowerList =
-                   Bot.Hand.GetMatchingCards(card => (card.Level < 5 && ((card.Race & (int)CardRace.Wyrm) > 0)));
-                if (Card.Id == lowerList.OrderByDescending(card=>card.Attack).FirstOrDefault().Id &&
-                    Bot.Hand.GetMatchingCardsCount(card => card.Id == Card.Id) < 2)
-                    return false;
-            }
-            return MonsSummon();
+            return !KeepWyrmForConstructorAmbush() && MonsSummon();
         }
 
         private bool RepositionConstructorAmbush()
@@ -213,16 +202,24 @@ namespace WindBot.Game.AI.Decks
         }
         private bool SetConstructorAmbush()
         {
-            if (Card.Level < 5 && (Card.Race & (int)CardRace.Wyrm) > 0 &&
-                Bot.HasInSpellZone(CardId.ConstructorAmbush) && !IsUpperMonSummon())
+            return !KeepWyrmForConstructorAmbush() && MonsSet();
+        }
+
+        private bool KeepWyrmForConstructorAmbush()
+        {
+            if (Card.Level >= 5 || !Card.HasRace(CardRace.Wyrm) ||
+                !Bot.HasInSpellZone(CardId.ConstructorAmbush) || IsUpperMonSummon())
+                return false;
+            ClientCard strongest = null;
+            int copies = 0;
+            foreach (ClientCard wyrm in Bot.Hand)
             {
-                IList<ClientCard> lowerList =
-                    Bot.Hand.GetMatchingCards(card => (card.Level < 5 && ((card.Race & (int)CardRace.Wyrm) > 0)));
-                if (Card.Id == lowerList.OrderByDescending(card => card.Attack).FirstOrDefault().Id &&
-                    Bot.Hand.GetMatchingCardsCount(card => card.Id == Card.Id) < 2)
-                    return false;
+                if (wyrm.Id == Card.Id) copies++;
+                if (wyrm.Level < 5 && wyrm.HasRace(CardRace.Wyrm) &&
+                    (strongest == null || wyrm.Attack > strongest.Attack))
+                    strongest = wyrm;
             }
-            return MonsSet();
+            return copies == 1 && strongest != null && strongest.Id == Card.Id;
         }
         private bool MonsSet()
         {
