@@ -28,7 +28,7 @@ $scriptsPath = Get-RequiredFile $ScriptsArchive '.zip'
 $compilerPath = Get-RequiredFile $Compiler '.exe'
 $banlistPath = if ($Banlist) { Get-RequiredFile $Banlist '.conf' } else { $null }
 $sourcePath = Join-Path $PSScriptRoot 'SkynetDuelHost.cs'
-$targetPath = [System.IO.Path]::GetFullPath($Destination)
+$targetPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination)
 if (Test-Path -LiteralPath $targetPath) {
     throw "Use a new destination; existing staged runtimes are never overwritten: $targetPath"
 }
@@ -74,7 +74,7 @@ $payload = foreach ($relativePath in $payloadPaths) {
     }
 }
 $receipt = [ordered]@{
-    schema = 'skynet-native-host-v2'
+    schema = 'skynet-native-host-v3'
     builtAtUtc = [DateTime]::UtcNow.ToString('o')
     platform = 'windows-x64-net48'
     inputs = @($inputRecords)
@@ -83,7 +83,7 @@ $receipt = [ordered]@{
     nativeLibrarySha256 = ($inputRecords | Where-Object role -eq 'nativeLibrary').sha256
     nativeHostSha256 = ($payload | Where-Object path -eq 'SKYNET_DUEL_HOST.exe').sha256
     listenAddress = '127.0.0.1'
-    binding = 'The host replaces the staged ygoserver.dll WS2_32!bind import and rewrites only AF_INET INADDR_ANY to loopback before start_server.'
+    binding = 'The staged ygoserver.dll Winsock bind import accepts only IPv4 loopback and maps IPv4 wildcard requests to 127.0.0.1.'
     runtimeValidation = 'Not run by this build step. Verify the listening address and a real Arena match separately.'
 }
 $receiptPath = Join-Path $targetPath 'host-receipt.json'

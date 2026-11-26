@@ -171,28 +171,39 @@ namespace Skynet.Tools
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Cannot flush the native bind import entry.");
         }
 
+        [DllImport("ws2_32.dll", ExactSpelling = true)]
+        private static extern void WSASetLastError(int error);
+
         private static int GuardedBind(IntPtr socket, IntPtr address, int addressLength)
         {
             const short addressFamilyInternet = 2;
-            bool rewritten = address != IntPtr.Zero
-                && addressLength >= 16
-                && Marshal.ReadInt16(address) == addressFamilyInternet
-                && Marshal.ReadInt32(address, 4) == 0;
-            if (rewritten)
+            const int sockaddrSize = 16;
+            const int loopback = 0x0100007f;
+            if (address != IntPtr.Zero && addressLength == sockaddrSize && Marshal.ReadInt16(address) == addressFamilyInternet)
             {
-                // sockaddr_in stores IPv4 octets in network order. On little-endian
-                // Windows, writing 0x0100007f produces the bytes 7f 00 00 01.
-                Marshal.WriteInt32(address, 4, 0x0100007f);
+                int requested = Marshal.ReadInt32(address, 4);
+                if (requested == loopback)
+                    return _originalBind(socket, address, addressLength);
+                if (requested == 0)
+                {
+                    // Preserve the native caller's read-only address and requested port.
+                    IntPtr local = Marshal.AllocHGlobal(sockaddrSize);
+                    try
+                    {
+                        Marshal.WriteInt64(local, Marshal.ReadInt64(address));
+                        Marshal.WriteInt64(local, 8, Marshal.ReadInt64(address, 8));
+                        Marshal.WriteInt32(local, 4, loopback);
+                        return _originalBind(socket, local, sockaddrSize);
+                    }
+                    finally
+                    {
+                        Marshal.FreeHGlobal(local);
+                    }
+                }
             }
-            try
-            {
-                return _originalBind(socket, address, addressLength);
-            }
-            finally
-            {
-                if (rewritten)
-                    Marshal.WriteInt32(address, 4, 0);
-            }
+            const int accessDenied = 10013;
+            WSASetLastError(accessDenied);
+            return -1;
         }
 
         private static void ValidateArguments(string[] args)
