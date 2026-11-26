@@ -76,10 +76,9 @@ The default `check` suite loads the actual bot assembly and native SQLite,
 initializes the executor registry, checks every supplied deck ID against the
 selected CDB, and optionally verifies an exact compiled registration. It does not
 validate a banlist, card rules, behavior or server protocol. `--suite rda`,
-`--suite voiceless`, `--suite metalmorph` and `--suite destiny-board` run the
-deck-specific offline fixtures. Use each suite's matching `.ydk` and CDB.
-They are not generic tests of
-a newly generated bot. Every check requires a fresh `--output` directory and
+`--suite voiceless`, `--suite metalmorph`, `--suite destiny-board` and
+`--suite shaddoll-2025` run deck-specific offline fixtures. Use each suite's
+matching `.ydk` and CDB. Every check requires a fresh `--output` directory and
 retains hashes, results and logs. `--bot-exe` selects a frozen binary explicitly;
 otherwise checks use the Debug output. No checks start a duel server.
 
@@ -548,6 +547,40 @@ Contributor guidance for creating and modifying deck AIs is available in `AGENTS
 - `Config`: Loads additional options from a configuration file. Command-line options take precedence.
 - `DbPath`: Specifies the path to `cards.cdb`. The default is `cards.cdb`. The program also looks for `cards.cdb` in the parent directory of the working directory, which is the typical location for YGOPro.
 - `ServerMode` and `ServerPort`: Enable the HTTP server mode and set its port. The default port is `2399`.
+- `TraceData`: Optional absolute non-root directory for bounded structured JSONL
+  traces. Each duel writes a unique file containing public observations, legal
+  main-phase offers, ordinary card-selection candidates, the executor's actual
+  response and the authoritative outcome. Hidden opponent identities remain
+  masked. Capture is off by default and never changes an executor decision.
+- `TraceRoom` and `TraceMatchOrder`: Optional correlation metadata supplied by
+  Arena. Every row records UTC `recordedAt`; Arena traces also contain the room,
+  room-launch order and per-process duel number so files can be ordered across
+  concurrent matches and within a best-of-three match.
+
+To collect a standalone trace, add an explicit output directory:
+
+```powershell
+.\bin\Release\WindBot.exe Deck=Shaddoll2025 `
+  Host=127.0.0.1 Port=7911 `
+  TraceData=D:/Arena-Traces/manual-shaddoll
+```
+
+Arena can configure this under **Settings → Agents → Local WindBot → Structured
+duel traces**. It separates files by experiment, room and participant. Summarize
+one or more completed runs as JSON plus a flat decision CSV:
+
+```powershell
+python Tools/analyze_traces.py `
+  --traces D:/Arena-Traces `
+  --output D:/Arena-Traces/analysis.json `
+  --decisions-csv D:/Arena-Traces/decisions.csv
+```
+
+The report counts executor responses, legal fallbacks, unsupported prompt
+coverage and W/L/D outcomes. These are correlations and protocol evidence, not
+proof that a particular action caused a result. Current structured coverage is
+`select_idlecmd` and ordinary `select_card`; chain, battle, yes/no, option, sum,
+tribute and select/unselect prompts remain explicitly unsupported.
 
 ## Server mode
 
@@ -557,7 +590,7 @@ Server mode exposes an HTTP endpoint that starts a bot for each valid request. E
 http://127.0.0.1:2399/?name=%E2%91%A8&deck=Blue-Eyes&host=127.0.0.1&port=7911&dialog=cirno.zh-CN
 ```
 
-Query parameter names are lowercase. Supported parameters are `name`, `deck`, `host`, `port`, `dialog`, `version`, `password`, `hand`, `debug`, and `chat`. The `name`, `host`, and `port` parameters are required. `deckfile` is not supported.
+Query parameter names are lowercase. Supported parameters are `name`, `deck`, `host`, `port`, `dialog`, `version`, `password`, `hand`, `debug`, `chat`, `tracedata`, `traceroom`, and `traceorder`. The `name`, `host`, and `port` parameters are required. `tracedata` must identify an absolute non-root directory; `traceorder` must be a positive integer. `deckfile` is not supported.
 
 The HTTP listener binds to all interfaces. On Windows, run with sufficient privileges or reserve the URL for the selected port (using `2399` here):
 
@@ -722,3 +755,385 @@ reliable improvement or tournament strength. Pilot runs are excluded. Exact
 inputs, observed first-player counts and separate evidence are in
 [Destiny Board provenance](destiny-board-provenance.json); detailed local logs
 remain under `Artifacts/destiny-board-implementation-20261102/`.
+
+## Shaddoll 2025 executor
+
+`Shaddoll2025` is a normal WindBot executor for a 40 Main / 15 Extra / 9 Side
+revision of the supplied `Shaddoll2025.ydk`. El Shaddoll Anoyatyllis remains in
+the game-one Extra Deck; El Shaddoll Grysta and Shaddoll Construct (the Link
+Monster) remain in the Side Deck. It uses the released Standard
+catalog in `DeckWorkshop/Data/standard` as its implementation reference. The
+installed scripts and card database take priority over external strategy notes.
+The supplied file's tournament provenance has not been independently confirmed;
+the nine-card Side Deck also means this is not a complete tournament match list.
+The source review is deliberately separate from the executor design: Konami's
+[public deck database](https://www.db.yugioh-card.com/yugiohdb/member_deck.action?cgid=417886d4321be901de816ca475c25137&dno=6&request_locale=en)
+and the [TW03 strategy profile](https://ygorganization.com/cdp_shaddolltw03/)
+support Resh/Evil-era Shaddoll play, but neither is this exact 40-card file. A
+later [Belen WCQ Regional result](https://ygoprodeck.com/tournament/belen-wcq-regional-5175)
+used a different Branded/Dogmatika shell and therefore is not provenance for
+this list.
+
+The executor re-evaluates the current legal offers rather than assuming a fixed
+combo. Its implemented decisions include:
+
+- contextual Lev dumps: Apkallone for search/discard setup, Meshachrer for a
+  live revival, Fusion recovery when a Spell/Trap is already in the GY, and
+  Lunalight Perfume Dancer only when its GY ATK reduction has battle value;
+- a state-derived Lev route through Apkallone, Squamata, Tohushaddoll Grysta and
+  Meshachrer, followed by Void, Construct, Hedgehog/Wendi, El Shaddoll Fusion,
+  Wendikuruhu, Ariel and revived face-up Squamata. Construct recovers El Shaddoll
+  Fusion while the searched Schism remains in hand, then both cards are set;
+- real idle-command sequencing for the committed route: Lev starts before an
+  unrelated Void line, Meshachrer searches before being tributed, and Quick
+  Fusions cannot consume Mesh before Lev converts it. With no reveal already in
+  hand, Lev makes Construct and Hedgehog finds Wendi before Void resolves; with
+  a live opening reveal, Void may resolve earlier but preserves that Shaddoll and
+  still leaves Mesh for Lev. A spent Meshachrer is not counted as a functional
+  control board, so a resolved Maxx C or Fuwalos cannot make the executor stop
+  when Lev is already offering the one-summon conversion;
+- recalculation at each legal offer: missing Apkallone can use the Evil/Void
+  fallback, missing Void can search El Shaddoll Fusion, and missing Meshachrer
+  can choose another legal Fusion;
+- Void Unleashing searches that preserve the required different card types and
+  preserve Wendi, El Shaddoll Fusion and Schism while using the supplied discard
+  cost;
+- state-based Squamata sends, Hedgehog/Wendi searches, Ariel GY disruption,
+  Construct setup, Apkallone search/discard and Meshachrer search/revival. Ariel
+  prioritizes live Orcust recursion, Dragon grave protection and Magician
+  Navigation's grave negate before generic bodies. Meshachrer search follows the
+  script's once-per-copy limit, while its Graveyard revival is not assigned a
+  fabricated hard once-per-turn;
+- legal-offer Fusion target and material scoring for Shaddoll Fusion, El
+  Shaddoll Fusion, Schism, Tohushaddoll Grysta, Cartesia, Faimena and Scheiren;
+- adaptive secondary engines: Scheiren sends the highest-value live Shaddoll
+  from hand before milling, Faimena is preserved on the bot's turn and activates
+  on the opponent's turn only when its two real remaining materials can make
+  Winda (or Apkallone against an established persistent threat), and Cartesia
+  includes itself for Granguignol while preserving stronger hand interaction. Flexible
+  Quick Fusions do not chain over the bot's unresolved setup effects, consume
+  Mesh before Lev, or fire between Construct sending Hedgehog and Hedgehog
+  resolving the Wendi search, and
+  Faimena is held through an empty own-turn board for the opponent's turn;
+- opponent-turn branch selection that uses El Shaddoll Fusion to send the revived
+  Squamata and summon Apkallone, lets Squamata send Tohushaddoll Grysta, and uses
+  that GY Fusion trigger for Shekhinaga only when a real EARTH material and a
+  Shaddoll negate cost remain. When the prepared board has both Quick-Play Fusion
+  and Schism, revived Squamata remains face-down so Wendikuruhu has real Flip
+  fuel. Schism establishes Winda before the opponent's first Special Summon
+  whenever its field/Graveyard contains a legal Shaddoll plus DARK material;
+  the full Wendikuruhu shell can then flip Squamata and turn the permitted
+  summoned monster face-down. The generic reposition routine preserves the
+  final face-down Flip body instead of exposing Wendikuruhu's only fuel. If the
+  first Special Summon has already resolved,
+  the executor does not pretend that a late Winda counts it retroactively.
+  Schism instead chooses a legal same-Attribute Fusion so its follow-up send
+  removes that Xyz, Synchro, Link or Fusion material. Winda remains the preferred
+  late target when the material is DARK because it supplies both the send and
+  the remaining summon limit.
+  A resolving one-shot Normal or Quick-Play Spell is not treated as an
+  Apkallone target that will still exist after the Fusion chain resolves. El
+  Shaddoll Fusion now waits for an established monster or persistent
+  Continuous, Field, Equip or Pendulum engine, unless the set Quick-Play itself
+  is threatened. A visible persistent Spell/Trap engine such as Dark Magical
+  Circle remains the exception: El Shaddoll Fusion can make Apkallone before the
+  engine snowballs. If Schism is unavailable, El Shaddoll Fusion still
+  establishes Winda after the opponent's first Special Summon or at Main End.
+  Set Schism activates proactively when it can legally make Winda before the
+  first summon, even if the full Wendikuruhu/Flip shell was interrupted. Without
+  legal Winda materials it waits for a removable material, Main End commitment
+  or a threat to the Trap. A visible high-value continuous control engine is also
+  treated as a commitment so it can be answered before it snowballs. Schism
+  counts only field/GY materials and compares the summoned Fusion's Attribute
+  with the visible material before using Winda as a fallback. El Shaddoll Fusion
+  likewise prefers Apkallone against an established high-value face-up negate or
+  recursive engine;
+- Fusion Control board evaluation that preserves an active Winda or other live
+  interaction, stops redundant extensions and proceeds to battle with safe
+  on-board lethal;
+- Resh Shaddoll Incarnation revival and position-change decisions, including
+  rebuilding Winda, flipping prepared Shaddolls and resetting spent Flip
+  monsters without consuming the active floodgate;
+- the Lev Shaddoll Fusion -> Infernoid Evil -> Void Unleashing fallback when the
+  primary route is unavailable, plus defensive positions for exposed low-ATK
+  utility monsters and every 0 ATK Fusion summoned by Lev;
+- the recorded double-Armageddon route: the first Knight sends Squamata and is
+  banished into Meshachrer, Meshachrer searches Lev, Lev sends Infernoid Evil,
+  Evil finds Void, and the second Knight remains available as Void's discard;
+- the recorded Shaddoll-monster-plus-Void route: Void reveals the Shaddoll card
+  and searches Schism plus Lev, then values every legal discard by its live GY
+  effect, replacement value and remaining combo role instead of forcing the
+  revealed monster. When that monster is the best cost, Meshachrer remembers and
+  revives it while searching El Shaddoll Fusion instead of a spent second Void;
+- optional Apkallone negation only when a live opposing target exists, avoiding
+  self-negation and declining when Apkallone is already disabled;
+- capability-based threat evaluation for publicly known cards. The executor
+  reads the selected database's effect text and classifies negate, removal,
+  recursion, protection, floodgate, Quick Effect, grave interaction, repeatable
+  permanent engines and recurring advantage. Repeatable monster effects such as
+  once-per-turn removal are valued as persistent engines rather than as one raw
+  body, and common negate, removal and summon-lock phrasings are recognized.
+  Schism, El Shaddoll Fusion,
+  Apkallone, Dragon and Ariel compare those capabilities before falling back to
+  the smaller card-specific grave-recursion list;
+- going-second Construct/Apkallone priorities, visible backrow and GY answers,
+  grind-game Spell/Trap recovery, and conservative use of hand traps.
+
+The revised list contains one Infernoid Evil, one Resh Shaddoll Incarnation and
+three Armageddon Knight starters. Shaddoll Construct (the Link Monster) is in
+the Side Deck rather than the game-one Extra Deck, so the executor does not
+fabricate the promotional Link continuation. El Shaddoll Grysta also remains in
+the Side Deck and is not claimed as part of the game-one combo. The current
+game-one branches use Wendikuruhu, Squamata, Apkallone, Tohushaddoll Grysta,
+Shekhinaga or another legally offered Fusion, Schism and Winda according to the
+observed board. Cartesia cannot
+self-Special Summon by an absent Albaz condition, Faimena has no Dracotail Set
+target, and Perfume Dancer remains a Lev GY utility card.
+
+The referenced [Lev combo](https://www.masterduelmeta.com/combo/6a6d325cb3d5c9618637712e)
+and [Shaddoll guide](https://www.masterduelmeta.com/articles/guides/shaddoll-pancakes)
+describe the route as a 1.5-card combo. The recorded Combo Sheet resolves the
+apparent reveal problem by searching Void with Meshachrer, using Lev to make
+Construct, and searching Wendi with Hedgehog before activating Void. A
+deterministic Lev-plus-four-non-engine replay now reaches the usable control
+endboard: face-up Wendikuruhu and Ariel, face-down Squamata, face-up Lev, and set
+El Shaddoll Fusion plus Schism. One non-engine card is used as Void's discard
+cost. In the live idle scheduler, an opening Void can no longer resolve ahead
+of Meshachrer's search, and optional Quick Fusions wait for the Construct ->
+Hedgehog -> Wendi trigger sequence even when an earlier Void resolution has
+already advanced the control-spell state. Squamata is intentionally face-down
+because Wendikuruhu cannot legally turn an opposing monster face-down until it
+first flips a face-down Flip monster.
+
+On the opponent's turn, the prepared Squamata makes Wendikuruhu's position
+change live. While Winda is applying its summon limit, Wendikuruhu now keeps
+that face-down Flip body hidden until an opposing face-up non-Link monster is
+actually available. It no longer spends the interaction at an empty-board
+timing hint before Blue-Eyes Alternative White Dragon appears. El Shaddoll
+Fusion can use Squamata to summon Apkallone,
+whose summon-trigger effect negates one face-up card; Squamata can then send
+Tohushaddoll Grysta. Its Fusion continuation chooses Shekhinaga only with a legal
+EARTH material and a remaining Shaddoll hand cost. Schism summons Winda as the
+Special Summon floodgate and can additionally send an opponent's face-up DARK
+monster. These are separate timing windows and conditional interactions, not
+four unconditional omni-negates. Against Blue-Eyes Spirit Dragon, simultaneous
+Graveyard triggers are ordered by continuation value: the core search or Fusion
+effect is placed first, while a lower-value trigger is placed last as the legal
+negate target. The executor no longer exposes Tohushaddoll Grysta above Squamata
+merely because Squamata's executor was registered first.
+
+Build and run the offline registration and focused callback checks from the
+workspace root:
+
+```powershell
+msbuild WindBot/WindBot.sln /p:Configuration=Debug /p:Platform="Any CPU"
+msbuild WindBot/WindBot.sln /p:Configuration=Release /p:Platform="Any CPU"
+python WindBot/Tools/bot_tool.py check --suite runtime --configuration Release --database DeckWorkshop/Data/standard/cards.cdb --deck WindBot/Decks/AI_Shaddoll2025.ydk --registration Shaddoll2025 --output Artifacts/shaddoll-runtime
+python WindBot/Tools/bot_tool.py check --suite shaddoll-2025 --configuration Release --database DeckWorkshop/Data/standard/cards.cdb --deck WindBot/Decks/AI_Shaddoll2025.ydk --output Artifacts/shaddoll-focused
+```
+
+The focused suite uses synthetic legal offers and a deterministic state replay
+against the compiled dispatcher. It records the final field, Graveyard,
+banished cards, hand, Life Points and verified interaction categories for the
+Lev-plus-four-non-engine opening and its opponent-turn branches. It follows the selected Lua scripts but
+does not itself execute the Lua engine. WindBot's
+local HTTP command endpoint binds only to `127.0.0.1` and uses a small TCP-based
+HTTP/1.1 handler so server mode does not depend on the Windows HTTP service.
+
+The focused suite currently covers 85 callback, scheduler, route and deck-structure scenarios,
+including the Fusion Control regressions above. Real script-backed Arena runs
+use the prepared loopback MDPro4 native host, shuffled decks, disabled deck
+legality checks and an uncontrolled core seed. Their results prove the complete
+launch, duel and result-recording path only; a small sample is not a strength or
+win-rate claim. Structured traces now include repeated `SelectUnselect` card
+choices, chain-choice candidates and responses, and ordinary card and
+idle-command selections. Card callbacks are emitted as `kind: selection`
+rather than being mixed into idle-command decisions. Void subgroup searches,
+multi-step Fusion materials and the exact response window used for Schism or El Shaddoll Fusion can therefore
+be audited. The client cannot see hidden opponent cards, simulate future Lua
+resolution, or know an opponent's unobserved hand. Effect-text classification
+uses the English Standard catalog selected for this executor; it is a bounded
+semantic heuristic, not a substitute for executing each card's Lua script. It
+does not infer activation conditions that are absent from the public text or
+predict whether an opponent holds the cost for a conditional effect.
+
+Broad challenge run `77fa0384-9f9f-46b7-9172-9548647d0fe3` completed 183
+single-match Arena entries across 61 Standard opponents with no recorded
+disconnects. Shaddoll2025 went 66-117 (36.1%); excluding the three mirror
+entries it went 64-116 (35.6%). Its trace tree contains 874 captures, 873 of
+them complete. After normalizing the older writer's mislabeled card callbacks,
+the analyzer recovers 22,939 selection rows instead of reporting zero. The same
+evidence found 20 accepted Faimena activations, all on the bot's own turn; 15
+ended in losses, and several selected Granguignol without creating immediate
+control. That correlation motivated preserving Faimena for a verified
+opponent-turn Winda or Apkallone line. It does not prove the policy will improve
+the next randomized sample, so this update is committed before any new Arena
+run.
+
+Arena run `517f9b9a-61be-43c8-ba7f-30055724bbb7` used the current 40/15/9 list
+and completed three Normal-level matches against `Lightsworn`: Shaddoll2025 won
+2–1, all three results were observed and the Shaddoll client recorded no
+disconnects. This is a functional regression sample, not an estimate of matchup
+win rate or competitive strength.
+
+Scheduler-fix run `da97e47f-5c46-447e-b3c8-578b3024fd51` expanded the smoke
+matrix to 30 Normal-level games before the temporary Grysta/Anoyatyllis Extra Deck swap.
+Shaddoll2025 went 1–4 against Blue-Eyes, 0–5 against Chaos-MAX, 2–3 against Dark
+Magician, 2–3 against Mathmech, 5–0 against Salamangreat and 4–1 against Sky
+Striker, with no Shaddoll disconnects. The later run
+`2e3b4c81-d8d1-4d16-a3ba-7be06f03d567` completed another 18 observed games:
+0–3 Blue-Eyes, 0–3 Chaos-MAX, 0–3 Dark Magician, 3–0 Mathmech, 0–3
+Salamangreat and 1–2 Sky Striker, again with no Shaddoll disconnects, but used
+the mistaken El Shaddoll Grysta game-one swap and is superseded by the restored
+list. These
+results show that the launch/runtime path is stable and that the combo scheduler
+regression is covered, but they also show unresolved matchup weakness and high
+small-sample variance; they are not evidence of competitive strength.
+
+Combo-Sheet correction run `1e840c39-f0bb-4f82-8836-20e200ae7c44` used the
+restored game-one Extra Deck and the executor that records Wendikuruhu, Ariel,
+Squamata, El Shaddoll Fusion and Schism correctly. It completed one Normal-level
+game each against Blue-Eyes, Dark Magician and Sky Striker: Shaddoll2025 went
+0–3 with zero disconnects. This older run predated structured per-action traces,
+so it proves runtime completion only and does not show that Lev was drawn or that
+the deterministic combo occurred.
+
+Quick-Fusion chain-guard run `7c0cdc0b-b92d-4eb5-b6ea-d12f3f9ac91b`
+completed one Normal-level game against Lightsworn: Shaddoll2025 won 1–0 with
+zero disconnects. This confirms the corrected build completed a real Lua-backed
+duel; the exact logged Void opening remains covered by the deterministic
+chain-lifecycle regression.
+
+Final trace-backed validation run `7875ea0c-30ed-4f08-82f4-40d398a38cae`
+completed three Normal-level Arena match entries against Blue-Eyes with no
+Shaddoll disconnects. Arena recorded three match wins, representing eight
+underlying duels (6–2). The shuffled sample contained one opening Lev route and
+that trace selected Apkallone, Squamata, Tohushaddoll Grysta, Meshachrer, Void,
+Construct, Hedgehog, Wendi and Schism in order. Across the run, the analyzer also
+observed the complete prepared control shell (Wendikuruhu, Ariel, revived
+Squamata, Schism and recovered El Shaddoll Fusion) in a real Lua-backed duel.
+This small successful sample verifies execution and traceability, not an expected
+Blue-Eyes win rate.
+
+Completed run `f07d557f-7b67-4927-98c7-366eb2005067` recorded 486 underlying
+duels across 200 Arena entries. Shaddoll2025 went 325–161 by duel and 151–49 by
+Arena result. The two weak Arena matchups were Blue-Eyes at 3–17 and Orcust at
+8–12. The prepared control shell was observed in 46 duels and went 40–6; with El
+Shaddoll Fusion also observed it went 37–4. This supports preserving the core Lev
+route while correcting its response policy rather than replacing the route.
+
+Against the bundled legacy Blue-Eyes bot, Shaddoll2025 went 12–34 by individual
+duel. Twenty-three of the 34 losses showed Number 38: Hope Harbinger Dragon
+Titanic Galaxy and twenty-one showed Blue-Eyes Spirit Dragon. The list also uses
+cards outside current tournament legality because Arena deck checks are disabled.
+The traces exposed three correctable policies: set Schism fired before the first
+opposing Special Summon, Schism kept selecting Winda while a LIGHT spell negate
+remained face-up, and Ariel valued generic grave bodies above live Orcust/Dragon
+recursion. Timing, legal material counting, adaptive Schism targets and grave
+priorities now have focused regressions. This run predates those corrections and
+is not a post-fix win-rate result.
+
+Completed post-timing run `3d471151-ffb4-4bad-89e7-446ea571169a` recorded 488
+underlying duels across 200 Arena entries. Shaddoll2025 went 313–175 by duel and
+140–60 by Arena result. Blue-Eyes improved from the preceding run's 3–17 Arena
+result to 12–8 and Orcust finished 10–10, but Dark Magician fell from 15–5 to
+5–15; Rank V finished 14–6 and Salamangreat 17–3. The Dark Magician losses
+exposed Dark Magical Circle in 30 of 33 duels, Dark Magician in 29, Eternal Soul
+in 28 and Magician Navigation in 24. Rank V losses exposed Tiras in 11 of 22
+duels and Cyber Dragon Infinity in nine. Those public observations now drive a
+capability-based correction instead of a matchup-name switch: visible repeatable
+control can open the delayed Schism window; Apkallone is preferred against live
+negate, removal, recursion or protection engines; and Dragon/Ariel score field
+and grave capabilities before card-specific fallbacks. These changes have
+compiled callback regressions. The completed run remains diagnosis, not proof of
+improvement.
+
+Capability-policy run `800a8951-99d7-4ec8-8fbf-c078d7f7f88a` is the first
+post-change Arena evidence. It recorded 477 completed underlying duels across 200
+Arena entries: 292–185 by duel and 130–70 by Arena result, down from 70% to 65%
+by Arena result. Blue-Eyes regressed from 12–8 to 2–18, while Dark Magician
+improved from 5–15 to 11–9; Rank V was 12–8, Orcust 10–10 and Salamangreat 15–5.
+The prepared control shell remained strong when reached (33–9, or 28–7 when El
+Shaddoll Fusion was also observed), but it appeared in 42 duels instead of 49,
+and opening Lev fell from 175 to 141 observations. That draw mix explains part
+of the aggregate movement, not the Blue-Eyes collapse. Source and trace review
+found that the first capability parser treated repeatable removal on a face-up
+monster as a one-shot effect; Blue-Eyes Alternative White Dragon therefore fell
+below the live-engine threshold after the older name-specific score was removed.
+It also allowed Schism to consume the floodgate branch before a ready El Shaddoll
+Fusion could establish Apkallone. The parser now recognizes once-per-turn
+monster interaction as a repeatable permanent capability, and the prepared
+control shell gives El Shaddoll Fusion the first answer to such a threat while
+retaining Schism for Winda. The focused compiled regression covers that exact
+decision. No Arena run has been made after this correction, so the change is not
+yet a win-rate claim.
+
+Completed run `6751fceb-69b3-43d3-80fe-b5e11ec335e6` recorded 464 completed
+underlying duel traces across 200 single-match Arena entries: 306–158 by duel
+trace and 140–60 by Arena result. The Arena matchup results were Blue-Eyes 2–18,
+Dark Magician 6–14, Orcust 12–8, Salamangreat 14–6, Lightsworn 15–5, Rank V
+16–4, Toadally Awesome 16–4, Dragunity 19–1, MathMech 20–0 and Mokey Mokey King
+20–0. The prepared control shell was still positive globally at 39–10 in 49
+observations, but it went only 1–7 against Blue-Eyes. Opening Lev went 4–17
+against Blue-Eyes, and a first-turn Winda went 0–7 there; against Dark Magician,
+first-turn Winda went 2–10.
+
+Trace order exposed the timing defect rather than a missing combo route. El
+Shaddoll Fusion was firing on resolving one-shot setup Spells such as Trade-In,
+The Melody of Awakening Dragon, Cards of Consonance, Dragon Shrine, Pot of
+Desires and Upstart Goblin. Apkallone's summon trigger begins only after that
+chain resolves, when those Normal Spells are already in the GY, so the bot spent
+El Fusion and its materials without negating the effect and before Blue-Eyes
+Alternative White Dragon, Hope Harbinger, Dark Magical Circle or Eternal Soul
+became the real target. Opponent-turn Fusion timing now distinguishes transient
+chain cards from persistent face-up threats, preserves Schism for Winda, and
+retains a no-Schism Winda fallback. The compiled suite covers Trade-In versus
+Dark Magical Circle, the prepared Alternative branch and the fallback after an
+opposing Special Summon. No Arena run has been made after this timing correction.
+
+Completed run `551ef82e-ec51-4d57-a15d-9c6b3808d932` recorded 476 completed
+underlying duel traces across 200 single-match Arena entries: 316–160 by duel
+trace and 142–58 by Arena result (71%). The Arena matchup results were Blue-Eyes
+6–14, Orcust 10–10, Rank V 12–8, Dark Magician 13–7, Salamangreat 14–6,
+Toadally Awesome 15–5, Lightsworn 16–4, MathMech 17–3, Dragunity 19–1 and Mokey
+Mokey King 20–0. The prepared control shell went 40–6, or 39–5 when El Shaddoll
+Fusion was also observed, and opening Lev went 117–43. This confirms that the
+core route remained productive after the one-shot Spell timing fix.
+
+The next run, `81781204-441c-473d-82f4-cf14da400c61`, exposed that the first
+summon-denial correction was itself incomplete. It recorded 475 completed
+Shaddoll duel traces and fell from 316–160 to 295–180. Blue-Eyes fell from 20–30
+to 13–35 by duel trace and Dark Magician from 29–18 to 16–32, while Orcust
+improved from 24–26 to 34–17. Schism activations increased from 417 to 457 and
+El Shaddoll Fusion activations fell from 71 to 57, confirming that the new rule
+was consuming too many response windows rather than improving the core combo.
+
+The trace order supplies the rules-level cause. In a Blue-Eyes loss, Alternative
+White Dragon was Special Summoned, Schism then made Winda, and Blue-Eyes White
+Dragon was still Special Summoned afterward. Winda only limits summons made
+while it is face-up; making it after the first summon does not retroactively
+consume the opponent's permitted summon. The corrected policy now establishes
+Winda before the first summon whenever Schism has a legal Shaddoll plus DARK
+material pair. The deterministic Lev route also leaves revived Squamata
+face-down so a live Wendikuruhu keeps its position-change interaction. If the
+first summon has already happened, Schism removes the visible material with a
+same-Attribute Fusion instead: Construct for a LIGHT
+Alternative or Rank V extender, and Winda for a DARK material that Schism can
+also send. Dark Magical Circle still routes to El Fusion/Apkallone. The compiled
+regressions cover all of these branches and prove that the recorded Lev board's
+Wendikuruhu effect is legally activatable.
+
+The later targeted Blue-Eyes run
+`7b1fc6be-ab7a-49f7-a85e-6a673554d165` recorded 245 completed underlying duels
+across 100 Arena entries and went 85–160. Blue-Eyes Spirit Dragon appeared in
+147 duels; Shaddoll won 28 of those (19.0%) versus 57 of 98 without Spirit
+(58.2%). Number 38: Hope Harbinger appeared in 149 duels; Shaddoll won 20
+(13.4%) versus 65 of 96 without it (67.7%). The Spirit chain-order regression
+had no practical opportunity in this sample: no captured Shaddoll chain choice
+contained multiple simultaneous own Graveyard triggers while a live Spirit was
+already face-up. First-end observations instead showed Schism set in 185 duels,
+but the prior policy required the complete Wendikuruhu/Flip shell before making
+Winda ahead of the first opposing summon. The executor now uses any legal
+Schism-to-Winda material pair for that pre-summon lock and preserves the last
+face-down Flip body for Wendikuruhu. This correction has focused compiled
+coverage but has not yet been rerun in Arena.

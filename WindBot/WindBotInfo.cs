@@ -8,6 +8,9 @@ namespace WindBot
         public string Deck { get; set; }
         public string DeckFile { get; set; }
         public string Dialog { get; set; }
+        public string TraceData { get; set; }
+        public string TraceRoom { get; set; }
+        public int? TraceMatchOrder { get; set; }
         public string Host { get; set; }
         public int Port { get; set; }
         public string HostInfo { get; set; }
@@ -21,6 +24,9 @@ namespace WindBot
             Deck = null;
             DeckFile = null;
             Dialog = "default";
+            TraceData = null;
+            TraceRoom = null;
+            TraceMatchOrder = null;
             Host = "127.0.0.1";
             Port = 7911;
             HostInfo = "";

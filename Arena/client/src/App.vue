@@ -156,18 +156,21 @@ const runKindDescriptions = {
 const regressionDeckOptions = computed(() => (system.value?.configuration.decks || []).map((item) => ({
     aiLevel: item.aiLevel,
     currentLabel: item.currentLabel,
+    format: item.format,
     value: item.deck,
-})));
+})).filter((item) => item.format !== 'rush'));
 const currentDeckOptions = computed(() => (system.value?.configuration.currentDecks || []).map((item) => ({
     aiLevel: item.aiLevel,
     currentLabel: item.currentLabel,
+    format: item.format,
     value: item.deck,
-})));
+})).filter((item) => item.format !== 'rush'));
 const oldDeckOptions = computed(() => (system.value?.configuration.oldDecks || []).map((item) => ({
     aiLevel: item.aiLevel,
     currentLabel: item.currentLabel,
+    format: item.format,
     value: item.deck,
-})));
+})).filter((item) => item.format !== 'rush'));
 const catalogDeckOptions = computed(() => (
     experimentKind.value === 'regression' ? regressionDeckOptions.value : currentDeckOptions.value
 ));
@@ -223,20 +226,14 @@ const effectiveSelectedDeckSet = computed(() => {
     }
     const target = String(targetDeck.value || '').trim();
     return new Set(deckOptions.value
-        .filter((option) => (
-            option.aiLevel !== 1
-            || (experimentKind.value === 'challenge' && option.value === target)
-        ))
+        .filter((option) => option.aiLevel !== 1
+            && (experimentKind.value !== 'challenge' || option.value !== target))
         .map((option) => option.value));
 });
 const allDeckCount = computed(() => {
-    if (experimentKind.value !== 'challenge' || !String(targetDeck.value || '').trim()) {
-        return bulkDeckCount.value;
-    }
-    const included = deckOptions.value.some((item) => (
-        item.value === String(targetDeck.value || '').trim() && item.aiLevel !== 1
-    ));
-    return bulkDeckCount.value + (included ? 0 : 1);
+    if (experimentKind.value !== 'challenge') return bulkDeckCount.value;
+    const target = String(targetDeck.value || '').trim();
+    return deckOptions.value.filter((item) => item.aiLevel !== 1 && item.value !== target).length;
 });
 const displayedRun = computed(() => selectedRun.value);
 const historyPageCount = computed(() => Math.max(1, Math.ceil(
@@ -942,6 +939,13 @@ function formatDate(value, timeOnly = false) {
     }).format(new Date(value));
 }
 
+function recentRunEvents(type, limit = 8) {
+    return [...(displayedRun.value?.events || [])]
+        .filter((event) => (type ? event.type === type : event.type !== 'match-launched'))
+        .reverse()
+        .slice(0, limit);
+}
+
 function formatDuration(value) {
     if (!Number.isFinite(value)) {
         return '—';
@@ -1549,8 +1553,8 @@ onBeforeUnmount(() => {
                                                 class="deck-option"
                                                 :checked="allDecks
                                                     ? option.aiLevel !== 1
-                                                        || (experimentKind === 'challenge'
-                                                            && String(targetDeck || '').trim() === option.value)
+                                                        && (experimentKind !== 'challenge'
+                                                            || String(targetDeck || '').trim() !== option.value)
                                                     : selectedDecks.includes(option.value)"
                                                 :disabled="allDecks || !!activeRun"
                                                 @update:checked="handleDeckSelection(option.value, $event)"
@@ -2036,15 +2040,28 @@ onBeforeUnmount(() => {
                         <article v-if="displayedRun" class="panel event-panel">
                             <div class="aside-heading">
                                 <div>
-                                    <h2>Activity</h2>
+                                    <h2>Match order & activity</h2>
                                 </div>
                             </div>
-                            <ol class="event-list">
-                                <li v-for="event in [...displayedRun.events].reverse().slice(0, 8)" :key="event.id">
-                                    <time>{{ formatDate(event.at, true) }}</time>
-                                    <span :class="`event-${event.level}`">{{ event.message }}</span>
-                                </li>
-                            </ol>
+                            <div v-if="recentRunEvents('match-launched', 12).length" class="event-section">
+                                <h3>Recent match start order</h3>
+                                <p>Match # is Arena room-launch order; the time is when both participants were accepted.</p>
+                                <ol class="event-list">
+                                    <li v-for="event in recentRunEvents('match-launched', 12)" :key="event.id">
+                                        <time>{{ formatDate(event.at, true) }}</time>
+                                        <span>{{ event.message }}</span>
+                                    </li>
+                                </ol>
+                            </div>
+                            <div v-if="recentRunEvents(null, 8).length" class="event-section">
+                                <h3>Other activity</h3>
+                                <ol class="event-list">
+                                    <li v-for="event in recentRunEvents(null, 8)" :key="event.id">
+                                        <time>{{ formatDate(event.at, true) }}</time>
+                                        <span :class="`event-${event.level}`">{{ event.message }}</span>
+                                    </li>
+                                </ol>
+                            </div>
                         </article>
 
                         <article class="future-panel">

@@ -20,6 +20,25 @@ Keep the console open while using Arena; press Ctrl+C to stop it. Internet acces
 is needed when dependencies must be installed. The launcher leaves failures
 visible instead of closing immediately.
 
+To start Arena with structured normal-WindBot duel logging already enabled,
+double-click **`Duel Log Arena.bat`**. It starts or reuses the prepared loopback
+SRVPro on ports `17911`/`17922`, verifies the authenticated room-count API,
+builds the current WindBot Release, starts or reuses Arena, applies the generated
+local server credential, enables traces for every Local WindBot agent, and opens
+the browser. Logs default to `../Artifacts/windbot-duel-traces`; override the
+absolute non-root destination or skip rebuilds from Command Prompt when needed:
+
+```bat
+"Duel Log Arena.bat" -TraceDirectory "D:\Arena-Traces"
+"Duel Log Arena.bat" -SkipWindBotBuild -SkipArenaBuild
+```
+
+The launcher only enables local normal-WindBot tracing. Remote WindBot and
+native SKYNET agents are left unchanged. It uses the already prepared dedicated
+runtime under `Artifacts/arena-server-v2`; it does not download or build the
+native room host. If that staged runtime is missing, the launcher stops with an
+explicit error instead of starting an Arena instance that cannot run duels.
+
 Commands are optional. For a manual PowerShell start:
 
 ```powershell
@@ -47,6 +66,31 @@ file-lock problem.
 You can also run `npm run build` and `npm start` directly on Windows or Linux.
 Model files and server credentials are not shipped. Standard and Rush database
 and script snapshots are included in `../DeckWorkshop/Data/`.
+
+### Shaddoll 2025 one-click challenge
+
+Double-click **`Shaddoll 2025 Arena.cmd`** to build the normal WindBot Release
+runtime, copy the versioned Standard card database, run the focused Shaddoll
+checks, start the prepared loopback-only duel server, apply its generated Arena
+credentials without printing them, open Arena, and start a Challenge.
+The English MDPro4 roster defines LV3 as **Normal**. The launcher defaults to one
+best-of-three match against Lightsworn and records the result in SQLite. It opens
+separate consoles for Arena and the dedicated server; keep both open during the
+match. The prepared runtime lives under ignored `Arena/Artifacts/arena-server-v2`
+and uses only `127.0.0.1`, ports `17911`/`17922`. It never changes the installed
+game, firewall or global services.
+
+Optional Command Prompt examples:
+
+```bat
+"Shaddoll 2025 Arena.cmd" -GamesPerOpponent 3
+"Shaddoll 2025 Arena.cmd" -OpponentDeck Lightsworn -SkipBuild -SkipChecks
+"Shaddoll 2025 Arena.cmd" -PreflightOnly -SkipBuild -SkipChecks
+```
+
+`-OpponentDeck` accepts only LV3 roster entries. Pass multiple names to run more
+Normal opponents. Keep both consoles open until the run ends; Ctrl+C stops only
+the processes owned by that console.
 
 ## Deck Workshop
 
@@ -112,6 +156,29 @@ entries with quoted names and deck names are supported; the manual deck-picker
 entry is excluded. Full display labels and deck registrations are retained;
 overlong participant names use a stable hash suffix to fit WindBot's 19 UTF-16
 unit wire limit without splitting surrogate pairs.
+
+To collect structured evidence for normal-WindBot development, open **Settings
+→ Agents**, select **Local WindBot**, enable **Structured duel traces**, and set
+an absolute non-root output directory. New experiments pass an isolated trace
+directory to each participant and produce JSONL under
+`<root>/<experiment>/<room>/<participant>/`. Capture is opt-in, does not enable
+training, and records only client-visible information. Analyze the resulting
+tree from the workspace root:
+
+```powershell
+python WindBot/Tools/analyze_traces.py `
+  --traces D:/Arena-Traces `
+  --output D:/Arena-Traces/analysis.json `
+  --decisions-csv D:/Arena-Traces/decisions.csv
+```
+
+Each successful Arena room launch appears on the web under **Match order &
+activity** as `Match #N`, with its room, participants and acceptance time. The
+same `matchOrder` and `roomName` are written into every WindBot JSONL row;
+`duelNumber` orders duels inside a best-of-three match, and `recordedAt` is the
+UTC timestamp for the individual row. The analyzer sorts captures by their start
+timestamp and adds `startOrder`, so concurrent runs can be compared without
+relying on file names.
 
 ## Configure a SKYNET comparison
 
@@ -191,7 +258,11 @@ search neighboring directories.
 2. Build the owned `SKYNET_DUEL_HOST.exe` with explicit engine and data inputs.
    It accepts exactly the native API's twelve room arguments, loads only its
    staged library, rejects external expansion/script environment overrides and
-   remains alive until that native room retires.
+   remains alive until that native room retires. Its v2 receipt also supports an
+   installed MDPro4 `ygoserver.dll`: the host replaces that exact module's
+   `WS2_32!bind` import before `start_server` and rewrites only IPv4
+   `INADDR_ANY` listeners to `127.0.0.1`. The receipt binds both executable
+   hashes, and the staged server rejects a mismatched host or library.
 
    ```powershell
    ./Tools/Build-DuelHost.ps1 `
@@ -267,6 +338,9 @@ are never killed. Output buffers are bounded.
 
 - **Regression:** candidate versus baseline on matching profile IDs.
 - **Challenge:** one chosen profile versus a list of opponents.
+- Bulk Standard experiments exclude `AI_RD*` Rush Duel profiles and, in
+  Challenge mode, exclude the challenger itself. Explicitly selecting a Rush
+  profile is rejected before any room or bot process is launched.
 - **Ranking:** continuously sample candidate deck pairs until stopped.
 - **Tag smoke test:** WindBot-only stability checks; native SKYNET tag play is
   disabled until its lifecycle is validated.

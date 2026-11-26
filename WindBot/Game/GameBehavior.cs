@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using WindBot.Game.AI;
+using WindBot.Game.AI.Trace;
 using YGOSharp.Network;
 using YGOSharp.Network.Enums;
 using YGOSharp.Network.Utils;
@@ -20,6 +21,7 @@ namespace WindBot.Game
         public Deck Deck { get; private set; }
 
         private GameAI _ai;
+        private TraceSession _trace;
 
         private IDictionary<StocMessage, Action<BinaryReader>> _packets;
         private IDictionary<GameMessage, Action<BinaryReader>> _messages;
@@ -52,8 +54,16 @@ namespace WindBot.Game
             _ai.Executor = DecksManager.Instantiate(_ai, _duel);
             Game.SetDeckContext(_ai.Executor.GetType().Name);
             Deck = Deck.Load(Game.DeckFile ?? _ai.Executor.Deck);
+            _trace = new TraceSession(Game.TraceData, _ai.Executor.GetType().Name,
+                Game.TraceRoom, Game.TraceMatchOrder);
 
             _select_hint = 0;
+        }
+
+        public void CloseTrace()
+        {
+            if (_trace != null)
+                _trace.End(false, "connection-retired");
         }
 
         public int GetLocalPlayer(int player)
@@ -91,6 +101,7 @@ namespace WindBot.Game
             {
                 GameMessage msg = (GameMessage)packet.ReadByte();
                 Game.SetCurrentSTOCMessage(msg.ToString());
+                _trace.OnMessage(msg);
                 if (_messages.ContainsKey(msg))
                     _messages[msg](packet);
                 _lastMessage = msg;
@@ -326,6 +337,7 @@ namespace WindBot.Game
         
         private void OnDuelEnd(BinaryReader packet)
         {
+            _trace.End(true, "duel-end");
             Thread.Sleep(500);
             Connection.Close();
         }
@@ -476,11 +488,14 @@ namespace WindBot.Game
                 Logger.DebugWriteLine("Duel started: " + _room.Names[0] + " versus " + _room.Names[1]);
             }
             _ai.OnStart();
+            _trace.Begin(_isTag);
         }
 
         private void OnWin(BinaryReader packet)
         {
-            int result = GetLocalPlayer(packet.ReadByte());
+            int winner = packet.ReadByte();
+            int result = winner < 2 ? GetLocalPlayer(winner) : winner;
+            _trace.OnOutcome(result);
 
             string otherName;
             if (_isTag)
@@ -1235,6 +1250,8 @@ namespace WindBot.Game
 
             IList<ClientCard> cards = new List<ClientCard>();
             IList<int> candidateIndexes = new List<int>();
+            List<TraceSelectionCandidate> traceCandidates = _trace.Enabled && !isTribute
+                ? new List<TraceSelectionCandidate>() : null;
             int count = packet.ReadByte();
             for (int i = 0; i < count; ++i)
             {
@@ -1243,6 +1260,7 @@ namespace WindBot.Game
                 CardLocation loc = (CardLocation)packet.ReadByte();
                 int seq = packet.ReadByte();
                 int param = packet.ReadByte();
+                _trace.AddSelectionCandidate(traceCandidates, i, id, player, (int)loc, seq, param);
                 ClientCard card;
                 if (((int)loc & (int)CardLocation.Overlay) != 0)
                 {
@@ -1270,21 +1288,27 @@ namespace WindBot.Game
                 candidateIndexes.Add(i);
             }
 
+            TraceRecord observation = _trace.PrepareSelection(
+                _duel, traceCandidates, min, max, cancelable, _select_hint);
+
             if (_select_hint == 575 && cancelable) // HINTMSG_FIELD_FIRST
             {
                 _select_hint = 0;
                 Connection.Send(CtosMessage.Response, -1);
+                _trace.CommitSelection(observation, new byte[] { 255, 255, 255, 255 }, true,
+                    "automatic-field-first-cancel");
                 return;
             }
 
             IList<ClientCard> selected = func(cards, min, max, _select_hint, cancelable);
             _select_hint = 0;
 
-            SendCardSelectionResponse(cards, candidateIndexes, selected, min, max, cancelable, isTribute);
+            SendCardSelectionResponse(cards, candidateIndexes, selected, min, max, cancelable, isTribute, observation);
         }
 
         private void SendCardSelectionResponse(IList<ClientCard> cards, IList<int> candidateIndexes,
-            IList<ClientCard> selected, int min, int max, bool cancelable, bool isTribute = false)
+            IList<ClientCard> selected, int min, int max, bool cancelable, bool isTribute = false,
+            TraceRecord observation = null)
         {
             bool validCount = selected != null
                 && (isTribute ? _ai.IsValidTributeSelection(selected, min, max) : selected.Count >= min && selected.Count <= max);
@@ -1332,6 +1356,8 @@ namespace WindBot.Game
             if (selected.Count == 0 && cancelable)
             {
                 Connection.Send(CtosMessage.Response, -1);
+                _trace.CommitSelection(observation, new byte[] { 255, 255, 255, 255 }, true,
+                    isValid ? "executor" : "legal-fallback");
                 return;
             }
 
@@ -1346,6 +1372,7 @@ namespace WindBot.Game
             BinaryWriter reply = GamePacketFactory.Create(CtosMessage.Response);
             reply.Write(result);
             Connection.Send(reply);
+            _trace.CommitSelection(observation, result, false, isValid ? "executor" : "legal-fallback");
         }
 
         private void OnSelectUnselectCard(BinaryReader packet)
@@ -1358,6 +1385,8 @@ namespace WindBot.Game
 
             IList<ClientCard> cards = new List<ClientCard>();
             IList<int> candidateIndexes = new List<int>();
+            List<TraceSelectionCandidate> traceCandidates = _trace.Enabled
+                ? new List<TraceSelectionCandidate>() : null;
             int count = packet.ReadByte();
             for (int i = 0; i < count; ++i)
             {
@@ -1365,7 +1394,9 @@ namespace WindBot.Game
                 int player = GetLocalPlayer(packet.ReadByte());
                 CardLocation loc = (CardLocation)packet.ReadByte();
                 int seq = packet.ReadByte();
-                packet.ReadByte(); // pos
+                int position = packet.ReadByte();
+                _trace.AddSelectionCandidate(traceCandidates, i, id, player,
+                    (int)loc, seq, position);
                 ClientCard card;
                 if (((int)loc & (int)CardLocation.Overlay) != 0)
                     card = new ClientCard(id, CardLocation.Overlay, -1);
@@ -1410,8 +1441,13 @@ namespace WindBot.Game
             // Lua helpers such as SelectSubGroup use this hint message repeatedly for one selection.
 
             int selectionMin = finishable ? 0 : 1;
+            TraceRecord observation = _trace.PrepareSelection(
+                _duel, traceCandidates, selectionMin, 1, cancelable, _select_hint);
+            if (observation != null)
+                observation.Prompt = "select_unselect";
             IList<ClientCard> selected = _ai.OnSelectCard(cards, selectionMin, 1, _select_hint, cancelable);
-            SendCardSelectionResponse(cards, candidateIndexes, selected, selectionMin, 1, cancelable);
+            SendCardSelectionResponse(cards, candidateIndexes, selected,
+                selectionMin, 1, cancelable, false, observation);
         }
 
         private void OnSelectCard(BinaryReader packet)
@@ -1431,6 +1467,8 @@ namespace WindBot.Game
             IList<ClientCard> cards = new List<ClientCard>();
             IList<int> descs = new List<int>();
             IList<bool> forces = new List<bool>();
+            List<TraceSelectionCandidate> traceCandidates = _trace.Enabled
+                ? new List<TraceSelectionCandidate>() : null;
 
             for (int i = 0; i < count; ++i)
             {
@@ -1453,6 +1491,15 @@ namespace WindBot.Game
                 if (card.Id == 0)
                     card.SetId(id);
 
+                _trace.AddSelectionCandidate(traceCandidates, i, id, con, loc, seq,
+                    ((loc & (int)CardLocation.Overlay) != 0) ? sseq : card.Position);
+                if (traceCandidates != null && traceCandidates.Count > 0)
+                {
+                    TraceSelectionCandidate candidate = traceCandidates[traceCandidates.Count - 1];
+                    candidate.Description = candidate.Known ? desc : -1;
+                    candidate.Forced = forced;
+                }
+
                 cards.Add(card);
                 descs.Add(desc);
                 forces.Add(forced);
@@ -1464,13 +1511,25 @@ namespace WindBot.Game
                 return;
             }
 
+            bool mustRespond = forces.Any(force => force);
+            TraceRecord observation = _trace.PrepareSelection(
+                _duel, traceCandidates, mustRespond ? 1 : 0, 1, !mustRespond, hint1 | hint2);
+            if (observation != null)
+                observation.Prompt = "select_chain";
+
             if (cards.Count == 1 && forces[0])
             {
+                _trace.CommitSelection(observation, new byte[] { 1, 0 }, false, "forced");
                 Connection.Send(CtosMessage.Response, 0);
                 return;
             }
 
-            Connection.Send(CtosMessage.Response, _ai.OnSelectChain(cards, descs, forces, hint1 | hint2));
+            int response = _ai.OnSelectChain(cards, descs, forces, hint1 | hint2);
+            if (response < 0)
+                _trace.CommitSelection(observation, new byte[] { 255, 255, 255, 255 }, true, "executor");
+            else
+                _trace.CommitSelection(observation, new byte[] { 1, (byte)response }, false, "executor");
+            Connection.Send(CtosMessage.Response, response);
         }
 
         private void OnSelectCounter(BinaryReader packet)
@@ -1544,6 +1603,7 @@ namespace WindBot.Game
 
             _duel.MainPhase = new MainPhase();
             MainPhase main = _duel.MainPhase;
+            List<TraceOffer> traceOffers = _trace.Enabled ? new List<TraceOffer>() : null;
             int count;
             for (int k = 0; k < 5; k++)
             {
@@ -1554,6 +1614,7 @@ namespace WindBot.Game
                     int con = GetLocalPlayer(packet.ReadByte());
                     CardLocation loc = (CardLocation)packet.ReadByte();
                     int seq = packet.ReadByte();
+                    _trace.AddOffer(traceOffers, k, i, con, (int)loc, seq, -1);
                     ClientCard card = _duel.GetCard(con, loc, seq);
                     if (card == null) continue;
                     card.ActionIndex[k] = i;
@@ -1580,12 +1641,13 @@ namespace WindBot.Game
             count = packet.ReadByte();
             for (int i = 0; i < count; ++i)
             {
-                packet.ReadInt32(); // card id
+                int offeredCode = packet.ReadInt32();
                 int con = GetLocalPlayer(packet.ReadByte());
                 CardLocation loc = (CardLocation)packet.ReadByte();
                 int seq = packet.ReadByte();
                 int desc = packet.ReadInt32();
 
+                _trace.AddOffer(traceOffers, 5, i, con, (int)loc, seq, desc, offeredCode < 0);
                 ClientCard card = _duel.GetCard(con, loc, seq);
                 if (card == null) continue;
                 card.ActionIndex[5] = i;
@@ -1598,9 +1660,18 @@ namespace WindBot.Game
 
             main.CanBattlePhase = packet.ReadByte() != 0;
             main.CanEndPhase = packet.ReadByte() != 0;
-            packet.ReadByte(); // CanShuffle
+            bool canShuffle = packet.ReadByte() != 0;
+            if (main.CanBattlePhase)
+                _trace.AddOffer(traceOffers, 6, 0, 0, 0, 0, -1);
+            if (main.CanEndPhase)
+                _trace.AddOffer(traceOffers, 7, 0, 0, 0, 0, -1);
+            if (canShuffle)
+                _trace.AddOffer(traceOffers, 8, 0, 0, 0, 0, -1);
 
-            Connection.Send(CtosMessage.Response, _ai.OnSelectIdleCmd(main).ToValue());
+            TraceRecord observation = _trace.Prepare(_duel, traceOffers);
+            int response = _ai.OnSelectIdleCmd(main).ToValue();
+            Connection.Send(CtosMessage.Response, response);
+            _trace.Commit(observation, response, _ai.LastDecisionSource);
         }
 
         private void OnSelectOption(BinaryReader packet)

@@ -431,9 +431,11 @@ test('pair launches use one duel password per pair and never reuse it', async (c
         return new Response(null, { status: 200 });
     };
 
-    await service.launchMatchup(activeContext, matchup);
-    await service.launchMatchup(activeContext, matchup);
-    await service.launchRankingPair(activeContext, rankingEntries);
+    const launches = [
+        await service.launchMatchup(activeContext, matchup),
+        await service.launchMatchup(activeContext, matchup),
+        await service.launchRankingPair(activeContext, rankingEntries),
+    ];
 
     const passwords = requests.map((url) => url.searchParams.get('password'));
     assert.deepEqual(passwords, [
@@ -446,6 +448,10 @@ test('pair launches use one duel password per pair and never reuse it', async (c
     ]);
     assert.ok(requests.every((url) => url.searchParams.get('host') === 'srvpro.lan'));
     assert.ok(requests.every((url) => url.searchParams.get('port') === '7911'));
+    assert.deepEqual(launches.map((launch) => launch.launchOrder), [1, 2, 3]);
+    assert.deepEqual(launches.map((launch) => launch.roomName), [
+        'M#123456789', 'M#123456790', 'M#123456791',
+    ]);
 });
 
 test('tag launches send four randomly seated bots to one T room', async (context) => {
@@ -600,6 +606,64 @@ test('WindBot 404 distinguishes a missing challenger from other missing decks', 
         (error) => error.code === 'WINDBOT_DECK_NOT_FOUND'
             && error.message === 'Opponent-MissingOpponent deck “MissingOpponent” does not exist in the selected WindBot; check that bot.conf matches its version',
     );
+});
+
+test('local WindBot trace capture is isolated by run room and participant', async (context) => {
+    const service = new ArenaService({}, {});
+    const activeContext = {
+        abortController: new AbortController(),
+        id: 'run:trace/one',
+        kind: 'regression',
+        settings: {
+            srvpro: { duelPort: 7911, host: 'srvpro.lan' },
+            windbots: {
+                current: { mode: 'local', traceDirectory: 'D:\\Arena-Traces', traceEnabled: true },
+                old: { mode: 'local', traceDirectory: 'D:\\Old-Traces', traceEnabled: false },
+            },
+        },
+    };
+    const requests = [];
+    const originalFetch = global.fetch;
+    context.after(() => { global.fetch = originalFetch; });
+    global.fetch = async (url) => {
+        requests.push(new URL(url));
+        return new Response(null, { status: 200 });
+    };
+
+    await service.addBot(activeContext, {
+        deck: 'Shaddoll 2025', executionMode: 'local', endpointHost: '127.0.0.1',
+        endpointPort: 2399, rankName: 'Candidate', source: 'current',
+    }, 'M#123456789', 7);
+    await service.addBot(activeContext, {
+        deck: 'Shaddoll 2025', executionMode: 'local', endpointHost: '127.0.0.1',
+        endpointPort: 2398, rankName: 'Baseline', source: 'old',
+    }, 'M#123456789');
+
+    const traceData = requests[0].searchParams.get('tracedata');
+    assert.match(traceData, /^D:\\Arena-Traces\\run_trace_one\\M_123456789\\current-Shaddoll_2025-[a-f0-9]{12}$/);
+    assert.equal(requests[0].searchParams.get('traceroom'), 'M#123456789');
+    assert.equal(requests[0].searchParams.get('traceorder'), '7');
+    assert.equal(requests[1].searchParams.has('tracedata'), false);
+    assert.equal(requests[1].searchParams.has('traceorder'), false);
+});
+
+test('successful launches add a web-visible match order event', () => {
+    const launches = [];
+    const events = [];
+    const service = new ArenaService({}, {
+        addEvent(...args) { events.push(args); },
+        recordLaunch(...args) { launches.push(args); },
+    });
+    service.recordSuccessfulLaunch({ id: 'run-1' }, [4], {
+        launchOrder: 3,
+        participants: ['Shaddoll 2025', 'Lightsworn'],
+        roomName: 'M#123456789',
+    });
+    assert.deepEqual(launches, [['run-1', [4]]]);
+    assert.deepEqual(events, [[
+        'run-1', 'info', 'match-launched',
+        'Match #3 launched · M#123456789 · Shaddoll 2025 vs Lightsworn',
+    ]]);
 });
 
 test('scheduler stops immediately when WindBot reports a missing deck', async () => {
@@ -806,7 +870,7 @@ test('deck listing keeps current decks available without an old WindBot', () => 
     });
 
     assert.deepEqual(service.listDecks(), {
-        currentDecks: [{ aiLevel: null, currentLabel: 'Current', deck: 'Dragon' }],
+        currentDecks: [{ aiLevel: null, currentLabel: 'Current', deck: 'Dragon', format: 'standard' }],
         oldDecks: [],
         regressionDecks: [],
     });
@@ -1360,7 +1424,10 @@ for (const mode of ['local', 'remote']) {
             const next = service.contexts.get('srvpro-2');
             const competitors = next.matchups.flatMap((matchup) => matchup.competitors)
                 .filter((competitor) => kind !== 'challenge' || competitor.slot !== 1);
-            assert.deepEqual([...new Set(competitors.map((competitor) => competitor.deck))].sort(), ['Beta', 'Gamma']);
+            assert.deepEqual(
+                [...new Set(competitors.map((competitor) => competitor.deck))].sort(),
+                kind === 'challenge' ? ['Gamma'] : ['Beta', 'Gamma'],
+            );
             assert.ok(competitors.every((competitor) => competitor.dialog === 'updated'));
             assert.ok(competitors.filter((competitor) => competitor.deck === 'Beta')
                 .every((competitor) => competitor.botLabel === 'Renamed Beta'));

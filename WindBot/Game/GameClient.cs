@@ -21,6 +21,9 @@ namespace WindBot.Game
         public string Deck;
         public string DeckFile;
         public string Dialog;
+        public string TraceData { get; private set; }
+        public string TraceRoom { get; private set; }
+        public int? TraceMatchOrder { get; private set; }
         public int Hand;
         public bool Debug;
         public bool _chat;
@@ -39,6 +42,9 @@ namespace WindBot.Game
             Deck = Info.Deck;
             DeckFile = Info.DeckFile;
             Dialog = Info.Dialog;
+            TraceData = Info.TraceData;
+            TraceRoom = Info.TraceRoom;
+            TraceMatchOrder = Info.TraceMatchOrder;
             Hand = Info.Hand;
             Debug = Info.Debug;
             _chat = Info.Chat;
@@ -51,6 +57,12 @@ namespace WindBot.Game
         internal void SetDeckContext(string executorName)
         {
             ExecutorName = executorName;
+        }
+
+        public void CloseTrace()
+        {
+            if (_behavior != null)
+                _behavior.CloseTrace();
         }
 
         internal void SetCurrentSTOCMessage(string message)
