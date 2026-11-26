@@ -10,7 +10,7 @@ namespace YGOSharp.Network
         public event Action<Exception> Disconnected;
         public event Action<byte[]> DataReceived;
 
-        public bool IsConnected { get; private set; }
+        public bool IsConnected { get { return _isConnected; } }
 
         public IPAddress RemoteIPAddress
         {
@@ -21,6 +21,8 @@ namespace YGOSharp.Network
 
         private Socket _socket;
         private IPEndPoint _endPoint;
+        private readonly object _stateLock = new object();
+        private volatile bool _isConnected;
         private bool _isClosed;
         private byte[] _receiveBuffer = new byte[BufferSize];
 
@@ -35,27 +37,38 @@ namespace YGOSharp.Network
 
         public void Initialize(Socket socket)
         {
-            _endPoint = (IPEndPoint)socket.RemoteEndPoint;
-            _socket = socket;
-            IsConnected = true;
+            lock (_stateLock)
+            {
+                if (_isClosed)
+                    throw new ObjectDisposedException("NetworkClient");
+                if (_isConnected)
+                    throw new InvalidOperationException("The client already owns a socket.");
+
+                _endPoint = (IPEndPoint)socket.RemoteEndPoint;
+                _socket = socket;
+                _isConnected = true;
+            }
             Connected?.Invoke();
         }
 
         public void BeginConnect(IPAddress address, int port)
         {
-            if (!IsConnected && !_isClosed)
+            try
             {
-                IsConnected = true;
-                try
+                lock (_stateLock)
                 {
+                    if (_isClosed || _isConnected)
+                        return;
+
                     _endPoint = new IPEndPoint(address, port);
                     _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                    _socket.BeginConnect(_endPoint, new AsyncCallback(ConnectCallback), null);
+                    _isConnected = true;
                 }
-                catch (Exception ex)
-                {
-                    Close(ex);
-                }
+                _socket.BeginConnect(_endPoint, new AsyncCallback(ConnectCallback), null);
+            }
+            catch (Exception ex)
+            {
+                Close(ex);
             }
         }
 
@@ -85,23 +98,24 @@ namespace YGOSharp.Network
 
         public void Close(Exception error = null)
         {
-            if (!_isClosed)
+            lock (_stateLock)
             {
+                if (_isClosed)
+                    return;
+
                 _isClosed = true;
-                try
-                {
-                    if (_socket != null)
-                    {
-                        _socket.Close();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ex = new AggregateException(error, ex);
-                }
-                IsConnected = false;
-                Disconnected?.Invoke(error);
+                _isConnected = false;
             }
+
+            try
+            {
+                _socket?.Close();
+            }
+            catch (Exception ex)
+            {
+                error = error == null ? ex : new AggregateException(error, ex);
+            }
+            Disconnected?.Invoke(error);
         }
 
         private void ConnectCallback(IAsyncResult result)

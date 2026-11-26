@@ -323,6 +323,7 @@ namespace WindBot
                         if (Debugger.IsAttached)
                             throw;
                         Logger.WriteErrorLine("Tick Error", ex);
+                        break;
                     }
                 }
                 Logger.DebugWriteLine(client.Username + " end.");
@@ -335,9 +336,15 @@ namespace WindBot
             }
             finally
             {
-                if (client != null)
-                    client.CloseTrace();
-                Logger.ClearContext();
+                try
+                {
+                    client?.Connection?.Close();
+                }
+                finally
+                {
+                    client?.CloseTrace();
+                    Logger.ClearContext();
+                }
             }
         }
 

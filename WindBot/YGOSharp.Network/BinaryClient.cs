@@ -23,8 +23,8 @@ namespace YGOSharp.Network
         private byte[] _lengthBuffer = new byte[16];
 
         private int _pendingLength;
-        private bool _wasConnected;
-        private bool _wasDisconnected;
+        private volatile bool _wasConnected;
+        private volatile bool _wasDisconnected;
         private bool _wasDisconnectedEventFired;
         private Exception _closingException;
 
@@ -147,8 +147,8 @@ namespace YGOSharp.Network
 
         private void Client_Disconnected(Exception ex)
         {
-            _wasDisconnected = true;
             _closingException = ex;
+            _wasDisconnected = true;
         }
 
         private void Client_DataReceived(byte[] data)

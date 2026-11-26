@@ -53,7 +53,11 @@ namespace WindBot.Game
             _ai = new GameAI(Game, _duel);
             _ai.Executor = DecksManager.Instantiate(_ai, _duel);
             Game.SetDeckContext(_ai.Executor.GetType().Name);
-            Deck = Deck.Load(Game.DeckFile ?? _ai.Executor.Deck);
+            string deckFile = Game.DeckFile ?? _ai.Executor.Deck;
+            Deck = Deck.Load(deckFile);
+            if (Deck == null || Deck.Cards.Count == 0)
+                throw new InvalidDataException("Could not load a playable main deck from '" + deckFile
+                    + "'. Check the deck file and the configured card database.");
             _trace = new TraceSession(Game.TraceData, _ai.Executor.GetType().Name,
                 Game.TraceRoom, Game.TraceMatchOrder);
 
