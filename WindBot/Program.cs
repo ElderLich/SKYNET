@@ -19,9 +19,9 @@ namespace WindBot
 
         internal static void Main(string[] args)
         {
-            Logger.WriteLine("WindBot starting...");
-
             Config.Load(args);
+            Logger.SetLogFile(Config.GetString("LogPath"));
+            Logger.WriteLine("WindBot starting...");
 
             string databasePath = Config.GetString("DbPath", "cards.cdb");
 

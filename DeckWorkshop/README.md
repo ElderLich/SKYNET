@@ -27,12 +27,12 @@ Open **http://127.0.0.1:3000/#workshop**. Windows users can also use
 3. Inspect the printed text, database prompt strings, script hash and numbered
    Lua. Download **Text report** for the Deck Compiler-style combined text/Lua file.
 4. For Standard decks, enter a unique executor name and **Generate starter**.
-   Preview/download its two C# files, `.ydk`, analysis, instructions and manifest.
+   Preview/download its executor source, `.ydk`, analysis, instructions and manifest.
    Copy the files to their displayed destinations when ready to integrate them.
 
-Both C# files are required. The per-deck planner base comes from
-`WindBot/Templates/RdaPlannerExecutor.cs.template`; the concrete executor contains
-card IDs, observation/model/action seams and prompt callbacks. Registration starts
+Copy the single `<Name>Executor.cs` to `WindBot/Game/AI/Decks/` and its deck list
+to `WindBot/Decks/`. The executor file includes the card IDs, model hooks, prompt
+callbacks and planner base from `WindBot/Templates/RdaPlannerExecutor.cs.template`. Registration starts
 as `Test`, outside the normal random pool. Its model deliberately starts disabled.
 The generator never installs source, changes the roster, compiles or launches a bot.
 

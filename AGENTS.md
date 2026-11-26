@@ -7,7 +7,10 @@ This repository has three independent source folders:
 - `WindBot/`: the normal WindBot project restored from the explicitly selected
   `windbot-elder` checkout. Preserve `WindBot.sln`, `WindBot.csproj`, `WindBot.exe`,
   `BotWrapper`, namespaces, executor registrations and deck names. Read its own
-  `AGENTS.md` before changing the normal bot.
+  `AGENTS.md` before changing the normal bot. Keep only registered executor
+  files in `WindBot/Game/AI/Decks/`. Keep deck-specific runtime helpers in the
+  owning executor file and its developer tools in `WindBot/Tools/Executors/<deck>/`.
+  Use the exact registered deck name for the tools folder.
 - `SKYNET/`: the existing experimental training AI. Read `SKYNET/AGENTS.md` for
   policy, legality, hidden information, training and evidence requirements. Its
   solution is `SKYNET/Skynet.sln`, output `SKYNET.exe`. The normal WindBot collection

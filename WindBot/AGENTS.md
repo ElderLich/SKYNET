@@ -12,8 +12,14 @@ the combo-fixture/Arena workflow. Implement each deck's card model and prompt
 handling explicitly; the template itself provides no card coverage. Existing
 executors remain supported and do not need wholesale rewrites for narrow fixes.
 
-- Put deck logic in `Game/AI/Decks`; preserve `[Deck]` names and `AddExecutor`
-  priority. Keep the original selection/callback lifecycle together.
+- Keep one registered `*Executor.cs` file per executor in `Game/AI/Decks/`.
+  Put its deck-specific planner, tactics, state and helper types in the same file.
+  Group larger implementations by responsibility. Preserve `[Deck]` names,
+  `AddExecutor` priority and the selection/callback lifecycle.
+- Put maintained launchers, regression harnesses and native fixtures specific to one
+  deck in `Tools/Executors/<deck>/`. Use the exact `Deck=` registration for the
+  folder name and create it only when needed. Keep cross-deck tools in
+  `Tools/` and generated logs, binaries and receipts under ignored `Artifacts/`.
 - Read only information provided to this client. Unknown opponent cards are
   valid. Query remaining own-deck cards with `HasInDeck`/`GetCardCountInDeck`.
 - Use the server's offered cards and response indices. Respect selection bounds,
@@ -24,7 +30,7 @@ executors remain supported and do not need wholesale rewrites for narrow fixes.
   files, deck resources, and dialogs already use project wildcards.
 - Build Debug and Release Any CPU using Visual Studio/MSBuild. Runtime checks
   require an explicitly selected card database and a compatible duel host.
-- Use `Tools/Invoke-RdaPlannerChecks.ps1` for RDA scheduling and model regressions.
+- Use `Tools/Executors/TheCrimsonKing/Invoke-RdaPlannerChecks.ps1` for RDA scheduling and model regressions.
   Preserve a baseline runtime before changing planner policy; compare actual
   script-backed duels separately from model replay and Arena match rankings.
 - Dialogs and `BotWrapper/bot.conf` are supplied resource snapshots; preserve
@@ -58,7 +64,7 @@ and synchronized; it must never contain another duel's mutable card state.
 
 - `Game/`: protocol-driven duel state and main/battle phase action models.
 - `Game/AI/`: shared decisions, selection helpers and card extensions.
-- `Game/AI/Decks/`: deck-specific routes, priorities and temporary state.
+- `Game/AI/Decks/`: one source file containing each registered deck's implementation.
 - `Game/AI/Enums/`: genuinely shared card classifications.
 - `YGOSharp.Network/`: framed TCP messages and CTOS/STOC transport.
 - `YGOSharp.OCGWrapper/` and `.Enums/`: database models and protocol/rule enums.

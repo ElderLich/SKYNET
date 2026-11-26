@@ -17,6 +17,9 @@ import sqlite3
 import sys
 from types import SimpleNamespace
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from fixture_deck import read_deck, write_deck
+
 LO, SKULL, SAFFIRA = 25801745, 10774240, 51296484
 BARRIER, RADIANCE, BLESSING = 98477480, 86310763, 39114494
 SAGE, SAURAVIS, PRAYERS = 88284599, 4810828, 52472775
@@ -41,24 +44,6 @@ SCENARIOS = [
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def read_deck(path):
-    zones = {"main": [], "extra": [], "side": []}
-    zone = "main"
-    for line in path.read_text(encoding="utf-8-sig").splitlines():
-        line = line.strip()
-        if line == "#main": zone = "main"
-        elif line == "#extra": zone = "extra"
-        elif line == "!side": zone = "side"
-        elif line.isdigit(): zones[zone].append(int(line))
-    return zones
-
-
-def write_deck(path, main, extra):
-    path.write_text("#created by Voiceless native scenario\n#main\n"
-                    + "\n".join(map(str, main)) + "\n#extra\n"
-                    + "\n".join(map(str, extra)) + "\n!side\n", encoding="utf-8")
 
 
 def inspect_log(path, names, hand, route, interruption):
@@ -172,7 +157,7 @@ def main():
     parser.add_argument("--timeout", type=float, default=90)
     args = parser.parse_args()
     if not 10 <= args.timeout <= 300: parser.error("timeout must be 10..300 seconds")
-    root = Path(__file__).resolve().parents[2]
+    root = Path(__file__).resolve().parents[4]
     tool = root / "SKYNET/Tools/Skynet/native_smoke.py"
     spec = importlib.util.spec_from_file_location("voiceless_native_smoke", tool)
     smoke = importlib.util.module_from_spec(spec)

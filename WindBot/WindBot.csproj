@@ -81,7 +81,7 @@
     <Compile Include="Game\AI\CardSelector.cs" />
     <Compile Include="Game\AI\DeckAttribute.cs" />
     <Compile Include="Game\AI\DecksManager.cs" />
-    <Compile Include="Game\AI\Decks\*.cs" />
+    <Compile Include="Game\AI\Decks\*Executor.cs" />
     <Compile Include="Game\AI\DefaultExecutor.cs" />
     <Compile Include="Game\AI\Dialogs.cs" />
     <Compile Include="Game\AI\Enums\*.cs" />

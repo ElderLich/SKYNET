@@ -51,8 +51,8 @@ function generateFiles(requestedName, analysis, workspaceRoot) {
     const templatePath = path.join(workspaceRoot, 'WindBot', 'Templates', 'RdaPlannerExecutor.cs.template');
     const template = fs.readFileSync(templatePath, 'utf8');
     const baseSource = template.replace(/RdaPlannerExecutorTemplate/g, baseName)
-        .replace('// This .template file is NOT compiled or registered as a bot.', '// Generated per-deck planner base. Paired executor is registered as Test.')
-        .replace('// Copy it into your new executor\'s source only after implementing its card model.', '// This scaffold contains no card semantics; implement and validate the paired model.');
+        .replace('// This .template file is NOT compiled or registered as a bot.', '// Planner base for the registered executor above.')
+        .replace('// Copy it into your new executor\'s source only after implementing its card model.', '// Implement and validate the card model in the registered executor.');
     const constants = analysis.cards.map((card) => {
         const label = card.name.normalize('NFKD').replace(/[^A-Za-z0-9]+/g, '').slice(0, 56) || 'Unknown';
         return `            // ${comment(card.name)} — ${card.counts.main} main, ${card.counts.extra} extra, ${card.counts.side} side\n            public const int Card_${label}_${card.id} = ${card.id};`;
@@ -195,7 +195,6 @@ establish legal combos, correct selections, competitive strength or Rush support
 
 Files are relative to WindBot/ unless specified otherwise:
   Game/AI/Decks/${className}.cs
-  Game/AI/Decks/${baseName}.cs
   Decks/${deckName}.ydk
 The UI downloads individual files; recreate these folders or copy each file to
 its listed path. Deck source and .ydk wildcards already include these paths.
@@ -216,7 +215,8 @@ Keep analysis.txt and manifest.json with your authoring evidence outside source.
    for platform prerequisites and the actual validation limits.
    The runtime check loads SQLite, verifies the deck and compiled registration;
    its output directory must be new. It does not play a duel.
-5. Add focused decision/prompt/reset fixtures before connecting a real host.
+5. Keep maintained decision, prompt and reset fixtures in Tools/Executors/${name}/.
+   Run them before connecting a real host.
    The existing RDA suite tests TheCrimsonKing, not your generated executor.
 6. Use an explicitly configured database and compatible duel host. Choose
    Deck=${name} explicitly: [Deck(..., "Test")] excludes random selection.
@@ -234,8 +234,7 @@ Keep SKYNET training and policy separate. No checkpoint promotion or training
 is performed by this workflow. Keep the original WindBot/YGOSharp attribution.
 `;
     const files = [
-        { name: `Game/AI/Decks/${className}.cs`, content: crlf(source) },
-        { name: `Game/AI/Decks/${baseName}.cs`, content: crlf(baseSource) },
+        { name: `Game/AI/Decks/${className}.cs`, content: crlf(`${source}\n${baseSource}`) },
         { name: `Decks/${deckName}.ydk`, content: crlf(analysis.normalizedYdk) },
         { name: 'README.txt', content: instructions },
         { name: 'analysis.txt', content: analysis.report },

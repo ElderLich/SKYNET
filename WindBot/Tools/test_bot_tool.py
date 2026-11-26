@@ -11,9 +11,32 @@ import tempfile
 import unittest
 
 import bot_tool
+import fixture_deck
 
 
 class PortableToolTests(unittest.TestCase):
+    def test_deck_sources_are_registered_executors(self):
+        decks = bot_tool.ROOT / "Game" / "AI" / "Decks"
+        for source in decks.rglob("*.cs"):
+            with self.subTest(source=source.name):
+                self.assertEqual(source.parent, decks)
+                self.assertTrue(source.name.endswith("Executor.cs"))
+                self.assertRegex(source.read_text(encoding="utf-8-sig"), r"\[Deck\s*\(")
+
+    def test_registered_suites_have_harness_sources(self):
+        for suite, relative_path in bot_tool.SUITES.items():
+            with self.subTest(suite=suite):
+                self.assertTrue((bot_tool.ROOT / "Tools" / relative_path).is_file(), relative_path)
+
+    def test_fixture_deck_preserves_zone_order_and_duplicate_cards(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "fixture.ydk"
+            path.write_text("#created by fixture\n#main\n9\n3\n9\n#extra\n8\n!side\n4\n", encoding="utf-8-sig")
+            zones = fixture_deck.read_deck(path)
+            self.assertEqual({"main": [9, 3, 9], "extra": [8], "side": [4]}, zones)
+            fixture_deck.write_deck(path, zones["main"], zones["extra"])
+            self.assertEqual({"main": [9, 3, 9], "extra": [8], "side": []}, fixture_deck.read_deck(path))
+
     def test_selected_database_is_read_only_and_missing_database_is_not_created(self):
         with tempfile.TemporaryDirectory() as temporary:
             database = Path(temporary) / "cards with spaces.cdb"

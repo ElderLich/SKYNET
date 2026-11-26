@@ -168,14 +168,15 @@ test('generated files have unique Test registrations, CRLF, reproducible provena
     const { workshop, workspaceRoot } = fixture(context);
     const result = workshop.generate({ format: 'standard', ydk: '#main\n10001\n10002', name: 'Example Deck' });
     assert.equal(result.className, 'ExampleDeckExecutor');
-    const source = result.files.find((file) => file.name.endsWith('Executor.cs')).content;
+    const sources = result.files.filter((file) => file.name.endsWith('.cs'));
+    assert.deepEqual(sources.map((file) => file.name), ['Game/AI/Decks/ExampleDeckExecutor.cs']);
+    const source = sources[0].content;
     assert.match(source, /\[Deck\("ExampleDeck", "AI_ExampleDeck", "Test"\)\]/);
     assert.match(source, /protected override bool ValidateDeckAndModel\(\)[\s\S]*?return false;/);
     assert.match(source, /Card_StandardOne_10001 = 10001;/);
     assert.equal(source.replace(/\r\n/g, '').includes('\n'), false);
-    const base = result.files.find((file) => file.name.endsWith('PlannerBase.cs')).content;
-    assert.match(base, /class ExampleDeckPlannerBase<TState, TAction>/);
-    assert.doesNotMatch(base, /RdaPlannerExecutorTemplate/);
+    assert.match(source, /class ExampleDeckPlannerBase<TState, TAction>/);
+    assert.doesNotMatch(source, /RdaPlannerExecutorTemplate/);
     const manifest = JSON.parse(result.files.find((file) => file.name === 'manifest.json').content);
     assert.equal(manifest.modelImplemented, false);
     assert.match(manifest.templateSha256, /^[a-f0-9]{64}$/);
@@ -191,7 +192,7 @@ test('generation detects existing class and registration collisions before expor
     const { workshop, workspaceRoot } = fixture(context);
     fs.writeFileSync(path.join(workspaceRoot, 'WindBot', 'Game', 'AI', 'Decks', 'Existing.cs'), '[Deck("Existing", "AI_Old")] public class OtherExecutor {}');
     assert.throws(() => workshop.generate({ format: 'standard', ydk: '#main\n10001', name: 'existing' }), /conflicts/);
-    fs.writeFileSync(path.join(workspaceRoot, 'WindBot', 'Game', 'AI', 'Decks', 'Collision.cs'), 'public class UniquePlannerBase<T> {}');
+    fs.writeFileSync(path.join(workspaceRoot, 'WindBot', 'Game', 'AI', 'Decks', 'CollisionExecutor.cs'), 'public class UniquePlannerBase<T> {}');
     assert.throws(() => workshop.generate({ format: 'standard', ydk: '#main\n10001', name: 'Unique' }), /conflicts/);
 });
 
