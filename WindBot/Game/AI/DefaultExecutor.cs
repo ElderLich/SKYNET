@@ -1358,14 +1358,10 @@ namespace WindBot.Game.AI
 
         protected bool 手枪龙Effect()
         {
-            ClientCard target = Util.GetBestEnemyMonster(true, true);
-            {
-                if (target != null) 
-                AI.SelectCard(target);
+            // The coin toss determines whether the host offers a destruction prompt.
+            return Enemy.GetMonsterCount() > 0;
         }
 
-            return true;
-        }
         protected bool 传说战士Effect()
         {
             IList<ClientCard> targets = new List<ClientCard>();
@@ -1399,82 +1395,42 @@ namespace WindBot.Game.AI
         }
         protected bool 星战骑佩流安Effect()
         {
-            AI.SelectCard(Bot.GetMonsters().GetHighestAttackMonster());
-            AI.SelectNextCard(Enemy.GetMonsters().GetLowestLevelMonster());
-            return true;
+            return Bot.MonsterZone.Any(c => c != null && c.IsFaceup()) &&
+                Enemy.MonsterZone.Any(c => c != null && c.IsFaceup());
         }
+
         protected bool 加百列热茶Effect()
         {
-            foreach (ClientCard m in Bot.Hand)
-                AI.SelectCard(m);
-            AI.SelectNextCard(Bot.GetMonsters().GetHighestAttackMonster());
-            return true;
+            return Bot.MonsterZone.Any(c => c != null && c.IsFaceup());
         }
+
         protected bool 破灭之龙魔导士Effect()
         {
-            foreach (ClientCard m in Bot.GetGraveyardMonsters())
-                AI.SelectCard(m);
-            AI.SelectNextCard(Bot.GetMonsters().GetHighestAttackMonster());
-            return true;
+            // The host offers four eligible graveyard cards together for the cost.
+            return Bot.MonsterZone.Any(c => c != null && c.IsFaceup());
         }
+
         protected bool 斗牛士Effect()
         {
-            {
-                foreach (ClientCard o in Bot.Graveyard)
-                    AI.SelectCard(o);
-                if (Enemy.GetMonsters().GetHighestAttackMonster() == null)
-                    AI.SelectNextCard(Enemy.MonsterZone.GetHighestAttackMonster());
-                return true;
-            }
+            return Enemy.MonsterZone.Any(c => c != null && c.IsFaceup() && c.IsAttack() && c.Level <= 8);
         }
+
         protected bool 海龙骑士Effect()
         {
-            List<ClientCard> spells = Enemy.GetSpells();
-            ClientCard selected = spells.FirstOrDefault(card => card.IsFacedown());
-            foreach (ClientCard m in Bot.GetGraveyardMonsters())
-                AI.SelectCard(m);
-            AI.SelectNextCard(selected);
-            return true;
+            return Enemy.SpellZone.Any(c => c != null && c.IsFacedown());
         }
+
         protected bool 耳语妖精Effect()
         {
-
-            IList<ClientCard> targets = new List<ClientCard>();
-            foreach (ClientCard card in Enemy.GetGraveyardMonsters())
-            {
-                if (card.Level <= 4)
-                    targets.Add(card);
-                if (card.Level <= 6)
-                    targets.Add(card);
-                else
-                    targets.Add(card);
-            }
-            AI.SelectCard(targets);
-            return true;
+            // The discard is paid before the opposing graveyard cards are offered.
+            return Enemy.Graveyard.Any(c => c.IsMonster());
         }
+
         protected bool 钢机神1Effect()
         {
-            if (Enemy.HasDefendingMonster() && Enemy.GetMonsterCount() >= 1 && !Util.IsOneEnemyBetterThanValue(2500, false))
-            {
-                List<ClientCard> cards = new List<ClientCard>(Bot.Graveyard.GetMatchingCards(card => (card.Race & (int)CardRace.Machine) > 0));
-                cards.Sort(CardContainer.CompareCardLevel); ClientCard selectedCard = null;
-                for (int i = cards.Count - 1; i >= 0; --i)
-                {
-                    ClientCard card = cards[i];
-                    if ((selectedCard == null || card.Attack > selectedCard.Attack))
-                    {
-                        selectedCard = card;
-                        break;
-                    }
-                }
-                if (selectedCard != null)
-                {
-                    AI.SelectCard(selectedCard);
-                    return true;
-                }
-            }
-            return false;
+            return Enemy.HasDefendingMonster() && !Util.IsOneEnemyBetterThanValue(2500, false);
         }
+
         protected bool 钢机神Effect()
         {
             if (Duel.Turn == 1)
@@ -1494,42 +1450,14 @@ namespace WindBot.Game.AI
         
         protected bool 最强战旗Effect()
         {
-            if (Util.IsOneEnemyBetterThanValue(1900, false))
-            {
-                foreach (ClientCard m in Bot.Hand)
-                    AI.SelectCard(m);
-                foreach (ClientCard mon in Enemy.GetMonsters())
-                    if (mon.Level >= 9)
-                        AI.SelectNextCard(mon);
-                    else if (mon.Level >= 8)
-                        AI.SelectNextCard(mon);
-                    else if (mon.Level >= 7)
-                        AI.SelectNextCard(mon);
-                    else if (mon.Level >= 5)
-                        AI.SelectNextCard(mon);
-                return true;
-            }
-            return false;
+            return HasFaceupRushThreat(1900);
         }
+
         protected bool 最强战旗Eff()
         {
-            if (Util.IsOneEnemyBetterThanValue(2500, false))
-            {
-                foreach (ClientCard m in Bot.Hand)
-                    AI.SelectCard(m);
-                foreach (ClientCard mon in Enemy.GetMonsters())
-                    if (mon.Level >= 9)
-                        AI.SelectNextCard(mon);
-                    else if (mon.Level >= 8)
-                        AI.SelectNextCard(mon);
-                    else if (mon.Level >= 7)
-                        AI.SelectNextCard(mon);
-                    else if (mon.Level >= 5)
-                        AI.SelectNextCard(mon);
-                return true;
-            }
-            return false;
+            return HasFaceupRushThreat(2500);
         }
+
         protected bool 反转Repos()
         {
             if (Card.IsFacedown())
@@ -1646,20 +1574,9 @@ namespace WindBot.Game.AI
         }
         protected bool 死苏Effect()
         {
-
-            if (Enemy.Graveyard.GetMatchingCardsCount(card => card.Level > 6) +
-             Bot.Graveyard.GetMatchingCardsCount(card => card.Level > 6) > 0)
-            {
-                IList<ClientCard>
-                EmList = Enemy.Graveyard.GetMatchingCards(card => card.Level > 6),
-                BotList = Bot.Graveyard.GetMatchingCards(card => card.Level > 6),
-                unionList = EmList.Concat(BotList).ToList();
-                AI.SelectCard(unionList.OrderByDescending(card => card.Attack).FirstOrDefault());
-                AI.SelectPosition(CardPosition.FaceUpAttack);
-                return true;
-            }
-            return false;
+            return Enemy.Graveyard.Any(c => c.Level > 6) || Bot.Graveyard.Any(c => c.Level > 6);
         }
+
         protected bool 大风暴Effect()
         {
             return   Enemy.GetSpellCount() - Bot.GetSpellCount() >= 1;
@@ -1670,11 +1587,11 @@ namespace WindBot.Game.AI
         }
         protected bool 黑洞Effect()
         {
-            return (Util.IsOneEnemyBetter() && Util.GetTotalAttackingMonsterAttack(1) >= 3000 && !Enemy.HasInMonstersZone(_CardId.终焰魔神) ) || Enemy.GetMonsterCount() == 3;
+            return (Util.IsOneEnemyBetter() && Util.GetTotalAttackingMonsterAttack(1) >= 3000 && !Enemy.HasInMonstersZone(_CardId.终焰魔神, faceUp: true)) || Enemy.GetMonsterCount() == 3;
         }
         protected bool 疾风弹Effect()
         {
-            return (Util.GetTotalAttackingMonsterAttack(1) >= 3000 && !Enemy.HasInMonstersZone(_CardId.终焰魔神)) || Enemy.GetMonsterCount() == 3 ;
+            return (Util.GetTotalAttackingMonsterAttack(1) >= 3000 && !Enemy.HasInMonstersZone(_CardId.终焰魔神, faceUp: true)) || Enemy.GetMonsterCount() == 3 ;
         }
         protected bool 活杀Effect()
         {
@@ -1690,34 +1607,32 @@ namespace WindBot.Game.AI
         }
         protected bool 死供Effect()
         {
-            if (Util.IsOneEnemyBetterThanValue(1900, false) && !Enemy.HasInMonstersZone(_CardId.终焰魔神))
+            return TributeToTheDoomed(1900) && !Enemy.HasInMonstersZone(_CardId.终焰魔神, faceUp: true);
+        }
+
+        protected bool TributeToTheDoomed(int minimumThreat)
+        {
+            // The script collects one discard, then asks for a monster only at resolution.
+            return HasFaceupRushThreat(minimumThreat);
+        }
+
+        private bool HasFaceupRushThreat(int power)
+        {
+            foreach (ClientCard monster in Enemy.MonsterZone)
             {
-                foreach (ClientCard m in Bot.Hand)
-                    AI.SelectCard(m);
-                foreach (ClientCard mon in Enemy.GetMonsters())
-                    if (mon.Level >= 9)
-                        AI.SelectNextCard(mon);
-                    else if (mon.Level >= 8)
-                        AI.SelectNextCard(mon);
-                    else if (mon.Level >= 7)
-                        AI.SelectNextCard(mon);
-                    else if (mon.Level >= 5)
-                        AI.SelectNextCard(mon);
-                return true;
+                if (monster != null && monster.IsFaceup() && monster.GetDefensePower() > power)
+                    return true;
             }
             return false;
         }
-        protected bool 魔法筒Effect()         
-           {
-                if (Bot.LifePoints <= Enemy.BattlingMonster.Attack)
-                    return DefaultUniqueTrap();
-                if (Enemy.LifePoints <= Enemy.BattlingMonster.Attack)
-                    return DefaultUniqueTrap();
-                if (Enemy.BattlingMonster.Attack > 1800)
-                    return DefaultUniqueTrap();
-                else
-                    return false;           
+
+        protected bool 魔法筒Effect()
+        {
+            ClientCard attacker = Enemy.BattlingMonster;
+            return attacker != null && (Bot.LifePoints <= attacker.Attack || Enemy.LifePoints <= attacker.Attack ||
+                attacker.Attack > 1800) && DefaultUniqueTrap();
         }
+
         protected bool 圣防Effect()
         {
             if (Util.GetTotalAttackingMonsterAttack(1) >= 1900 && (Enemy.GetMonsters().GetImmuneTrapMonster() == null)) return true;
@@ -1783,29 +1698,24 @@ namespace WindBot.Game.AI
 
         protected bool 炸甲Effect()
         {
-            if (Enemy.BattlingMonster.Attack > 2000 && (Enemy.GetMonsters().GetImmuneTrapMonster() == null)) return true;
-            if (Bot.LifePoints <= Enemy.BattlingMonster.Attack) return true;
-            if (!Util.IsOneEnemyBetterThanValue(1500, true) && Bot.GetSpellCountWithoutField() == 3) return true;
-            return false;
+            ClientCard attacker = Enemy.BattlingMonster;
+            return attacker != null && ((attacker.Attack > 2000 && Enemy.GetMonsters().GetImmuneTrapMonster() == null)
+                || Bot.LifePoints <= attacker.Attack || (!Util.IsOneEnemyBetterThanValue(1500, true) && Bot.GetSpellCountWithoutField() == 3));
         }
-        
+
         protected bool RushMonsterSummon()
         {
             if (Card.Level <= 4)
                 return true;
-
-            //if (!UniqueFaceupMonster())
-            // return false;
-            int tributecount = (int)Math.Ceiling((Card.Level - 4.0d) / 2.0d);
-            for (int j = 0; j < 7; ++j)
+            int needed = Card.Level <= 6 ? 1 : 2;
+            foreach (ClientCard tribute in Bot.MonsterZone)
             {
-                ClientCard tributeCard = Bot.MonsterZone[j];
-                if (tributeCard == null) continue;
-                if (tributeCard.GetDefensePower() < Card.Attack && tributeCard.Level <= 4)
-                    tributecount--;
+                if (tribute != null && tribute.Level <= 4 && tribute.GetDefensePower() < Card.Attack && --needed == 0)
+                    return true;
             }
-            return tributecount <= 0;
+            return false;
         }
+
         protected bool 伟大魔兽Sum()
         {
             int tributecount = 1;

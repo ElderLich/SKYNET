@@ -83,6 +83,7 @@
     <Compile Include="Game\AI\DecksManager.cs" />
     <Compile Include="Game\AI\Decks\*Executor.cs" />
     <Compile Include="Game\AI\DefaultExecutor.cs" />
+    <Compile Include="Game\AI\RushExecutor.cs" />
     <Compile Include="Game\AI\Dialogs.cs" />
     <Compile Include="Game\AI\Enums\*.cs" />
     <Compile Include="Game\AI\Executor.cs" />
