@@ -33,7 +33,10 @@ namespace WindBot
             {
                 // Run in server mode, provide a http interface to create bot.
                 int serverPort = Config.GetInt("ServerPort", 2399);
-                RunAsServer(serverPort);
+                IPAddress bindAddress;
+                if (!IPAddress.TryParse(Config.GetString("ServerBindAddress", "127.0.0.1"), out bindAddress))
+                    throw new ArgumentException("ServerBindAddress must be a local IP address.");
+                RunAsServer(bindAddress, serverPort);
             }
             else
             {
@@ -94,29 +97,40 @@ namespace WindBot
             Run(Info);
         }
 
-        private static void RunAsServer(int ServerPort)
+        private static void RunAsServer(IPAddress bindAddress, int serverPort)
         {
-            TcpListener mainServer = new TcpListener(IPAddress.Loopback, ServerPort);
+            TcpListener mainServer = new TcpListener(bindAddress, serverPort);
+            SemaphoreSlim requestSlots = new SemaphoreSlim(16);
             try
             {
                 mainServer.Start();
-                Logger.WriteLine("WindBot server start successed.");
-                Logger.WriteLine("HTTP GET http://127.0.0.1:" + ServerPort + "/?name=WindBot&host=127.0.0.1&port=7911 to call the bot.");
+                Logger.WriteLine("WindBot HTTP server listening on " + mainServer.LocalEndpoint + ".");
                 while (true)
                 {
-                    try
+                    TcpClient client = mainServer.AcceptTcpClient();
+                    requestSlots.Wait();
+                    ThreadPool.QueueUserWorkItem(delegate
                     {
-                        using (TcpClient client = mainServer.AcceptTcpClient())
+                        using (client)
                         {
-                            HandleServerRequest(client);
+                            try
+                            {
+                                HandleServerRequest(client);
+                            }
+                            catch (IOException)
+                            {
+                                // A polling client can disconnect before receiving the response.
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.WriteErrorLine("WindBot HTTP request failed", ex);
+                            }
+                            finally
+                            {
+                                requestSlots.Release();
+                            }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        if (Debugger.IsAttached)
-                            throw;
-                        Logger.WriteErrorLine("Parse Http Request Error", ex);
-                    }
+                    });
                 }
             }
             finally
@@ -134,22 +148,24 @@ namespace WindBot
 
             try
             {
-                string requestLine = ReadHttpLine(stream, 16384);
+                int remaining = 16384;
+                Stopwatch elapsed = Stopwatch.StartNew();
+                BufferedStream input = new BufferedStream(stream);
+                string requestLine = ReadHttpLine(input, ref remaining, elapsed);
                 string[] requestParts = requestLine.Split(' ');
-                if (requestParts.Length != 3 || requestParts[0] != "GET")
+                if (requestParts.Length != 3 || !requestParts[1].StartsWith("/", StringComparison.Ordinal)
+                    || (requestParts[2] != "HTTP/1.1" && requestParts[2] != "HTTP/1.0"))
+                {
+                    WriteHttpResponse(stream, 400);
+                    return;
+                }
+                if (requestParts[0] != "GET")
                 {
                     WriteHttpResponse(stream, 405);
                     return;
                 }
 
-                int totalHeaderLength = requestLine.Length;
-                while (true)
-                {
-                    string headerLine = ReadHttpLine(stream, 16384 - totalHeaderLength);
-                    totalHeaderLength += headerLine.Length;
-                    if (headerLine.Length == 0)
-                        break;
-                }
+                while (ReadHttpLine(input, ref remaining, elapsed).Length != 0) { }
 
                 Uri requestUri;
                 if (!Uri.TryCreate("http://127.0.0.1" + requestParts[1], UriKind.Absolute, out requestUri))
@@ -169,10 +185,19 @@ namespace WindBot
                 string deckfile = queryParams.Get("deckfile"); // Obsoleted
                 string dialog = queryParams.Get("dialog");
                 if (dialog != null)
+                {
+                    if (dialog.Length == 0 || dialog == "." || dialog == ".."
+                        || dialog.IndexOfAny(new[] { '/', '\\', ':' }) >= 0)
+                        throw new ArgumentException("A dialog name is required.");
                     Info.Dialog = dialog;
+                }
                 string traceData = queryParams.Get("tracedata");
                 if (traceData != null)
+                {
+                    if (!IPAddress.IsLoopback(((IPEndPoint)client.Client.RemoteEndPoint).Address))
+                        throw new ArgumentException("Only local launchers may select a trace directory.");
                     Info.TraceData = Game.AI.Trace.TraceSession.ResolveDirectory(traceData);
+                }
                 string traceRoom = queryParams.Get("traceroom");
                 if (traceRoom != null)
                 {
@@ -204,7 +229,8 @@ namespace WindBot
                 if (chat != null)
                     Info.Chat = bool.Parse(chat);
 
-                if (Info.Name == null || Info.Host == null || port == null || deckfile != null)
+                if (string.IsNullOrWhiteSpace(Info.Name) || string.IsNullOrWhiteSpace(Info.Host)
+                    || port == null || Info.Port < 1 || Info.Port > 65535 || deckfile != null)
                 {
                     statusCode = 400;
                 }
@@ -219,6 +245,11 @@ namespace WindBot
                     workThread.Start(Info);
                 }
             }
+            catch (Exception ex) when (ex is FormatException || ex is OverflowException || ex is ArgumentException
+                || ex is NotSupportedException || ex is InvalidDataException || ex is IOException)
+            {
+                statusCode = 400;
+            }
             catch (Exception ex)
             {
                 if (Debugger.IsAttached)
@@ -230,15 +261,13 @@ namespace WindBot
             WriteHttpResponse(stream, statusCode);
         }
 
-        private static string ReadHttpLine(NetworkStream stream, int maximumLength)
+        private static string ReadHttpLine(Stream stream, ref int remaining, Stopwatch elapsed)
         {
-            if (maximumLength <= 0)
-                throw new InvalidDataException("HTTP request headers are too large.");
-
             StringBuilder line = new StringBuilder();
-            while (line.Length < maximumLength)
+            while (remaining > 0 && elapsed.ElapsedMilliseconds < 5000)
             {
                 int value = stream.ReadByte();
+                --remaining;
                 if (value < 0)
                     throw new EndOfStreamException("HTTP request ended before the headers were complete.");
                 if (value == '\n')
@@ -249,7 +278,7 @@ namespace WindBot
                 }
                 line.Append((char)value);
             }
-            throw new InvalidDataException("HTTP request headers are too large.");
+            throw new InvalidDataException("HTTP request exceeded the header size or time limit.");
         }
 
         private static void WriteHttpResponse(NetworkStream stream, int statusCode)
