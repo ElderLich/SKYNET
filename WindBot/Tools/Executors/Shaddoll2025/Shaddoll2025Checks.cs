@@ -138,6 +138,21 @@ internal static class Shaddoll2025Checks
             return Select(hint, 1, 1, offered)[0];
         }
 
+        internal void EndChain()
+        {
+            AI.OnChainEnd();
+            Duel.LastChainPlayer = -1;
+            Duel.LastChainLocation = 0;
+            Duel.CurrentChain.Clear();
+            Duel.CurrentChainInfo.Clear();
+            Duel.ChainTargets.Clear();
+            Duel.LastChainTargets.Clear();
+            Duel.ChainTargetOnly.Clear();
+            Duel.SolvingChainIndex = 0;
+            Duel.NegatedChainIndexList.Clear();
+            Duel.SummoningCards.Clear();
+        }
+
         internal ClientCard SelectIdle(params KeyValuePair<ClientCard, int>[] offers)
         {
             MainPhase main = new MainPhase { CanEndPhase = true };
@@ -310,7 +325,7 @@ internal static class Shaddoll2025Checks
         Is(f.Select(HintMsg.ToGrave, apkallone, f.Extra(Evil), f.Extra(Construct)),
             Apkallone, "Lev did not begin the primary route");
         f.Move(apkallone, CardLocation.Grave);
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         Require(f.AI.OnSelectEffectYn(apkallone, Desc(Apkallone, 1)),
             "Apkallone grave trigger was rejected");
@@ -322,7 +337,7 @@ internal static class Shaddoll2025Checks
         Is(f.Select(HintMsg.Discard, f.Bot.Hand.ToArray()), Squamata,
             "Apkallone did not discard Squamata by effect");
         f.Move(squamata, CardLocation.Grave);
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         Require(f.AI.OnSelectEffectYn(squamata, Desc(Squamata, 1)),
             "Squamata grave trigger was rejected");
@@ -331,7 +346,7 @@ internal static class Shaddoll2025Checks
             Card(Hedgehog, CardLocation.Deck), Card(Wendi, CardLocation.Deck)),
             Grysta, "Squamata did not send Tohushaddoll Grysta");
         ClientCard tohushaddoll = f.Add(Grysta, CardLocation.Grave);
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         Require(f.AI.OnSelectEffectYn(tohushaddoll, Desc(Grysta, 1)),
             "Tohushaddoll Grysta fusion trigger was rejected");
@@ -344,7 +359,7 @@ internal static class Shaddoll2025Checks
         Require(openingMaterials.Count == 3, "Meshachrer did not use exactly three materials");
         foreach (ClientCard material in openingMaterials) f.Move(material, CardLocation.Removed);
         f.Move(mesh, CardLocation.MonsterZone);
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         Require(f.AI.OnSelectEffectYn(mesh, Desc(Mesh, 1)), "Meshachrer search was rejected");
         f.Bot.LifePoints -= 800;
@@ -353,7 +368,7 @@ internal static class Shaddoll2025Checks
             Card(Wendi, CardLocation.Deck), Card(Schism, CardLocation.Deck)),
             Void, "Meshachrer did not plan the future Wendi reveal for Void");
         ClientCard meshSearch = f.Add(Void, CardLocation.Hand);
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         Require(f.AI.OnSelectEffectYn(lev, Desc(Lev, 1)),
             "Lev stopped before the Construct continuation");
@@ -366,7 +381,7 @@ internal static class Shaddoll2025Checks
         f.Move(construct, CardLocation.MonsterZone);
         construct.Position = (int)f.Executor.OnSelectPosition(Construct,
             new[] { CardPosition.FaceUpAttack, CardPosition.FaceUpDefence });
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         Require(f.AI.OnSelectEffectYn(construct, Desc(Construct, 0)),
             "Construct send effect was rejected");
@@ -375,7 +390,7 @@ internal static class Shaddoll2025Checks
             Card(Wendi, CardLocation.Deck), Card(Resh, CardLocation.Deck)),
             Hedgehog, "Construct did not prepare the Wendi search");
         ClientCard hedgehog = f.Add(Hedgehog, CardLocation.Grave);
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         Require(f.AI.OnSelectEffectYn(hedgehog, Desc(Hedgehog, 1)),
             "Hedgehog search was rejected");
@@ -384,7 +399,7 @@ internal static class Shaddoll2025Checks
             Card(Squamata, CardLocation.Deck)), Wendi,
             "Hedgehog did not search the WIND material");
         ClientCard wendi = f.Add(Wendi, CardLocation.Hand);
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         ClientCard voidCard = meshSearch;
         Require(f.AI.OnSelectEffectYn(voidCard, Desc(Void, 0)), "Void activation was rejected");
@@ -403,7 +418,7 @@ internal static class Shaddoll2025Checks
             "Void discarded a required combo piece instead of the supplied non-engine cost");
         f.Move(voidCost, CardLocation.Grave);
         f.Move(voidCard, CardLocation.Grave);
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         Require(f.AI.OnSelectEffectYn(elFusion, Desc(ElFusion, 0)),
             "El Shaddoll Fusion continuation was rejected");
@@ -420,7 +435,7 @@ internal static class Shaddoll2025Checks
         f.Move(elFusion, CardLocation.Grave);
         f.Move(wendikuruhu, CardLocation.MonsterZone);
         wendikuruhu.Position = (int)CardPosition.FaceUpDefence;
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         Require(f.AI.OnSelectEffectYn(wendi, Desc(Wendi, 1)), "Wendi setup trigger was rejected");
         f.Chain(wendi, true);
@@ -428,7 +443,7 @@ internal static class Shaddoll2025Checks
             Card(Hedgehog, CardLocation.Deck), Card(Squamata, CardLocation.Deck)),
             Ariel, "Wendi did not set Ariel for the control line");
         ClientCard ariel = f.Add(Ariel, CardLocation.MonsterZone, 0, true);
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         Require(f.AI.OnSelectEffectYn(construct, Desc(Construct, 2)),
             "Construct recovery trigger was rejected");
@@ -436,14 +451,14 @@ internal static class Shaddoll2025Checks
         Is(f.Select(HintMsg.AddToHand, schism, elFusion), ElFusion,
             "Construct did not recover El Shaddoll Fusion");
         f.Move(elFusion, CardLocation.Hand);
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         Require(f.AI.OnSelectEffectYn(wendikuruhu, Desc(Wendikuruhu, 0)),
             "Wendikuruhu did not continue into the prepared Flip body");
         f.Chain(wendikuruhu, true);
         Is(f.Select(HintMsg.PosChange, ariel), Ariel, "Wendikuruhu did not flip Ariel");
         ariel.Position = (int)CardPosition.FaceUpDefence;
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         Require(f.AI.OnSelectEffectYn(ariel, Desc(Ariel, 0)), "Ariel revival was rejected");
         f.Chain(ariel, true);
@@ -452,7 +467,7 @@ internal static class Shaddoll2025Checks
         f.Move(squamata, CardLocation.MonsterZone);
         squamata.Position = (int)f.Executor.OnSelectPosition(Squamata,
             new[] { CardPosition.FaceUpDefence, CardPosition.FaceDownDefence });
-        f.AI.OnChainEnd();
+        f.EndChain();
 
         f.Move(elFusion, CardLocation.SpellZone, true);
         f.Move(schism, CardLocation.SpellZone, true);
@@ -478,12 +493,24 @@ internal static class Shaddoll2025Checks
         {
             Fixture f = new Fixture();
             ClientCard threat = f.Add(BlueEyes, CardLocation.MonsterZone, 1);
-            Set(threat, "Defense", 3000);
+            f.Duel.Turn = 3;
+            Set(threat, "BaseDefense", 2500);
+            f.Add(Squamata, CardLocation.MonsterZone);
             ClientCard lev = f.Add(Lev, CardLocation.SpellZone);
             f.Chain(lev, true);
             Is(f.Select(HintMsg.ToGrave, Card(Apkallone, CardLocation.Extra),
                 Card(Perfume, CardLocation.Extra)), Perfume,
                 "Lev ignored the available battle solution");
+        });
+
+        Run("Lev keeps its search when Perfume cannot change a battle", () =>
+        {
+            Fixture f = new Fixture();
+            f.Duel.Turn = 3;
+            f.Add(BlueEyes, CardLocation.MonsterZone, 1);
+            f.Chain(f.Add(Lev, CardLocation.SpellZone), true);
+            Is(f.Select(HintMsg.ToGrave, Card(Perfume, CardLocation.Extra),
+                Card(Apkallone, CardLocation.Extra)), Apkallone, "No attacker could use Perfume");
         });
 
         Run("Lev sends Meshachrer when the primary route is unavailable and revival is live", () =>
@@ -544,7 +571,7 @@ internal static class Shaddoll2025Checks
             f.Chain(mesh, true);
             f.Executor.OnMove(voidCard, 0, (int)CardLocation.Deck,
                 0, (int)CardLocation.Hand);
-            f.AI.OnChainEnd();
+            f.EndChain();
             Is(f.SelectIdle(Offer(elFusion, 0), Offer(lev, 1), Offer(voidCard, 0),
                 Offer(mesh, 1)), Void,
                 "Idle scheduler skipped the searched Void setup");
@@ -623,7 +650,7 @@ internal static class Shaddoll2025Checks
                 0, (int)CardLocation.Hand);
             f.Executor.OnMove(schism, 0, (int)CardLocation.Deck,
                 0, (int)CardLocation.Hand);
-            f.AI.OnChainEnd();
+            f.EndChain();
 
             ClientCard construct = f.Add(Construct, CardLocation.MonsterZone);
             ClientCard hedgehog = f.Add(Hedgehog, CardLocation.Deck);
@@ -708,7 +735,7 @@ internal static class Shaddoll2025Checks
             f.Chain(mesh, true);
             f.Executor.OnMove(voidCard, 0, (int)CardLocation.Deck,
                 0, (int)CardLocation.Hand);
-            f.AI.OnChainEnd();
+            f.EndChain();
 
             ClientCard wendi = f.Add(Wendi, CardLocation.Hand);
             ClientCard expendable = f.Add(Droll, CardLocation.Hand);
@@ -856,12 +883,12 @@ internal static class Shaddoll2025Checks
                 "Void did not value Beast's GY draw and later revival over a redundant starter");
             f.Move(beast, CardLocation.Grave);
             f.Move(voidCard, CardLocation.Grave);
-            f.AI.OnChainEnd();
+            f.EndChain();
 
             Require(f.AI.OnSelectEffectYn(beast, Desc(Beast, 1)),
                 "The Shaddoll discarded by Void did not keep its GY trigger");
             f.Chain(beast, true);
-            f.AI.OnChainEnd();
+            f.EndChain();
 
             Require(f.AI.OnSelectEffectYn(lev, Desc(Lev, 0)),
                 "The searched Lev starter was rejected");
@@ -874,7 +901,7 @@ internal static class Shaddoll2025Checks
                 Card(ElFusion, CardLocation.Deck), Card(Wendi, CardLocation.Deck)), ElFusion,
                 "Meshachrer searched a spent second Void instead of El Shaddoll Fusion");
             f.Add(ElFusion, CardLocation.Hand);
-            f.AI.OnChainEnd();
+            f.EndChain();
 
             Require(f.AI.OnSelectEffectYn(lev, Desc(Lev, 1)),
                 "Lev did not convert Meshachrer after the El Fusion search");
@@ -884,7 +911,7 @@ internal static class Shaddoll2025Checks
             f.Move(mesh, CardLocation.Grave);
             Is(f.Select(HintMsg.SpSummon, f.Extra(Construct), f.Extra(Winda)), Construct,
                 "Lev did not summon Construct in the Void route");
-            f.AI.OnChainEnd();
+            f.EndChain();
 
             Require(f.AI.OnSelectEffectYn(mesh, Desc(Mesh, 2)),
                 "Meshachrer did not activate its Graveyard revival");
@@ -946,7 +973,7 @@ internal static class Shaddoll2025Checks
                 Card(Schism, CardLocation.Deck), Card(ElFusion, CardLocation.Deck)), Lev,
                 "Meshachrer did not search Lev for the recorded Armageddon route");
             ClientCard lev = f.Add(Lev, CardLocation.Hand);
-            f.AI.OnChainEnd();
+            f.EndChain();
 
             Require(f.AI.OnSelectEffectYn(lev, Desc(Lev, 0)),
                 "Lev activation was rejected after the Armageddon opening");
@@ -956,7 +983,7 @@ internal static class Shaddoll2025Checks
             Is(f.Select(HintMsg.ToGrave, evil, f.Extra(Apkallone), f.Extra(Construct)), Evil,
                 "Lev did not send Infernoid Evil for the Void bridge");
             f.Move(evil, CardLocation.Grave);
-            f.AI.OnChainEnd();
+            f.EndChain();
 
             Require(f.AI.OnSelectEffectYn(evil, Desc(Evil, 0)),
                 "Infernoid Evil did not activate from the Graveyard");
@@ -965,7 +992,7 @@ internal static class Shaddoll2025Checks
                 Card(Schism, CardLocation.Deck)), Void,
                 "Infernoid Evil did not search Void Unleashing");
             f.Add(Void, CardLocation.Hand);
-            f.AI.OnChainEnd();
+            f.EndChain();
 
             Require(f.AI.OnSelectEffectYn(lev, Desc(Lev, 1)),
                 "Lev did not continue after Infernoid Evil found Void");
@@ -1075,13 +1102,15 @@ internal static class Shaddoll2025Checks
         Run("Schism sends only a monster matching Winda's DARK attribute", () =>
         {
             Fixture light = new Fixture();
-            light.Add(Winda, CardLocation.MonsterZone);
+            light.Chain(light.Add(Schism, CardLocation.SpellZone), true);
+            light.Select(HintMsg.SpSummon, light.Extra(Winda));
             light.Add(BlueEyes, CardLocation.MonsterZone, 1);
             Require(!light.AI.OnSelectYesNo(Desc(Schism, 0)),
                 "Schism tried to send a LIGHT monster after summoning DARK Winda");
 
             Fixture dark = new Fixture();
-            dark.Add(Winda, CardLocation.MonsterZone);
+            dark.Chain(dark.Add(Schism, CardLocation.SpellZone), true);
+            dark.Select(HintMsg.SpSummon, dark.Extra(Winda));
             dark.Add(DarkMagician, CardLocation.MonsterZone, 1);
             Require(dark.AI.OnSelectYesNo(Desc(Schism, 0)),
                 "Schism declined its legal DARK send after summoning Winda");
@@ -1139,6 +1168,7 @@ internal static class Shaddoll2025Checks
             f.Duel.Player = 1;
             f.Add(Wendikuruhu, CardLocation.MonsterZone);
             f.Add(Ariel, CardLocation.MonsterZone);
+            f.Add(Veiler, CardLocation.Grave);
             f.Add(Squamata, CardLocation.MonsterZone);
             ClientCard schism = f.Add(Schism, CardLocation.SpellZone, 0, true);
             ClientCard threat = f.Add(BlueEyesAlternative, CardLocation.MonsterZone, 1);
@@ -1162,6 +1192,7 @@ internal static class Shaddoll2025Checks
             f.Duel.Player = 1;
             f.Add(Wendikuruhu, CardLocation.MonsterZone);
             f.Add(Ariel, CardLocation.MonsterZone);
+            f.Add(Veiler, CardLocation.Grave);
             f.Add(Squamata, CardLocation.MonsterZone);
             ClientCard schism = f.Add(Schism, CardLocation.SpellZone, 0, true);
             ClientCard fusion = f.Add(ElFusion, CardLocation.SpellZone, 0, true);
@@ -1241,7 +1272,7 @@ internal static class Shaddoll2025Checks
             Fixture f = new Fixture();
             f.Duel.Player = 1;
             f.Add(Squamata, CardLocation.Hand);
-            f.Add(MaxxC, CardLocation.Hand);
+            f.Add(Armageddon, CardLocation.Hand);
             ClientCard fusion = f.Add(ElFusion, CardLocation.SpellZone, 0, true);
             f.Add(BlueEyes, CardLocation.MonsterZone, 1);
             f.Duel.LastSummonPlayer = 1;
@@ -1249,7 +1280,7 @@ internal static class Shaddoll2025Checks
             Require(f.AI.OnSelectEffectYn(fusion, 0),
                 "El Shaddoll Fusion missed the Winda fallback when Schism was unavailable");
             f.Chain(fusion, true);
-            Is(f.Select(HintMsg.SpSummon, f.Extra(Winda), f.Extra(Apkallone)), Winda,
+            Is(f.Select(HintMsg.SpSummon, f.Extra(Winda)), Winda,
                 "El Shaddoll Fusion used Apkallone on a vanilla body instead of establishing Winda");
         });
 
@@ -1303,7 +1334,7 @@ internal static class Shaddoll2025Checks
             f.Chain(elFusion, true);
             Is(f.Select(HintMsg.SpSummon, f.Extra(Apkallone), f.Extra(Winda)), Apkallone,
                 "Prepared branch did not establish Apkallone state");
-            f.AI.OnChainEnd();
+            f.EndChain();
 
             f.Add(Resh, CardLocation.Hand);
             ClientCard earthMaterial = f.Add(MaxxC, CardLocation.Hand);
@@ -1517,12 +1548,23 @@ internal static class Shaddoll2025Checks
                 "Schism spent its once-per-turn interaction without a threat");
         });
 
-        Run("Schism makes Winda after the opponent commits a Special Summon", () =>
+        Run("Schism holds when distinct materials cannot make a control Fusion", () =>
         {
             Fixture f = new Fixture();
             f.Duel.Player = 1;
             f.Add(Wendi, CardLocation.Grave);
             f.Add(MaxxC, CardLocation.Grave);
+            ClientCard schism = f.Add(Schism, CardLocation.SpellZone, 0, true);
+            Require(!f.AI.OnSelectEffectYn(schism, 0),
+                "WIND and EARTH materials cannot make Winda or Apkallone");
+        });
+
+        Run("Schism makes Winda after the opponent commits a Special Summon", () =>
+        {
+            Fixture f = new Fixture();
+            f.Duel.Player = 1;
+            f.Add(Wendi, CardLocation.Grave);
+            f.Add(Squamata, CardLocation.Grave);
             ClientCard schism = f.Add(Schism, CardLocation.SpellZone, 0, true);
             f.Duel.LastSummonPlayer = 1;
             f.Executor.OnSpSummoned();
@@ -1535,7 +1577,7 @@ internal static class Shaddoll2025Checks
             Fixture f = new Fixture();
             f.Duel.Player = 1;
             f.Add(Wendi, CardLocation.Grave);
-            f.Add(MaxxC, CardLocation.Grave);
+            f.Add(Squamata, CardLocation.Grave);
             f.Add(DarkMagicalCircle, CardLocation.SpellZone, 1);
             ClientCard schism = f.Add(Schism, CardLocation.SpellZone, 0, true);
             Require(f.AI.OnSelectEffectYn(schism, 0),
@@ -1571,7 +1613,7 @@ internal static class Shaddoll2025Checks
             Fixture f = new Fixture();
             f.Duel.Player = 1;
             f.Add(Wendi, CardLocation.Grave);
-            f.Add(MaxxC, CardLocation.Grave);
+            f.Add(Squamata, CardLocation.Grave);
             ClientCard schism = f.Add(Schism, CardLocation.SpellZone, 0, true);
             ClientCard duster = f.Add(18144506, CardLocation.SpellZone, 1);
             f.Chain(duster, false);
@@ -1789,10 +1831,10 @@ internal static class Shaddoll2025Checks
             f.Add(Squamata, CardLocation.Hand);
             Require(!f.AI.OnSelectEffectYn(faimena, Desc(Faimena, 0)),
                 "Faimena duplicated an ordinary Fusion effect on our own turn");
+            // Construct is a Fairy and cannot be offered by Faimena.
             f.Chain(faimena, true);
-            Is(f.Select(HintMsg.SpSummon, Card(Construct, CardLocation.Extra),
-                Card(Winda, CardLocation.Extra)), Construct,
-                "Faimena's resolving target callback ignored visible board pressure");
+            Is(f.Select(HintMsg.SpSummon, f.Extra(Winda), f.Extra(Apkallone)), Apkallone,
+                "Faimena spent its own-turn board on a Winda lock");
 
             Fixture turnZero = new Fixture();
             turnZero.Duel.Player = 1;
@@ -1868,7 +1910,7 @@ internal static class Shaddoll2025Checks
             Fixture f = new Fixture();
             ClientCard lev = f.Add(Lev, CardLocation.Hand);
             Require(f.AI.OnSelectEffectYn(lev, 0), "Opening Lev was not accepted");
-            f.AI.OnChainEnd();
+            f.EndChain();
             f.Duel.CurrentChain.Clear();
             f.Duel.CurrentChainInfo.Clear();
             ClientCard voidCard = f.Add(Void, CardLocation.Hand);
@@ -1881,6 +1923,8 @@ internal static class Shaddoll2025Checks
         {
             Fixture f = new Fixture();
             f.Add(Winda, CardLocation.MonsterZone);
+            f.Duel.LastSummonPlayer = 0;
+            f.Executor.OnSpSummoned();
             ClientCard cartesia = f.Add(95515789, CardLocation.MonsterZone);
             f.Add(Wendi, CardLocation.Hand);
             f.Add(MaxxC, CardLocation.Hand);

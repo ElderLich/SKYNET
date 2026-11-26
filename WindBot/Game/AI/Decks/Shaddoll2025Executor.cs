@@ -979,7 +979,7 @@ namespace WindBot.Game.AI.Decks
 
         public override bool OnSelectYesNo(int desc)
         {
-            if (desc == Util.GetStringId(CardId.ShaddollSchism, 1))
+            if (desc == Util.GetStringId(CardId.ShaddollSchism, 0))
             {
                 NamedCard summoned = NamedCard.Get(_pendingFusionTargetId);
                 return summoned != null && Enemy.GetMonsters().Any(c => CanCreditSchismRemoval(c) && (c.Attribute & summoned.Attribute) != 0 && SchismRemovalScore(c)>0);
@@ -1136,7 +1136,8 @@ namespace WindBot.Game.AI.Decks
             bool battleThreat = Bot.GetMonsters().Any(c => c.IsFaceup() &&
                 c.IsCode(CardId.ElShaddollWinda) && card.Attack >= c.Attack) ||
                 card.Attack >= Bot.LifePoints;
-            if (battleThreat) return true;
+            if (battleThreat || (card.IsAttack() && card.Attack > 0 && Bot.GetMonsters().Any(c =>
+                c.IsFaceup() && card.Attack >= c.GetDefensePower()))) return true;
             if (_answeredOpponentBodies.Contains(card)) return false;
             if (card.IsDisabled()) return false;
             return IsExtraDeckMonster(card) || OpponentThreatScore(card) >= 750 ||
@@ -1164,10 +1165,14 @@ namespace WindBot.Game.AI.Decks
                 .Select(e => Math.Max(0, SchismRemovalScore(e))).DefaultIfEmpty(0).Max();
             if (id == CardId.ReeshaddollWendikuruhu && !LiveMonster(id) && Bot.GetMonsters().Any(IsUsefulFacedownFlip)) return 2800 + Math.Min(1000,removal);
             if (id == CardId.ElShaddollWinda && liveWinda && Bot.GetMonsters().Any(c=>c.IsCode(id) && EnemyThreatens(c))) return 4500 + Math.Min(1000,removal);
+            if (removal > 0 && Duel.Player == 1 && _opponentSpecialSummonsThisTurn == 1)
+                return 6500 + Math.Min(1500, removal);
+            if (removal >= 750) return 5500 + Math.Min(1500, removal);
+            if (id == CardId.ElShaddollApkallone && BestPersistentOpponentThreatScore() >= 750 &&
+                !EffectUsed(CardId.ElShaddollApkallone + 1)) return 4800;
             if (id == CardId.ElShaddollWinda && !liveWinda && Duel.Player == 1 && !HasUrgentPersistentSpellTrapEngine())
                 return 4000 + Math.Min(900, removal);
-            if (removal >= 350) return 2000 + Math.Min(1500, removal) + (id == CardId.ElShaddollWinda && !liveWinda ? 100 : 0);
-            if (id == CardId.ElShaddollApkallone && HasUrgentPersistentSpellTrapEngine() && !EffectUsed(CardId.ElShaddollApkallone + 1)) return 1800;
+            if (removal >= 350) return 2000 + Math.Min(1500, removal);
             return -10000;
         }
 
@@ -1180,7 +1185,11 @@ namespace WindBot.Game.AI.Decks
                 return false;
             if (Card.IsFacedown() && Duel.Player != 1) return false;
             bool threatened = DefaultOnBecomeTarget();
-            if (!threatened && Duel.Player == 1 && ShouldLeadWithElFusion()) return false;
+            if (!threatened && HasPreparedLevControlBoard() && Enemy.GetMonsterCount() == 0 &&
+                Duel.CurrentChain.Count > 0 && !HasUrgentPersistentSpellTrapEngine()) return false;
+            if (!threatened && Duel.Player == 1 && (ShouldLeadWithElFusion() ||
+                (HasPreparedLevControlBoard() && !ShouldEstablishWindaBeforeFirstSummon() &&
+                 !ShouldUseSchismMaterialRemovalWindow() && BestPersistentOpponentThreatScore() < 750))) return false;
             if (EffectUsed(CardId.ShaddollSchism)) return false;
             FusionPlan plan = PlanFusion(CardId.ShaddollSchism);
             if (plan == null || plan.Score < 25) return false;
@@ -1331,7 +1340,7 @@ namespace WindBot.Game.AI.Decks
             bool response = IsImmediateControlNeed(plan);
             bool rescue = ThreatenedMaterial(plan);
             bool refreshWinda = plan.Target==CardId.ElShaddollWinda && plan.Materials.Any(c=>c.IsCode(CardId.ElShaddollWinda) && (c.IsDisabled() || EnemyThreatens(c)));
-            if (Duel.Player == 0 && !rescue && !refreshWinda && !response && (FunctionalBoard() || HasImmediateFusionStarter())) return false;
+            if (Duel.Player == 0 && !rescue && !refreshWinda) return false;
             if (Duel.Player == 1 && !response && !refreshWinda)
             {
                 TraceDecision("HOLD", "Faimena: no urgent response; keep flexible Fusion for later");
@@ -1353,11 +1362,6 @@ namespace WindBot.Game.AI.Decks
             if (Duel.SolvingChainIndex == 0 && Duel.CurrentChain.Count > 0 &&
                 Duel.LastChainPlayer == 0)
                 return false;
-            // Granguignol is a Fusion Deployment reveal only. Do not start an
-            // optional Fusion if the only available material pair makes it.
-            List<ClientCard> materials = Bot.Hand.Concat(Bot.GetMonsters())
-                .Where(c => c != null && c.IsMonster()).ToList();
-            if (Duel.Player == 1 && BestPersistentOpponentThreatScore() < 750 && Enemy.GetMonsterCount() == 0) return false;
             FusionPlan plan = PlanFusion(CardId.BlazingCartesia);
             return plan != null && plan.Score >= 55 && PreserveControlBeforeFusion(CardId.BlazingCartesia,plan) &&
                 (!HasActiveControlShell() || IsImmediateControlNeed(plan));
@@ -1377,17 +1381,18 @@ namespace WindBot.Game.AI.Decks
             }
             if (DefaultCheckWhetherCardIsNegated(Card) || HasSafeLethalOnBoard())
                 return false;
-            // Do not spend the shared Squamata OPT before a viable starter.
-            // Lev is scheduled before Void; Knight is an idle summon scheduled after it.
-            if (ShouldReserveVoidForStarter() || CurrentPlan().Goal == RouteGoal.Knight) return false;
-            // Both starters must convert Mesh into Construct BEFORE Void spends
-            // Wendi or its OPT. A hand Wendi is a continuation, not discard fuel.
-            if (ShouldWaitForLevConstruct()) return false;
+            if (Duel.Player == 0 && _armageddonMeshSummoned && IsLevRouteActive() &&
+                Bot.HasInMonstersZone(CardId.ElShaddollMeshachrer) &&
+                Bot.HasInExtra(CardId.ElShaddollConstruct) &&
+                !EffectUsed(CardId.LevShaddollFusion + 1) &&
+                (Bot.HasInHand(CardId.ReeshaddollWendi) ||
+                    (Bot.HasInDeck(CardId.ShaddollHedgehog) && Bot.HasInDeck(CardId.ReeshaddollWendi))))
+                return false;
             if (MustWaitForLevWendiSearch()) return false;
-            if (Duel.Player == 0 && CurrentPlan().Goal == RouteGoal.MeshRecovery &&
+            if (Duel.Player == 0 && IsLevRouteActive() &&
                 Bot.GetMonsters().Any(c => c.IsCode(CardId.ElShaddollMeshachrer) &&
                     c.IsFaceup() && !c.IsDisabled()) &&
-                Bot.GetMonsters().Any(c => c.IsCode(CardId.ElShaddollMeshachrer) && (!_usedMeshSearches.Contains(c) || (Duel.CurrentChain.Count > 0 && PromptIs(CardId.ElShaddollMeshachrer)))))
+                !_levMeshSearchResolved)
                 return false;
             ClientCard reveal = Bot.Hand
                 .Where(c => c != Card && IsShaddollCard(c) && HasVoidPair(GetBaseType(c)))
@@ -1395,41 +1400,11 @@ namespace WindBot.Game.AI.Decks
                     c.IsMonster() ? 0 : c.IsTrap() ? 1 : 2)
                 .ThenByDescending(ShaddollMonsterSearchScore)
                 .FirstOrDefault();
-            if (reveal == null) { TraceDecision("HOLD", "Void: missing different-type search pair or reveal"); return false; }
-            if (!MarkUsed(CardId.VoidUnleashing)) return false;
+            if (reveal == null)
+                return false;
             _voidRevealedType = reveal.IsMonster() ? CardType.Monster : reveal.IsSpell() ? CardType.Spell : CardType.Trap;
             AI.SelectCard(reveal);
-            return true;
-        }
-
-        private bool ShouldWaitForLevConstruct()
-        {
-            return Duel.Player == 0 && LiveLev() && !FunctionalWinda() &&
-                Bot.GetMonsters().Any(c => c.IsCode(CardId.ElShaddollMeshachrer) &&
-                    c.IsFaceup() && !c.IsDisabled()) &&
-                Bot.GetSpells().Any(c => c.IsCode(CardId.LevShaddollFusion) &&
-                    c.IsFaceup() && !c.IsDisabled()) &&
-                Bot.HasInExtra(CardId.ElShaddollConstruct) &&
-                Bot.HasInExtra(CardId.ReeshaddollWendikuruhu) &&
-                !EffectUsed(CardId.LevShaddollFusion + 1) &&
-                !EffectUsed(CardId.ReeshaddollWendi) &&
-                (Bot.HasInHand(CardId.ReeshaddollWendi) ||
-                    (!EffectUsed(CardId.ShaddollHedgehog) && Bot.HasInDeck(CardId.ShaddollHedgehog) &&
-                     Bot.HasInDeck(CardId.ReeshaddollWendi)));
-        }
-
-        private bool ShouldReserveVoidForStarter()
-        {
-            if (Duel.Player != 0 || EffectUsed(CardId.VoidUnleashing) ||
-                FunctionalWinda() || HasPreparedLevControlBoard()) return false;
-            if (!IsLevRouteActive() && !Bot.HasInHandOrInSpellZone(CardId.LevShaddollFusion) &&
-                Bot.GetMonsterCount() == 0 && Bot.HasInHand(CardId.ArmageddonKnight) && CanStartArmageddonRoute() &&
-                Bot.HasInDeck(CardId.ShaddollSquamata) &&
-                Bot.HasInDeck(CardId.LevShaddollFusion)) return true;
-            // Once a starter produces Mesh, allow its search before spending Void.
-            return _armageddonMeshSummoned && !IsLevRouteActive() &&
-                Bot.GetMonsters().Any(c => c.IsCode(CardId.ElShaddollMeshachrer) &&
-                    c.IsFaceup() && !c.IsDisabled() && (!_usedMeshSearches.Contains(c) || (Duel.CurrentChain.Count > 0 && PromptIs(CardId.ElShaddollMeshachrer))));
+            return MarkUsed(CardId.VoidUnleashing);
         }
 
         private bool LevPrimaryActivate()
@@ -1684,10 +1659,16 @@ namespace WindBot.Game.AI.Decks
 
         private bool PerfumeDancerActivate()
         {
-            if (Card.Location != CardLocation.Grave || Duel.Player != 0 || Duel.Phase > DuelPhase.Main2)
-                return false;
-            return Enemy.GetMonsters().Any(c => c.IsFaceup() && c.Defense >= 2000) &&
-                Bot.GetMonsters().Any(c => c.IsFaceup() && c.Attack > 0);
+            return Card.Location == CardLocation.Grave && CanWinBattleWithPerfume();
+        }
+
+        private bool CanWinBattleWithPerfume()
+        {
+            if (Duel.Player != 0 || Duel.Turn <= 1 || Duel.Phase > DuelPhase.Battle) return false;
+            return Enemy.GetMonsters().Any(enemy => enemy.IsFaceup() && enemy.IsAttack() && enemy.BaseDefense > 0 &&
+                !IsBattleObstacle(enemy) && Bot.GetMonsters().Any(attacker => attacker.IsFaceup() && attacker.IsAttack() &&
+                    attacker.Attack > 0 && !attacker.Attacked && attacker.Attack <= enemy.Attack &&
+                    attacker.Attack > Math.Max(0, enemy.Attack - enemy.BaseDefense)));
         }
 
         private bool GranguignolActivate()
@@ -1790,6 +1771,9 @@ namespace WindBot.Game.AI.Decks
             }
             if (group.Count != 2) return false;
             ClientCard a = group[0], b = group[1];
+            if (id == CardId.GranguignolDuskDragon)
+                return (a.IsCode(CardId.BlazingCartesia) && b.HasAttribute(CardAttribute.Light | CardAttribute.Dark)) ||
+                    (b.IsCode(CardId.BlazingCartesia) && a.HasAttribute(CardAttribute.Light | CardAttribute.Dark));
             if (id == CardId.ElShaddollApkallone)
                 return IsShaddollMonster(a) && IsShaddollMonster(b) && a.Attribute != b.Attribute;
             CardAttribute required = id == CardId.ElShaddollConstruct ? CardAttribute.Light :
@@ -1807,8 +1791,6 @@ namespace WindBot.Game.AI.Decks
             if (owner == CardId.ShaddollSchism || owner == CardId.TohushaddollGrysta || owner == CardId.TearlamentsScheiren)
                 pool = pool.Concat(Bot.Graveyard);
             if (owner == CardId.DracotailFaimena && Card != null && Card.IsCode(CardId.DracotailFaimena)) pool = pool.Where(c => c != Card);
-            if (owner == CardId.ShaddollFusion && EnemyDeckFusionWindow())
-                pool = pool.Concat(Bot.Deck.Where(c=>c != null && c.Id != 0));
             return pool.Where(c => c != null && c.IsMonster()).Distinct().ToList();
         }
         private int MaterialValue(ClientCard c, int owner, int target, RoutePlan route)
@@ -1843,9 +1825,14 @@ namespace WindBot.Game.AI.Decks
         }
         private bool FusionAllowedByEffect(int owner, int id)
         {
+            if (id == CardId.GranguignolDuskDragon)
+                return !_shaddollExtraDeckLock && (owner == CardId.BlazingCartesia || owner == CardId.DracotailFaimena || owner == CardId.TearlamentsScheiren);
             if (!ShaddollFusionIds.Contains(id)) return false;
             if (owner == CardId.DracotailFaimena)
-                return id == CardId.ElShaddollWinda || id == CardId.ElShaddollApkallone;
+            {
+                NamedCard data = NamedCard.Get(id);
+                return data != null && (data.Race & (int)(CardRace.Dragon | CardRace.SpellCaster)) != 0;
+            }
             if (owner == CardId.BlazingCartesia)
             {
                 NamedCard data = NamedCard.Get(id);
@@ -1948,7 +1935,7 @@ namespace WindBot.Game.AI.Decks
         }
         private FusionPlan PlanFusion(int owner)
         {
-            return BestFusionPlan(owner, ShaddollFusionIds, AvailableMaterials(owner), true);
+            return BestFusionPlan(owner, Bot.ExtraDeck.Select(c => c.Id), AvailableMaterials(owner), true);
         }
         private bool WorthFusion(int owner, int floor = 25)
         {
@@ -1999,7 +1986,6 @@ namespace WindBot.Game.AI.Decks
             List<ClientCard> allowed = cards.Where(c => FusionAllowedByEffect(ownerId,c.Id)).ToList();
             // Optional effects are screened at activation. If an already-resolving
             // mandatory prompt has no allowed option, keep the protocol legal.
-            // Never select Granguignol over any legal permitted Fusion.
             IList<ClientCard> pool = allowed.Count >= Math.Max(min, 1) ? allowed : cards;
             _chosenFusionMaterials.Clear(); _selectedFusionGroup = null;
             FusionPlan plan = ownerId == CardId.LevShaddollFusion ? null : BestFusionPlan(ownerId, pool.Select(c => c.Id), AvailableMaterials(ownerId), true);
@@ -2007,8 +1993,7 @@ namespace WindBot.Game.AI.Decks
                 plan = BestFusionPlan(ownerId, pool.Select(c => c.Id), AvailableMaterials(ownerId));
             // Deck material permission belongs to the engine. Do not rule out offered Deck-only lines.
             bool deckWindow = ownerId == CardId.ShaddollFusion && EnemyDeckFusionWindow();
-            bool deckKnown = deckWindow && Bot.Deck.Any(c=>c != null && c.Id != 0 && c.IsMonster());
-            List<ClientCard> ordered = pool.OrderByDescending(c => (!deckWindow || deckKnown) && plan != null && c.IsCode(plan.Target) ? 100000 : FusionTargetScore(c, ownerId)).ToList();
+            List<ClientCard> ordered = pool.OrderByDescending(c => !deckWindow && plan != null && c.IsCode(plan.Target) ? 100000 : FusionTargetScore(c, ownerId)).ToList();
             IList<ClientCard> result = FillSelection(ordered, pool, min, max);
             if (result.Count > 0)
             {
@@ -2117,7 +2102,8 @@ namespace WindBot.Game.AI.Decks
 
         private int FusionTargetScore(ClientCard card, int ownerId)
         {
-            if (card.IsCode(CardId.GranguignolDuskDragon)) return -10000;
+            if (card.IsCode(CardId.GranguignolDuskDragon))
+                return FusionAllowedByEffect(ownerId, card.Id) ? 200 : -10000;
             if (ownerId == CardId.ShaddollSchism) return SchismPlanScore(card.Id);
             if (_shaddollExtraDeckLock && !card.HasSetcode(ShaddollSetcode))
                 return -1000;
@@ -2270,17 +2256,12 @@ namespace WindBot.Game.AI.Decks
         {
             // Preserve the Deployment reveal; do not spend it as a generic dump.
             if (card.IsCode(CardId.GranguignolDuskDragon)) return -10000;
-            // Starter routes take precedence over tactical Extra Deck dumps.
-            if (card.IsCode(CardId.InfernoidEvil) && VoidCanSearchNow() && LiveMonster(CardId.ElShaddollMeshachrer) &&
+            if (card.IsCode(CardId.LunalightPerfumeDancer) && CanWinBattleWithPerfume()) return 2100;
+            if (card.IsCode(CardId.InfernoidEvil) && (IsArmageddonLevRoute() || (VoidCanSearchNow() && LiveMonster(CardId.ElShaddollMeshachrer) &&
                 !EffectUsed(CardId.VoidUnleashing) && !Bot.HasInHand(CardId.VoidUnleashing) &&
                 (!Bot.HasInHandOrInSpellZone(CardId.ElShaddollFusion) || !Bot.HasInHandOrInSpellZone(CardId.ShaddollSchism)) &&
-                Bot.HasInDeck(CardId.VoidUnleashing)) return 2000;
+                Bot.HasInDeck(CardId.VoidUnleashing)))) return 2000;
             if (card.IsCode(CardId.ElShaddollApkallone) && CanStartLevPrimaryRoute()) return 1900;
-            // Match the actual activation predicate: an empty board cannot use Perfume.
-            if (card.IsCode(CardId.LunalightPerfumeDancer) &&
-                Duel.Player == 0 && Duel.Phase <= DuelPhase.Main2 &&
-                Enemy.GetMonsters().Any(c => c.IsFaceup() && c.Defense >= 2500) &&
-                Bot.GetMonsters().Any(c => c.IsFaceup() && c.Attack > 0)) return 250;
             if (card.IsCode(CardId.InfernoidEvil) && Bot.HasInDeck(CardId.VoidUnleashing) &&
                 HasVoidRevealInHand() && !Bot.HasInHandOrInSpellZone(CardId.VoidUnleashing)) return 126;
             if (card.IsCode(CardId.ElShaddollMeshachrer) && Bot.Graveyard.Any(IsShaddollMonster) &&
@@ -2326,6 +2307,9 @@ namespace WindBot.Game.AI.Decks
             // Used by effect-based discard prompts (Apkallone, Shekhinaga, Void).
             // Higher score = better net value when sent to GY by an effect.
             int copies = Bot.Hand.Count(c => c.IsCode(card.Id));
+            if (IsLevRouteActive() && Bot.HasInMonstersZone(CardId.ElShaddollConstruct) &&
+                Bot.HasInHand(CardId.ReeshaddollWendi) && Bot.HasInHand(CardId.ElShaddollFusion) &&
+                card.IsCode(CardId.ArmageddonKnight)) return 160;
             if (ReservedForRoute(card)) return -800;
             if (card.IsCode(CardId.ArmageddonKnight) && copies <= 1 && !_normalSpent &&
                 CanStartArmageddonRoute() && Bot.HasInDeck(CardId.ShaddollSquamata)) return -700;
@@ -2357,19 +2341,8 @@ namespace WindBot.Game.AI.Decks
 
         private int ApkalloneSearchScore(ClientCard card)
         {
-            if (IsLevRouteActive() && CanContinueLevThroughSquamata())
-            {
-                if (!Bot.HasInHand(CardId.ShaddollSquamata) && card.IsCode(CardId.ShaddollSquamata)) return 260;
-                if (Bot.HasInHand(CardId.ShaddollSquamata) && !Bot.HasInHandOrInSpellZone(CardId.ShaddollSchism) && card.IsCode(CardId.ShaddollSchism)) return 255;
-            }
-            if (IsLevRouteActive() && !CanContinueLevThroughSquamata() && CanContinueLevThroughGrysta())
-            {
-                if (!Bot.HasInHand(CardId.TohushaddollGrysta) && card.IsCode(CardId.TohushaddollGrysta)) return 260;
-                if (Bot.HasInHand(CardId.TohushaddollGrysta) && !Bot.HasInHandOrInSpellZone(CardId.ShaddollSchism) && card.IsCode(CardId.ShaddollSchism)) return 255;
-            }
-            if (!IsLevRouteActive() && card.IsMonster() && IsShaddollMonster(card) && !Bot.Hand.Any(IsShaddollMonster))
-                return 180 + ShaddollMonsterSearchScore(card);
-            if (Bot.HasInHand(card.Id) && !card.IsMonster()) return -150;
+            if (IsLevRouteActive() && CanContinueLevThroughSquamata() &&
+                card.IsCode(CardId.ShaddollSquamata)) return 240;
             return ShaddollSearchScore(card);
         }
 
@@ -2384,13 +2357,14 @@ namespace WindBot.Game.AI.Decks
 
         private int SquamataSendScore(ClientCard card)
         {
-            if (((IsLevRouteActive() && _levRouteStage >= LevRouteStage.ApkalloneSent &&
-                  _levRouteStage < LevRouteStage.MeshachrerSummoned) ||
-                 (CanDevelopArmageddonRoute() && _armageddonRouteStarted &&
-                  Bot.HasInMonstersZone(CardId.ArmageddonKnight))) &&
+            if (Duel.Player == 1 && LiveMonster(CardId.ElShaddollApkallone) &&
+                card.IsCode(CardId.TohushaddollGrysta) && !EffectUsed(card.Id) &&
+                Bot.Graveyard.Any(c => c.IsCode(CardId.ShaddollSquamata)) && Bot.HasInExtra(CardId.ElShaddollShekhinaga)) return 220;
+            if ((IsLevRouteActive() || (_armageddonRouteStarted && !_armageddonMeshSummoned &&
+                Bot.HasInMonstersZone(CardId.ArmageddonKnight))) &&
                 Bot.HasInExtra(CardId.ElShaddollMeshachrer) &&
                 card.IsCode(CardId.TohushaddollGrysta)) return 240;
-            return ContextualShaddollSendScore(card);
+            return ShaddollSendScore(card);
         }
 
         private int ConstructSendScore(ClientCard card)
@@ -2461,8 +2435,9 @@ namespace WindBot.Game.AI.Decks
 
         private int ArmageddonSendScore(ClientCard card)
         {
-            if (CanStartArmageddonRoute() && card.IsCode(CardId.ShaddollSquamata)) return 220;
-            return ContextualShaddollSendScore(card);
+            if (card.IsCode(CardId.ShaddollSquamata) && Bot.HasInDeck(CardId.TohushaddollGrysta) &&
+                Bot.HasInExtra(CardId.ElShaddollMeshachrer)) return 220;
+            return ShaddollSendScore(card);
         }
 
         private bool CanDevelopArmageddonRoute()
@@ -2567,17 +2542,13 @@ namespace WindBot.Game.AI.Decks
 
         private int MeshSearchScore(ClientCard card)
         {
-            if (!IsLevRouteActive() && (IsArmageddonLevRoute() || (!FunctionalBoard() && Bot.HasInExtra(CardId.ElShaddollConstruct) && !EffectUsed(CardId.LevShaddollFusion) &&
-                (Bot.HasInExtra(CardId.InfernoidEvil) || Bot.HasInHand(CardId.VoidUnleashing)))) &&
+            if (!IsLevRouteActive() && IsArmageddonLevRoute() &&
                 !Bot.HasInHandOrInSpellZone(CardId.LevShaddollFusion) &&
                 card.IsCode(CardId.LevShaddollFusion)) return 2000;
-            if (card.IsCode(CardId.VoidUnleashing) && !VoidCanSearchNow()) return -400;
             if (IsLevRouteActive() && card.IsCode(CardId.VoidUnleashing) &&
-                !EffectUsed(CardId.VoidUnleashing) &&
-                !Bot.HasInHandOrInSpellZone(CardId.VoidUnleashing)) return 250;
+                !EffectUsed(CardId.VoidUnleashing)) return 250;
             if (IsLevRouteActive() && HasVoidRevealInHand() &&
-                card.IsCode(CardId.ElShaddollFusion) &&
-                !Bot.HasInHandOrInSpellZone(CardId.ElShaddollFusion)) return 225;
+                card.IsCode(CardId.ElShaddollFusion)) return 225;
             if (card.IsCode(CardId.ShaddollSchism) && !Bot.HasInHandOrInSpellZone(CardId.ShaddollSchism)) return 120;
             return ShaddollSearchScore(card);
         }
@@ -2670,7 +2641,7 @@ namespace WindBot.Game.AI.Decks
                 if (scope.StartsWith("your own ") || scope.StartsWith("your card effects")) continue;
                 // Protection clauses that grant an effect to another target are not self-immunity.
                 string before = sentence.Substring(0, start).Trim();
-                if (before.Contains("target 1") || before.Contains("that target") || before.Contains("that face-up monster") || before.Contains("monsters you control")) continue;
+                if (before.Contains("target 1") || before.Contains("that target") || before.Contains("that face-up monster") || before.Contains("monsters you control") || before.Contains("in your monster zone")) continue;
                 if (scope.StartsWith("other cards' effects") || scope.StartsWith("other card effects") ||
                     scope.StartsWith("card effects") || scope.StartsWith("your opponent's card effects") ||
                     scope.StartsWith("activated card effects") || scope.StartsWith("your opponent's activated card effects")) return true;
@@ -2826,6 +2797,8 @@ namespace WindBot.Game.AI.Decks
             if (card.IsMonster() && EffectText(card).Contains("banish this card from your gy") &&
                 !EffectText(card).Contains("(quick effect)")) score -= 350;
             // Continuous effects and battle triggers remain relevant even after an ignition search.
+            if ((card.IsSpell() || card.IsTrap()) && (GetOpponentCapabilities(card) & OpponentCapability.Recursion) != 0)
+                score += 200;
             if (card.IsCode(CardId.ElShaddollWinda)) score += 500;
             if (card.IsCode(CardId.ShaddollSchism)) score += 850;
             if (card.IsCode(CardId.ReeshaddollWendikuruhu) && Enemy.GetMonsters().Any(c=>c.IsFacedown())) score += 700;
@@ -3049,7 +3022,8 @@ namespace WindBot.Game.AI.Decks
 
         private int ArielRevivalScore(ClientCard card)
         {
-            if (card.IsCode(CardId.TohushaddollGrysta) && !HasGrystaBody()) return 450;
+            if (card.IsCode(CardId.TohushaddollGrysta) && !HasGrystaBody() && HasCopyFuel()) return 450;
+            if (card.IsCode(CardId.ShaddollSquamata) && LiveMonster(CardId.ReeshaddollWendikuruhu)) return 380;
             if (card.IsCode(CardId.ShaddollSquamata) && Enemy.GetMonsterCount()>0) return 310;
             if (card.IsCode(CardId.ReeshaddollWendi) && Bot.GetMonsterCount()<4) return 290;
             if (card.IsCode(CardId.ShaddollDragon) && Enemy.GetFieldCount()>0) return 300;
