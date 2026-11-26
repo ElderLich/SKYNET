@@ -40,6 +40,13 @@
   ],
   "dialogs_source": "D:\\Programs\\GitHub\\MDPro4_Data\\Data\\Windbot\\Dialogs",
   "bot_conf_source": "D:\\Programs\\GitHub\\MDPro4_Data\\Data\\locales\\en-US\\bot.conf",
+  "localized_roster_source": {
+    "repository": "MDPro4_Data",
+    "revision": "d5a8db059ca034b8a630545e169eadb4a8c4e0b9",
+    "path": "Data/locales/<locale>/bot.conf",
+    "destination": "BotWrapper/locales/<locale>/bot.conf",
+    "changes": "Preserve the 82 original entries in each non-English locale and add the eight registrations from the English roster with localized text and packaged dialogs."
+  },
   "default_dialog_alias": "Dialogs/Universal.EN.json",
   "files": {
     "Dialogs/BusterBlader.DE.json": "0c66f026481ed7037b15faaa5aa8a972e0d00381215709b4ec84a596e38b1a64",
@@ -302,13 +309,14 @@
     "Dialogs/VI-1911.PT.json": "d7efbf3f6785bc70088bf6aaa147e245a1b5efbde4ffb42618cf76c7fb859005",
     "Dialogs/VI-1911.TH.json": "18470728513ab9e45c40d2176556e4f2505e617d2ea16cb01716207c8918b50f",
     "Dialogs/VI-1911.zh-CN.json": "dc769917811e18632e388115f17d48cacb80c52047ef47ffa984681347c90651",
-    "BotWrapper/bot.conf": "9a008699b7cec6124c8b3dee54975e4b42dc30e1cb59b49b0b13d7b6ad3b55ac"
+    "BotWrapper/bot.conf": "302c687981f7d4f01f3ab4d91fb02e37ffd40e42bb72c3c940e29a72bb4120f5"
   },
   "local_changes": {
     "BotWrapper/bot.conf": {
       "source_sha256": "4a851e97ba05be6fd72d8a803f5c986438c025fcd540e3ed638788e96807bd99",
       "changes": [
-        "Add SirokamiDarkMagician, RaiseMoon, Metalmorph and Odion with Universal.EN; no unmeasured difficulty assignment."
+        "Add SirokamiDarkMagician, RaiseMoon, Metalmorph and Odion with Universal.EN; no unmeasured difficulty assignment.",
+        "Add SkyStriker2026, Witchcraft2026, DestinyBoard and Shaddoll2025. Bakura requires unrestricted duels with prerelease card support."
       ]
     }
   }
