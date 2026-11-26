@@ -487,11 +487,16 @@ namespace WindBot.Game
             if (selected == null)
                 return null;
 
-            bool validCount = selected.Count >= min && selected.Count <= max;
-            if (cancelable && selected.Count == 0)
-                validCount = true;
+            int count = selected.Count;
+            bool valid = (count >= min && count <= max) || (cancelable && count == 0);
+            HashSet<ClientCard> seen = valid && count > 1 ? new HashSet<ClientCard>() : null;
+            for (int i = 0; valid && i < count; ++i)
+            {
+                ClientCard card = selected[i];
+                valid = card != null && cards.Contains(card) && (seen == null || seen.Add(card));
+            }
 
-            if (!validCount || selected.Distinct().Count() != selected.Count || selected.Any(card => card == null || !cards.Contains(card)))
+            if (!valid)
             {
                 Logger.WriteErrorLine("Invalid card selection returned by executor, using default selection.");
                 return null;
