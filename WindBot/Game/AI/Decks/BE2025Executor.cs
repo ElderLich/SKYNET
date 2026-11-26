@@ -1303,8 +1303,9 @@ namespace WindBot.Game.AI.Decks
             if (ActivateDescription == Util.GetStringId(CardId.SpiritWithEyesOfBlue, 2))
             {
                 Logger.DebugWriteLine("Check Link1 Active");
-                if (Bot.GetMonsterCountWithoutExtraMonster() >= 5) return false;
-                ClientCard pick = Bot.Graveyard.FirstOrDefault(x => x != null && x.IsCode(CardId.BlueEyesWhiteDragon));
+                //if (Bot.GetMonsterCountWithoutExtraMonster() >= 5) return false; foo new code
+                if (Bot.MonsterZone.Take(5).Count(x => x != null) >= 5) return false;
+				ClientCard pick = Bot.Graveyard.FirstOrDefault(x => x != null && x.IsCode(CardId.BlueEyesWhiteDragon));
 
 				if (pick == null)
 				{
