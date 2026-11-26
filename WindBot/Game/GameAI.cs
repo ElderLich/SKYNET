@@ -320,7 +320,7 @@ namespace WindBot.Game
             attackers.Reverse();
 
             List<ClientCard> defenders = new List<ClientCard>(Duel.Fields[1].GetMonsters());
-            defenders.Sort(CardContainer.CompareDefensePower);
+            defenders.Sort(Executor.CompareBattleTargets);
             defenders.Reverse();
 
             if (attackers.Count > 0)
@@ -1612,7 +1612,7 @@ namespace WindBot.Game
         {
             if (defender != null)
             {
-                string cardName = defender.Name ?? "monster";
+                string cardName = defender.IsFacedown() ? "monster" : defender.Name ?? "monster";
                 _dialogs.SendAttack(attacker.Name, cardName);
             }
             else

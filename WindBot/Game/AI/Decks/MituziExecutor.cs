@@ -111,7 +111,7 @@ namespace WindBot.Game.AI.Decks
              {
                  if (Card.IsFacedown())
                  {
-                     ClientCard card = Util.GetWorstEnemyMonster();
+                     ClientCard card = WeakestFaceupEnemy();
                      if (card == null) return true;
                      if (Bot.HasInSpellZone(CardId.透幻乡险峻))
                      {
@@ -133,7 +133,7 @@ namespace WindBot.Game.AI.Decks
                      return Bot.GetMonsterCount()>1&&
                          Bot.Hand.GetMatchingCardsCount(card => card.Level > 4) > 0;
              }
-             ClientCard emMon = Util.GetWorstEnemyMonster();
+             ClientCard emMon = WeakestFaceupEnemy();
              if (emMon == null) return Card.IsDefense();
              else
              {
@@ -151,7 +151,7 @@ namespace WindBot.Game.AI.Decks
          }
          private bool 风车鳞虫Summon()
          {
-             ClientCard card = Util.GetWorstEnemyMonster();
+             ClientCard card = WeakestFaceupEnemy();
              if (card == null) return true;
              if (Bot.HasInSpellZone(CardId.透幻乡险峻))
              {
@@ -228,7 +228,7 @@ namespace WindBot.Game.AI.Decks
         }
         private bool MonsSet()
         {
-            ClientCard EmWorstMon = Util.GetWorstEnemyMonster();
+            ClientCard EmWorstMon = WeakestFaceupEnemy();
             if (Card.Level < 5)
             {
                 if (Card.Id == CardId.镐头龙)
@@ -358,6 +358,7 @@ namespace WindBot.Game.AI.Decks
                 for (int i = 0; i < defenders.Count; i++)
                 {
                     ClientCard defender = defenders[i];
+                    if (!defender.IsFaceup() || !defender.IsAttack()) continue;
                     attacker.RealPower = attacker.Attack;
                     defender.RealPower = defender.GetDefensePower();
                     if (!OnPreBattleBetween(attacker, defender))
@@ -370,6 +371,11 @@ namespace WindBot.Game.AI.Decks
             }
             return base.OnSelectAttackTarget(attacker, defenders);
         }
+        private ClientCard WeakestFaceupEnemy()
+        {
+            return Enemy.MonsterZone.Where(c => c != null && c.IsFaceup()).OrderBy(c => c.GetDefensePower()).FirstOrDefault();
+        }
+
         private bool HasFaceupFieldSpell()
         {
             return Bot.GetFieldSpellCard()?.IsFaceup() == true || Enemy.GetFieldSpellCard()?.IsFaceup() == true;
@@ -383,7 +389,7 @@ namespace WindBot.Game.AI.Decks
                 .OrderByDescending(c => c.Level).FirstOrDefault();
             if (monster == null)
                 return false;
-            ClientCard enemy = Util.GetWorstEnemyMonster();
+            ClientCard enemy = WeakestFaceupEnemy();
             int power = monster.Attack + (Bot.HasInSpellZone(CardId.透幻乡险峻) ? 400 : 0);
             AI.SelectCard(monster);
             AI.SelectPosition(enemy == null || power >= enemy.GetDefensePower() ? CardPosition.FaceUpAttack : CardPosition.FaceUpDefence);

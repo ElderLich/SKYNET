@@ -19,6 +19,41 @@ namespace WindBot.Game.AI
         // Dinocarriage uses the normal WindBot option and position callbacks.
         protected virtual bool UseGenericRushChoices { get { return true; } }
 
+        public override int GetBattleTargetPower(ClientCard defender)
+        {
+            // A set monster has the same unknown power whether the client cached its identity or not.
+            return defender.IsFacedown() ? 0 : defender.GetDefensePower();
+        }
+
+        public override bool OnPreBattleBetween(ClientCard attacker, ClientCard defender)
+        {
+            return defender.IsFacedown() || base.OnPreBattleBetween(attacker, defender);
+        }
+
+        protected override bool AllRepositionThreatsStronger()
+        {
+            int ownPower = Util.GetBestPower(Bot);
+            bool hasOpponent = false;
+            foreach (ClientCard monster in Enemy.MonsterZone)
+            {
+                if (monster == null || !monster.IsFaceup()) continue;
+                if (monster.GetDefensePower() <= ownPower) return false;
+                hasOpponent = true;
+            }
+            return hasOpponent;
+        }
+
+        protected override int StrongestRepositionThreat()
+        {
+            int strongest = -1;
+            foreach (ClientCard monster in Enemy.MonsterZone)
+            {
+                if (monster != null && monster.IsFaceup())
+                    strongest = Math.Max(strongest, monster.GetDefensePower());
+            }
+            return strongest;
+        }
+
         public override bool OnSelectHand()
         {
             return true;

@@ -476,7 +476,7 @@ namespace WindBot.Game.AI
             foreach (ClientCard defender in defenders)
             {
                 attacker.RealPower = attacker.GetAttackPower();
-                defender.RealPower = defender.GetDefensePower();
+                defender.RealPower = GetBattleTargetPower(defender);
                 if (!OnPreBattleBetween(attacker, defender))
                     continue;
 
@@ -672,7 +672,7 @@ namespace WindBot.Game.AI
             List<ClientCard> defenders = Duel.Fields[1].GetMonsters();
             if (defenders.Count == 0)
                 return true;
-            defenders.Sort(CardContainer.CompareDefensePower);
+            defenders.Sort(CompareBattleTargets);
             defenders.Reverse();
             BattlePhaseAction result = OnSelectAttackTarget(Bot.BattlingMonster, defenders);
             if (result != null && result.Action == BattlePhaseAction.BattleAction.Attack)
@@ -1587,7 +1587,7 @@ namespace WindBot.Game.AI
         }
         protected bool 黑洞Effect()
         {
-            return (Util.IsOneEnemyBetter() && Util.GetTotalAttackingMonsterAttack(1) >= 3000 && !Enemy.HasInMonstersZone(_CardId.终焰魔神, faceUp: true)) || Enemy.GetMonsterCount() == 3;
+            return (HasStrongerFaceupEnemy() && Util.GetTotalAttackingMonsterAttack(1) >= 3000 && !Enemy.HasInMonstersZone(_CardId.终焰魔神, faceUp: true)) || Enemy.GetMonsterCount() == 3;
         }
         protected bool 疾风弹Effect()
         {
@@ -1614,6 +1614,11 @@ namespace WindBot.Game.AI
         {
             // The script collects one discard, then asks for a monster only at resolution.
             return HasFaceupRushThreat(minimumThreat);
+        }
+
+        protected bool HasStrongerFaceupEnemy()
+        {
+            return HasFaceupRushThreat(Util.GetBestPower(Bot));
         }
 
         private bool HasFaceupRushThreat(int power)
@@ -1673,15 +1678,17 @@ namespace WindBot.Game.AI
     }
         protected bool 亚龙地狱Effect()
         {
-            foreach (ClientCard n in Enemy.GetMonsters())
-                if (n.Level >= 7)
-                    return true;
-              else  if (n.Level == 6 && Bot.MonsterZone.GetMatchingCardsCount(card => card.Level == 6) < Enemy.MonsterZone.GetMatchingCardsCount(card => card.Level == 6))
-                    return true;
-                else if (Enemy.MonsterZone.GetMatchingCardsCount(card => card.Level == 6) == 3)
-                    return true;
-            return false;
+            int enemySixes = 0;
+            foreach (ClientCard monster in Enemy.MonsterZone)
+            {
+                if (monster == null || !monster.IsFaceup()) continue;
+                if (monster.Level >= 7) return true;
+                if (monster.Level == 6) enemySixes++;
+            }
+            return enemySixes > 0 && (enemySixes == 3
+                || enemySixes > Bot.MonsterZone.Count(c => c != null && c.IsFaceup() && c.Level == 6));
         }
+
         protected bool 落穴Effect()
         {
             foreach (ClientCard n in Duel.LastSummonedCards)
@@ -1765,22 +1772,32 @@ namespace WindBot.Game.AI
                     return false;
             }
 
-            if (Enemy.HasInMonstersZone(_CardId.BlueEyesChaosMAXDragon, true) &&
+            if (Enemy.HasInMonstersZone(_CardId.BlueEyesChaosMAXDragon, true, faceUp: true) &&
                 Card.IsAttack() && (4000 - Card.Defense) * 2 > (4000 - Card.Attack))
                 return false;
-            if (Enemy.HasInMonstersZone(_CardId.BlueEyesChaosMAXDragon, true) &&
+            if (Enemy.HasInMonstersZone(_CardId.BlueEyesChaosMAXDragon, true, faceUp: true) &&
                 Card.IsDefense() && Card.IsFaceup() &&
                 (4000 - Card.Defense) * 2 > (4000 - Card.Attack))
                 return true;
 
-            bool enemyBetter = Util.IsAllEnemyBetter();
+            bool enemyBetter = AllRepositionThreatsStronger();
             if (Card.IsAttack() && enemyBetter)
                 return true;
             if (Card.IsDefense() && !enemyBetter &&
-                (Card.Attack > Card.Defense || (Duel.Phase == DuelPhase.Main1 && Card.Attack >= Util.GetBestPower(Enemy))))
+                (Card.Attack > Card.Defense || (Duel.Phase == DuelPhase.Main1 && Card.Attack >= StrongestRepositionThreat())))
                 return true;
 
             return false;
+        }
+
+        protected virtual bool AllRepositionThreatsStronger()
+        {
+            return Util.IsAllEnemyBetter();
+        }
+
+        protected virtual int StrongestRepositionThreat()
+        {
+            return Util.GetBestPower(Enemy);
         }
 
         /// <summary>

@@ -75,6 +75,19 @@ namespace WindBot.Game.AI
             return null;
         }
 
+        public virtual int GetBattleTargetPower(ClientCard defender)
+        {
+            return defender.GetDefensePower();
+        }
+
+        public int CompareBattleTargets(ClientCard first, ClientCard second)
+        {
+            if (first == second) return 0;
+            if (first == null) return -1;
+            if (second == null) return 1;
+            return GetBattleTargetPower(first).CompareTo(GetBattleTargetPower(second));
+        }
+
         public virtual bool OnPreBattleBetween(ClientCard attacker, ClientCard defender)
         {
             // Overrided in DefaultExecutor

@@ -157,7 +157,7 @@ namespace WindBot.Game.AI.Decks
 
         private bool 救火女Sp()
         {
-            return !flameResolved && Util.IsOneEnemyBetter() && Util.GetBestAttack(Enemy) < FlameAttack(true);
+            return !flameResolved && HasStrongerFaceupEnemy() && Util.GetBestAttack(Enemy) < FlameAttack(true);
         }
 
         private static readonly int[] TributePriorities = { CardId.花草女, CardId.细剑女, CardId.救火女, CardId.夜魔女 };
@@ -179,13 +179,13 @@ namespace WindBot.Game.AI.Decks
 
         private bool 救火女Effect1()
         {
-            return Bot.Hand.Count > 0 && !flameResolved && Util.IsOneEnemyBetter()
+            return Bot.Hand.Count > 0 && !flameResolved && HasStrongerFaceupEnemy()
                 && Util.GetBestAttack(Enemy) < FlameAttack(false);
         }
 
         private bool 救火女Effect2()
         {
-            if (Bot.Hand.Count == 0 || flameResolved || Util.IsOneEnemyBetter())
+            if (Bot.Hand.Count == 0 || flameResolved || HasStrongerFaceupEnemy())
                 return false;
             ClientCard enemy = Enemy.MonsterZone.Where(c => c != null && c.IsAttack()).OrderBy(c => c.Attack).FirstOrDefault();
             if (enemy == null)
@@ -306,12 +306,12 @@ namespace WindBot.Game.AI.Decks
 
         private bool 结界像set()
         {
-            return Util.IsOneEnemyBetter();
+            return HasStrongerFaceupEnemy();
         }
 
         private bool 海龙set()
         {
-            if ((Util.IsOneEnemyBetter() || Duel.Turn == 1))
+            if ((HasStrongerFaceupEnemy() || Duel.Turn == 1))
             {
                 if (Enemy.GetSpellCount() ==0 || Bot.GetSpellCount() < 2)
                 return true;

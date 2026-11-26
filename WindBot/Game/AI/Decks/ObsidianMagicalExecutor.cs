@@ -377,7 +377,7 @@ namespace WindBot.Game.AI.Decks
 
         private bool 采掘Effect()
         {
-            if (Util.IsOneEnemyBetter() && Util.GetTotalAttackingMonsterAttack(1) >= 3500 && !Enemy.HasInMonstersZone(_CardId.终焰魔神) && Bot.HasInGraveyard(_CardId.黑洞))
+            if (HasStrongerFaceupEnemy() && Util.GetTotalAttackingMonsterAttack(1) >= 3500 && !Enemy.HasInMonstersZone(_CardId.终焰魔神, faceUp: true) && Bot.HasInGraveyard(_CardId.黑洞))
             {
                 AI.SelectCard(cost2);
                 AI.SelectNextCard(_CardId.黑洞);
