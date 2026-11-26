@@ -130,6 +130,8 @@ The repository includes the selected MDPro4 dialogs and roster. `Dialogs/default
 
 ## Validation and credits
 
+**Solo dialog compatibility.** The MDPro4 Unity player loads bot speech with Newtonsoft.Json. The standalone WindBot executable loads it with the .NET Framework serializer. To exercise the Unity code path locally with PowerShell 7, run `pwsh -NoProfile -File WindBot/Tools/Test-UnityDialogs.ps1` from the workspace root. This is also the macOS dialog check on pull requests. It compiles the production reader with the Unity symbol, uses PowerShell's JSON.NET assembly and opens every shipped dialog. A packaged macOS player opening a Solo lobby is a separate release check.
+
 | Evidence | What it checks |
 | --- | --- |
 | Build and runtime check | The bot compiles, loads the database, finds the supplied cards and registration. |

@@ -7,6 +7,15 @@ on:
 permissions:
   contents: read
 jobs:
+  dialogs:
+    name: macOS Solo dialog reader
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Load shipped dialogs with the Unity reader
+        shell: pwsh
+        run: ./WindBot/Tools/Test-UnityDialogs.ps1
   windows:
     runs-on: windows-2022
     steps:
