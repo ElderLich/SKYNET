@@ -1358,7 +1358,7 @@ namespace WindBot.Game.AI
 
         protected bool 手枪龙Effect()
         {
-            // The coin toss determines whether the host offers a destruction prompt.
+            // The host asks for the target before tossing the three coins.
             return Enemy.GetMonsterCount() > 0;
         }
 
@@ -1428,7 +1428,7 @@ namespace WindBot.Game.AI
 
         protected bool 钢机神1Effect()
         {
-            return Enemy.HasDefendingMonster() && !Util.IsOneEnemyBetterThanValue(2500, false);
+            return Enemy.MonsterZone.Any(c => c != null && c.IsDefense()) && !HasFaceupRushThreat(2500);
         }
 
         protected bool 钢机神Effect()

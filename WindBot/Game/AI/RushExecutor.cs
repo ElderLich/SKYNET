@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using YGOSharp.OCGWrapper;
 using YGOSharp.OCGWrapper.Enums;
@@ -49,7 +50,7 @@ namespace WindBot.Game.AI
                 return null;
 
             ChainInfo link = Duel.GetCurrentSolvingChainInfo();
-            int owner = link != null && link.ActivatePlayer == 0 ? link.ActivateId : 0;
+            int owner = link != null && link.ActivatePlayer == 0 ? SharedRushEffect(link.ActivateId) : 0;
             IList<ClientCard> effectChoice = SelectEffectCards(owner, hint, cards, min, max);
             if (effectChoice != null || Duel.Phase == DuelPhase.BattleStart)
                 return effectChoice;
@@ -131,6 +132,28 @@ namespace WindBot.Game.AI
         private const int DestroyerOfDragonSorcerers = 120231049;
         private const int MirrorInnovator = 120155015;
 
+        private static int SharedRushEffect(int printedId)
+        {
+            // Only equivalent printings verified in the bundled Rush scripts.
+            switch (printedId)
+            {
+                case 120195004:
+                case 129022671:
+                    return MonsterReborn;
+                case 120197003:
+                    return SevensRoadMage;
+                case 120239059:
+                case 129018890:
+                    return MirrorInnovator;
+                case 129018567:
+                    return DestroyerOfDragonSorcerers;
+                case 129022509:
+                    return AceBreaker;
+                default:
+                    return printedId;
+            }
+        }
+
         private IList<ClientCard> SelectEffectCards(int owner, int hint, IList<ClientCard> cards, int min, int max)
         {
             if (owner == 0 || cards.Count == 0 || max < 1)
@@ -155,13 +178,17 @@ namespace WindBot.Game.AI
                 return null;
             }
 
-            // Steel Mech needs exactly one returned monster to gain piercing.
-            bool piercing = owner == MirrorInnovator && hint == HintMsg.ToDeck;
+            if (owner == MirrorInnovator && hint == HintMsg.ToDeck)
+            {
+                // Returning one monster grants piercing. Otherwise each returned level adds 100 ATK.
+                int count = 钢机神1Effect() ? Math.Max(1, min) : Math.Min(3, max);
+                return cards.OrderByDescending(c => c.Level).Take(count).ToList();
+            }
             bool destroy = (owner == TributeToDoomed || owner == AceBreaker || owner == BarrelDragon)
                 && hint == HintMsg.Destroy;
-            bool boost = (owner == SevensRoadMage || owner == SparkheartsGirl || owner == AssaultCannon ||
+            bool statTarget = (owner == SevensRoadMage || owner == SparkheartsGirl || owner == AssaultCannon ||
                 owner == Agariel || owner == DestroyerOfDragonSorcerers) && hint == Util.GetStringId(owner, 1);
-            if (min > 1 || !(piercing || destroy || boost || (owner == SiestaTorero && hint == HintMsg.Set)
+            if (min > 1 || !(destroy || statTarget || (owner == SiestaTorero && hint == HintMsg.Set)
                 || (owner == MonsterReborn && hint == HintMsg.SpSummon)))
                 return null;
 
@@ -173,7 +200,14 @@ namespace WindBot.Game.AI
                 if (destroy && card.Controller == 0) continue;
                 int score = 0;
                 if (card.Controller == 0 || card.IsFaceup() || card.Location == CardLocation.Grave)
-                    score = piercing ? card.Level : card.Attack;
+                {
+                    if (destroy || owner == AssaultCannon)
+                        score = card.GetDefensePower();
+                    else if (owner == SevensRoadMage || owner == SparkheartsGirl)
+                        score = card.IsAttack() ? card.Attack : -1;
+                    else
+                        score = card.Attack;
+                }
                 if (best == null || score > bestScore)
                 {
                     best = card;
