@@ -2,7 +2,11 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+#if UNITY_5_3_OR_NEWER
+using Newtonsoft.Json;
+#else
 using System.Runtime.Serialization.Json;
+#endif
 
 namespace WindBot.Game.AI
 {
@@ -63,11 +67,19 @@ namespace WindBot.Game.AI
         public Dialogs(GameClient game)
         {
             _game = game;
-            DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(DialogsData));
             string dialogfilename = game.Dialog;
             using (FileStream fs = Program.ReadFile("Dialogs", dialogfilename, "json"))
             {
+#if UNITY_5_3_OR_NEWER
+                DialogsData data;
+                using (StreamReader reader = new StreamReader(fs))
+                    data = JsonConvert.DeserializeObject<DialogsData>(reader.ReadToEnd());
+#else
+                var serializer = new DataContractJsonSerializer(typeof(DialogsData));
                 DialogsData data = (DialogsData)serializer.ReadObject(fs);
+#endif
+                if (data == null)
+                    throw new InvalidDataException("Dialog file is empty or invalid: " + dialogfilename);
                 _welcome = data.welcome;
                 _deckerror = data.deckerror;
                 _duelstart = data.duelstart;
