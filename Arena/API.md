@@ -277,7 +277,7 @@ Regression, Challenge and Ranking create `M#` best-of-three match rooms. Their c
 | `stopReason` | string \| null | Stop or completion reason |
 | `error` | string \| null | Failure details |
 | `matchups` | array | Deck or pairing statistics |
-| `events` | array | Up to the 30 most recent run events, in chronological order |
+| `events` | array | Up to 30 recent activity events and 70 recent match launches, in chronological order |
 | `challengeTargetFlee` | integer | Challenge runs only: cumulative anomaly count for the challenger |
 
 Terminal statuses:

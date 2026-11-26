@@ -376,11 +376,15 @@ class ArenaDatabase {
             SELECT * FROM (
                 SELECT id, level, event_type, message, created_at
                 FROM run_events
-                WHERE run_id = ?
-                ORDER BY id DESC
-                LIMIT 100
+                WHERE run_id = ? AND event_type <> 'match-launched'
+                ORDER BY id DESC LIMIT 30
+            ) UNION ALL SELECT * FROM (
+                SELECT id, level, event_type, message, created_at
+                FROM run_events
+                WHERE run_id = ? AND event_type = 'match-launched'
+                ORDER BY id DESC LIMIT 70
             ) ORDER BY id
-        `).all(runId).map((event) => ({
+        `).all(runId, runId).map((event) => ({
             at: event.created_at,
             id: event.id,
             level: event.level,

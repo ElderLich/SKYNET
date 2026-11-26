@@ -44,6 +44,23 @@ test('new workspace defaults are persisted without replacing saved agent paths',
     assert.deepEqual(database.getArenaSettings().settings, settings);
 });
 
+test('a long match queue preserves recent warnings and bounds launch history', (context) => {
+    const database = new ArenaDatabase(':memory:');
+    context.after(() => database.close());
+    database.createRun({
+        id: 'long-run', kind: 'ranking', gamesPerMatchup: 0, createdAt: '2026-09-11T00:00:00Z',
+        config: {}, matchups: [], srvproId: 'srvpro-1',
+    });
+    database.addEvent('long-run', 'warning', 'retry', 'An earlier launch needed a retry');
+    for (let match = 1; match <= 110; match += 1) {
+        database.addEvent('long-run', 'info', 'match-launched', String(match));
+    }
+    const events = database.getRun('long-run').events;
+    assert.deepEqual(events.slice(0, 2).map((event) => event.type), ['created', 'retry']);
+    assert.equal(events.length, 72);
+    assert.equal(events.at(-1).message, '110');
+});
+
 test('scheduled stop persists in run configuration without changing other fields', (context) => {
     const database = new ArenaDatabase(':memory:');
     context.after(() => database.close());
