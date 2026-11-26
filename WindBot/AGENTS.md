@@ -35,7 +35,10 @@ executors remain supported and do not need wholesale rewrites for narrow fixes.
   script-backed duels separately from model replay and Arena match rankings.
 - Dialogs and `BotWrapper/bot.conf` are supplied resource snapshots; preserve
   their provenance and intentional names. Never overwrite the external sources.
-- Use the existing README for documentation. Preserve license and attribution.
+- Keep build, connection and launch instructions in [the README](README.md).
+  Update the [deck reference](Guides/DeckReference.md) for deck-specific commands,
+  reviewed decisions and dated results. Put reusable authoring contracts in the
+  [executor authoring guide](Guides/ExecutorAuthoring.md). Preserve attribution.
 
 ## Architecture and ownership
 
