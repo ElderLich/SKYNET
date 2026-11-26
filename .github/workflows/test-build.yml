@@ -18,6 +18,8 @@ jobs:
         run: msbuild WindBot/WindBot.sln /t:Build /p:Configuration=Release /p:Platform="Any CPU"
       - name: Check WindBot executor layout and tools
         run: python WindBot/Tools/test_bot_tool.py
+      - name: Check every Solo roster and the MDPro4 sync
+        run: python -m unittest discover -s WindBot/Tools/Sync -p "test_*.py"
       - name: Build SKYNET Debug
         run: msbuild SKYNET/Skynet.sln /t:Build /p:Configuration=Debug /p:Platform="Any CPU"
       - name: Build SKYNET Release
