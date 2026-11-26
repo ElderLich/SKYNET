@@ -114,6 +114,8 @@ For checkouts elsewhere, pass `--game-root "D:/path/to/MDPro_3" --data-root "D:/
 
 **When adding a playable bot**, add its English entry and a translated entry in every maintained locale. Keep the exact executor name, gameplay options and mode flags in each entry. Use an existing dialog filename with its exact capitalization. Validation reports the missing locale or resource before publishing. To check your changes without either companion checkout, run `python -m unittest discover -s WindBot/Tools/Sync`. [English roster](BotWrapper/bot.conf) · [Localized rosters](BotWrapper/locales/) · [Sync script](Tools/sync_mdpro4.py)
 
+Use the same menu order in every language. Put Standard entries before `# Rush Support Start` and Rush entries inside the final block ending at `# Rush Support End`. Give each fixed deck a difficulty or specialty group. The sync checks these rules and keeps installation-specific bots in the corresponding section.
+
 To withhold an unfinished bot, register it as `NotFinished`, add its ID and reason to `SOLO_EXCLUSIONS`, and remove its entries from every roster. Sync removes previously published entries for those IDs. Raise Moon is currently withheld and remains available to developers through `Deck=RaiseMoon`. [Solo roster exclusions](Tools/Sync/rosters.py)
 
 The sync also migrates published deck renames. For Dark Magician the Dragon Knight, it carries the original Unity GUID to the renamed executor and removes the superseded deck file from both checkouts. If you edited either retired file locally, the preview identifies the file to reconcile before publishing.

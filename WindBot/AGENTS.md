@@ -40,7 +40,10 @@ executors remain supported and do not need wholesale rewrites for narrow fixes.
   script-backed duels separately from model replay and Arena match rankings.
 - Maintain the English `BotWrapper/bot.conf` and `BotWrapper/locales/<locale>/bot.conf`
   together. Add every new playable bot to each language with translated display text,
-  matching gameplay flags and an installed dialog. Preserve resource provenance and
+  matching difficulty or specialty groups and an installed dialog. Keep the same
+  order in every language. Put Standard bots before `# Rush Support Start` and
+  every Rush bot inside the final block ending at `# Rush Support End`.
+  Record withheld registrations in `SOLO_EXCLUSIONS`. Preserve resource provenance and
   intentional names. Use [the sync workflow](README.md#sync-the-mdpro4-solo-bots)
   when publishing to the game and companion Data checkouts.
 - Keep build, connection and launch instructions in [the README](README.md).

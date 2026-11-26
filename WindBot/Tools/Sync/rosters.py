@@ -15,6 +15,8 @@ DECK_ATTRIBUTE = re.compile(
 
 # Unfinished executors may still be launched by developers using an explicit Deck=.
 SOLO_EXCLUSIONS = {"RaiseMoon": "Unfinished executor"}
+RUSH_START = "# Rush Support Start"
+RUSH_END = "# Rush Support End"
 
 
 @dataclass(frozen=True)
@@ -120,6 +122,23 @@ def _read(path, raw=None):
     return Roster(path, raw, entries, before, encoding, bom, newline, text.endswith(("\n", "\r")))
 
 
+def _is_rush(entry):
+    return any(re.fullmatch(r"AI_RD[1-9]\d*", flag) for flag in entry.flags | {entry.arguments.get("random", "")})
+
+
+def _validate_sections(roster):
+    markers = []
+    for index, entry in enumerate(roster.entries.values()):
+        markers.extend((line.strip(), index) for line in entry.before if line.strip() in (RUSH_START, RUSH_END))
+    count = len(roster.entries)
+    markers.extend((line.strip(), count) for line in roster.tail if line.strip() in (RUSH_START, RUSH_END))
+    rush = [i for i, entry in enumerate(roster.entries.values()) if _is_rush(entry)]
+    if not (markers or rush):
+        return
+    if not rush or markers != [(RUSH_START, rush[0]), (RUSH_END, count)] or rush != list(range(rush[0], count)):
+        raise ValueError(f"{roster.path}: put all Rush bots between {RUSH_START} and {RUSH_END} at the end")
+
+
 def validate_rosters(windbot_root):
     """Read all canonical locales and verify menu parity and installed resources."""
     wrapper = windbot_root / "BotWrapper"
@@ -151,10 +170,13 @@ def validate_rosters(windbot_root):
                 key in english.entries for key in ("deck:" + name, "custom:" + name)):
             raise ValueError(f"{english.path}: playable executor {name} needs an English entry and translations")
     for roster in sources.values():
+        _validate_sections(roster)
         missing = sorted(english.entries.keys() - roster.entries.keys())
         extra = sorted(roster.entries.keys() - english.entries.keys())
         if missing or extra:
             raise ValueError(f"{roster.path}: menu differs from English; missing {missing}, extra {extra}")
+        if list(roster.entries) != list(english.entries):
+            raise ValueError(f"{roster.path}: menu order differs from English")
         for key, entry in roster.entries.items():
             reference = english.entries[key]
             if not entry.lines[2].strip():
@@ -184,40 +206,53 @@ def validate_rosters(windbot_root):
 
 
 def _merge(source, destination):
-    """Keep destination-only entries and annotations before their next shared entry."""
+    """Keep local entries with their format and preserve comments during upgrades."""
     notes = Counter(line for entry in source.entries.values() for line in entry.before if line.strip())
     notes.update(line for line in source.tail if line.strip())
-    pending = []
+    has_rush = any(line.strip() == RUSH_END for line in source.tail)
+    pending = {False: [], True: []}
     extras = {}
 
-    def keep_notes(lines):
+    def keep_notes(lines, output):
         for line in lines:
             if line.strip():
+                if has_rush and line.strip() in (RUSH_START, RUSH_END):
+                    continue
                 if notes[line] > 0:
                     notes[line] -= 1
                 else:
-                    pending.append(line)
+                    output.append(line)
 
     for key, entry in destination.entries.items():
-        keep_notes(entry.before)
+        group = has_rush and _is_rush(source.entries.get(key, entry))
+        keep_notes(entry.before, pending[group])
         if key in source.entries:
-            extras[key] = pending
-            pending = []
+            extras[key] = pending[group]
+            pending[group] = []
         elif entry.arguments.get("deck") not in SOLO_EXCLUSIONS and entry.arguments.get("deck") not in RENAMED_DECKS:
-            pending.extend(entry.lines)
-            pending.append("")
-    keep_notes(destination.tail)
+            pending[group].extend(entry.lines)
+            pending[group].append("")
+    footer = []
+    keep_notes(destination.tail, footer)
     lines = []
+
+    def add_notes(block):
+        for line in block:
+            if has_rush and line.strip() in (RUSH_START, RUSH_END):
+                lines.extend(pending[line.strip() == RUSH_END])
+            lines.append(line)
+
     for key, entry in source.entries.items():
-        lines.extend(entry.before)
+        add_notes(entry.before)
         lines.extend(extras.get(key, ()))
         lines.extend(entry.lines)
-    if pending:
+    if not has_rush and pending[False]:
         lines.append("")
-        if pending[-1] == "":
-            pending.pop()
-        lines.extend(pending)
-    lines.extend(source.tail)
+        lines.extend(pending[False])
+        if lines[-1] == "" and not footer:
+            lines.pop()
+    add_notes(source.tail)
+    lines.extend(footer)
     original = destination.raw[len(destination.bom):].decode(destination.encoding)
     if lines == original.splitlines():
         return destination.raw

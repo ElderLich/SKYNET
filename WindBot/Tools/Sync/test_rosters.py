@@ -109,6 +109,27 @@ class RosterSyncTests(unittest.TestCase):
         target.write_bytes(self.french.read_bytes() + stale.encode())
         self.assertNotIn(b"RaiseMoon", plan_rosters(self.root, [self.game])[target])
 
+    def test_rush_is_last_even_when_an_installed_roster_appended_extra_bots(self):
+        rd = entry("Rush", "Deck=Rush Dialog=Dialog.EN", "Rush deck", "AI_RD1")
+        (self.root / "Game/AI/Decks/RushExecutor.cs").write_text('[Deck("Rush","AI_Rush")]', encoding="utf-8")
+        (self.root / "Decks/AI_Rush.ydk").touch()
+        for path in (self.english, self.french):
+            with path.open("a", encoding="utf-8") as target:
+                target.write("\n# Rush Support Start\n" + rd + "\n# Rush Support End\n")
+        target = self.game / "locales/fr-FR/bot.conf"
+        trailing = entry("LocalStandard", "Deck=Local", "Extra") + entry("LocalRush", "Deck=LocalRush", "Extra", "AI_RD2")
+        target.write_bytes(self.french.read_bytes() + trailing.encode())
+        result = plan_rosters(self.root, [self.game])[target]
+        self.assertLess(result.index(b"!LocalStandard"), result.index(b"# Rush Support Start"))
+        self.assertLess(result.index(b"# Rush Support Start"), result.index(b"!LocalRush"))
+        self.assertTrue(result.rstrip().endswith(b"# Rush Support End"))
+        target.write_bytes(result)
+        self.assertEqual(result, plan_rosters(self.root, [self.game])[target])
+        with self.french.open("a", encoding="utf-8") as f:
+            f.write(entry("Outside", "Deck=Outside", "Misplaced"))
+        with self.assertRaisesRegex(ValueError, "Rush bots between"):
+            validate_rosters(self.root)
+
     def test_duplicate_key_or_incomplete_entry_is_rejected_before_writes(self):
         target = self.game / "locales/fr-FR/bot.conf"
         target.write_bytes((self.bakufr + self.bakufr).encode())
