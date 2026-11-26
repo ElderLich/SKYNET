@@ -74,6 +74,7 @@ function getRegressionCatalog(settings) {
         .map((current) => ({
             current,
             deck: current.deck,
+            format: current.format === 'rush' || oldBots.get(current.deck).format === 'rush' ? 'rush' : 'standard',
             old: oldBots.get(current.deck),
         }))
         .sort((left, right) => {
@@ -223,7 +224,7 @@ function buildRegressionMatchups(settings, requestedDecks) {
         .filter((item) => (
             requestedDeckSet
                 ? requestedDeckSet.has(item.deck)
-                : isBulkEligible(item.current)
+                : item.current.aiLevel !== 1 && item.format !== 'rush'
         ))
         .map((item) => item.deck);
     if (selectedDecks.length === 0) {
@@ -268,6 +269,7 @@ function buildChallengeMatchups(settings, targetDeckInput, requestedDecks, chall
     const targetDeck = targetCatalog.find((bot) => (
         requestedTargetDeck === `${bot.deck} — ${bot.label}`
     ))?.deck || requestedTargetDeck;
+    rejectRushDecks(targetCatalogByDeck, [targetDeck]);
     let opponentDecks;
     if (requestedDecks?.length) {
         opponentDecks = [...new Set(requestedDecks.map((deck) => deck.trim()))];
@@ -449,7 +451,7 @@ function inspectConfiguration(settings, selectedSrvpro = settings.srvpro || sett
                 aiLevel: item.current.aiLevel,
                 currentLabel: item.current.label,
                 deck: item.deck,
-                format: item.current.format,
+                format: item.format,
                 oldLabel: item.old.label,
             }));
             if (decks.length === 0) {

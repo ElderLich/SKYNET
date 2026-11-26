@@ -84,6 +84,19 @@ test('parseBotConfig marks Rush profiles and Standard challenge rejects them', (
     };
     const bots = parseBotConfig(settings.windbots.current.botConfText);
     assert.equal(bots.get('RushDragon').format, 'rush');
+    settings.windbots.old = {
+        ...settings.windbots.current,
+        host: 'windbot-old.lan',
+        botConfText: settings.windbots.current.botConfText.replace('AI_LV2', 'AI_RD2'),
+    };
+    const mixed = [...parseBotConfig(settings.windbots.old.botConfText).values()]
+        .find((entry) => entry.format === 'rush' && entry.deck !== 'RushDragon').deck;
+    assert.throws(() => buildRegressionMatchups(settings, ['RushDragon']), /Rush Duel/);
+    assert.throws(() => buildRegressionMatchups(settings, [mixed]), /Rush Duel/);
+    assert.ok(buildRegressionMatchups(settings).every((entry) => ![mixed, 'RushDragon'].includes(entry.label)));
+    assert.equal(inspectConfiguration(settings).decks.find((entry) => entry.deck === mixed).format, 'rush');
+    assert.throws(() => buildChallengeMatchups(settings, 'RushDragon', ['Dragon']), /Rush Duel/);
+    assert.throws(() => buildChallengeMatchups(settings, mixed, ['Dragon'], 'old'), /Rush Duel/);
     assert.deepEqual(buildChallengeMatchups(settings, 'ManualExecutor', []).map((item) => item.label), [
         'Dragon',
         'Deck With Spaces',
