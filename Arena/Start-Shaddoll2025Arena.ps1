@@ -4,6 +4,7 @@ param(
     [string[]]$OpponentDeck = @('Lightsworn'),
     [ValidateRange(1, 65535)]
     [int]$Port = 3000,
+    [string]$ServerRuntime = (Join-Path $PSScriptRoot 'Artifacts/arena-server-v2'),
     [switch]$SkipBuild,
     [switch]$SkipChecks,
     [switch]$PreflightOnly
@@ -16,139 +17,19 @@ $runtimeDirectory = Join-Path $windBotRoot 'bin\Release'
 $databaseSource = Join-Path $workspaceRoot 'DeckWorkshop\Data\standard\cards.cdb'
 $databaseDestination = Join-Path $runtimeDirectory 'cards.cdb'
 $botTool = Join-Path $windBotRoot 'Tools\bot_tool.py'
-$challengeTool = Join-Path $PSScriptRoot 'Tools\run_shaddoll2025_challenge.js'
+$challengeTool = Join-Path $PSScriptRoot 'Tools\Executors\Shaddoll2025\run_challenge.js'
 $serverTool = Join-Path $PSScriptRoot 'Tools\arena_server.py'
-$serverRuntime = Join-Path $PSScriptRoot 'Artifacts\arena-server-v2'
-$portablePython = Join-Path $PSScriptRoot 'Artifacts\tools\python313\python.exe'
+$serverRuntime = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ServerRuntime)
+$arenaLauncher = Join-Path $PSScriptRoot 'Start-SkynetArena.ps1'
 $arenaUrl = "http://127.0.0.1:$Port"
-$duelPort = 17911
-$managementPort = 17922
-
-function Invoke-CheckedCommand {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$FilePath,
-        [Parameter(Mandatory = $true)]
-        [string[]]$Arguments,
-        [Parameter(Mandatory = $true)]
-        [string]$FailureMessage
-    )
-    & $FilePath @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "$FailureMessage (exit code $LASTEXITCODE)"
-    }
-}
-
-function Test-ArenaReady {
-    try {
-        $system = Invoke-RestMethod "$arenaUrl/api/system" -TimeoutSec 2
-        return $system.endpoints.web -eq $arenaUrl
-    }
-    catch {
-        return $false
-    }
-}
-
-function Test-LocalTcpPort {
-    param([int]$TcpPort)
-    $client = [System.Net.Sockets.TcpClient]::new()
-    try {
-        $pending = $client.BeginConnect('127.0.0.1', $TcpPort, $null, $null)
-        if (-not $pending.AsyncWaitHandle.WaitOne(500)) {
-            return $false
-        }
-        $client.EndConnect($pending)
-        return $true
-    }
-    catch {
-        return $false
-    }
-    finally {
-        $client.Dispose()
-    }
-}
-
-function Start-DedicatedArenaServer {
-    if (Test-LocalTcpPort $managementPort) {
-        return
-    }
-    $manifest = Join-Path $serverRuntime 'skynet-server.json'
-    $credentials = Join-Path $serverRuntime 'config\admin_user.json'
-    if (-not (Test-Path -LiteralPath $manifest -PathType Leaf) -or
-        -not (Test-Path -LiteralPath $credentials -PathType Leaf)) {
-        throw "The prepared loopback duel server is missing: $serverRuntime"
-    }
-    if (-not (Test-Path -LiteralPath $portablePython -PathType Leaf)) {
-        throw "The prepared portable Python runtime is missing: $portablePython"
-    }
-
-    $lease = Join-Path $serverRuntime 'supervisor.lock'
-    if (Test-Path -LiteralPath $lease -PathType Leaf) {
-        $ownerId = 0
-        [void][int]::TryParse((Get-Content -LiteralPath $lease -Raw).Trim(), [ref]$ownerId)
-        if ($ownerId -gt 0 -and (Get-Process -Id $ownerId -ErrorAction SilentlyContinue)) {
-            throw "The dedicated-server supervisor process $ownerId exists but port $managementPort is unavailable. Close that console and retry."
-        }
-        Remove-Item -LiteralPath $lease -Force
-    }
-    $stopRequest = Join-Path $serverRuntime 'stop.request'
-    if (Test-Path -LiteralPath $stopRequest -PathType Leaf) {
-        Remove-Item -LiteralPath $stopRequest -Force
-    }
-
-    $nodePath = (Get-Command node -ErrorAction Stop).Source
-    Write-Host "Starting the loopback duel server on ports $duelPort/$managementPort ..."
-    Start-Process -FilePath $portablePython -WorkingDirectory $PSScriptRoot -WindowStyle Hidden -ArgumentList @(
-        ('"' + $serverTool + '"'), 'serve',
-        '--runtime-dir', ('"' + $serverRuntime + '"'),
-        '--node', ('"' + $nodePath + '"'),
-        '--minutes', '720'
-    )
-    for ($attempt = 0; $attempt -lt 120 -and -not (Test-LocalTcpPort $managementPort); $attempt++) {
-        Start-Sleep -Milliseconds 500
-    }
-    if (-not (Test-LocalTcpPort $managementPort)) {
-        throw "The dedicated duel server did not become ready on 127.0.0.1:$managementPort within 60 seconds."
-    }
-}
-
-function Set-LocalArenaSettings {
-    $credentialsPath = Join-Path $serverRuntime 'config\admin_user.json'
-    $credentials = Get-Content -LiteralPath $credentialsPath -Raw | ConvertFrom-Json
-    $password = $credentials.users.'skynet-local'.password
-    if ([string]::IsNullOrWhiteSpace($password)) {
-        throw 'The prepared duel-server credential is invalid.'
-    }
-
-    $public = Invoke-RestMethod "$arenaUrl/api/settings" -TimeoutSec 5
-    $settings = $public.settings
-    $settings.srvpros = @([pscustomobject]@{
-        duelPort = $duelPort
-        host = '127.0.0.1'
-        id = 'srvpro-1'
-        maxRooms = 2
-        name = 'Local Shaddoll Arena'
-        password = $password
-        roomsPerSecond = 1
-        statusPort = $managementPort
-        username = 'skynet-local'
-    })
-    $settings.windbots.current.mode = 'local'
-    $settings.windbots.current.port = 2399
-    $settings.windbots.current.runtimeDir = $runtimeDirectory
-    $settings.windbots.current.botConfPath = Join-Path $windBotRoot 'BotWrapper\bot.conf'
-    $body = $settings | ConvertTo-Json -Depth 20
-    [void](Invoke-RestMethod "$arenaUrl/api/settings" -Method Put -ContentType 'application/json' -Body $body -TimeoutSec 15)
-}
+$SkipArenaBuild = $false
+. (Join-Path $PSScriptRoot 'Tools/LocalArenaLauncher.ps1')
 
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
     throw 'Python 3 is required to build and check WindBot.'
 }
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
     throw 'Node.js is required to start Arena.'
-}
-if (-not (Test-Path -LiteralPath $databaseSource -PathType Leaf)) {
-    throw "The standard card database is missing: $databaseSource"
 }
 
 Push-Location -LiteralPath $workspaceRoot
@@ -160,7 +41,10 @@ try {
     if (-not (Test-Path -LiteralPath (Join-Path $runtimeDirectory 'WindBot.exe') -PathType Leaf)) {
         throw "WindBot Release runtime is missing: $runtimeDirectory"
     }
-    Copy-Item -LiteralPath $databaseSource -Destination $databaseDestination -Force
+    if (-not (Test-Path -LiteralPath $databaseDestination -PathType Leaf)) {
+        if (-not (Test-Path -LiteralPath $databaseSource -PathType Leaf)) { throw "Missing Standard database: $databaseSource" }
+        Copy-Item -LiteralPath $databaseSource -Destination $databaseDestination
+    }
 
     if (-not $SkipChecks) {
         $receiptRoot = Join-Path $workspaceRoot ('Artifacts\shaddoll-2025-launcher-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -168,7 +52,7 @@ try {
         Invoke-CheckedCommand python @(
             $botTool, 'check', '--suite', 'runtime',
             '--configuration', 'Release',
-            '--database', $databaseSource,
+            '--database', $databaseDestination,
             '--deck', (Join-Path $windBotRoot 'Decks\AI_Shaddoll2025.ydk'),
             '--registration', 'Shaddoll2025',
             '--output', (Join-Path $receiptRoot 'runtime')
@@ -176,7 +60,7 @@ try {
         Invoke-CheckedCommand python @(
             $botTool, 'check', '--suite', 'shaddoll-2025',
             '--configuration', 'Release',
-            '--database', $databaseSource,
+            '--database', $databaseDestination,
             '--deck', (Join-Path $windBotRoot 'Decks\AI_Shaddoll2025.ydk'),
             '--output', (Join-Path $receiptRoot 'focused')
         ) 'Shaddoll focused checks failed'
@@ -186,32 +70,23 @@ finally {
     Pop-Location
 }
 
-Start-DedicatedArenaServer
-
-if (-not (Test-ArenaReady)) {
-    Write-Host "Starting Arena in a separate console at $arenaUrl ..."
-    $arenaLauncher = Join-Path $PSScriptRoot 'Start-SkynetArena.ps1'
-    $launcherArguments = @(
-        '-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass',
-        '-File', ('"' + $arenaLauncher + '"'),
-        '-Port', [string]$Port,
-        '-InstallDependencies', '-Build', '-OpenBrowser'
-    )
-    Start-Process -FilePath 'powershell.exe' -ArgumentList $launcherArguments -WindowStyle Normal
-    for ($attempt = 0; $attempt -lt 120 -and -not (Test-ArenaReady); $attempt++) {
-        Start-Sleep -Milliseconds 500
-    }
-    if (-not (Test-ArenaReady)) {
-        throw "Arena did not become ready within 60 seconds: $arenaUrl"
-    }
+Start-ArenaIfNeeded
+$public = Invoke-RestMethod "$arenaUrl/api/settings" -TimeoutSec 5
+$settings = $public.settings
+$current = $settings.windbots.current
+if ($current.mode -ne 'local' -or -not $current.runtimeDir -or -not $current.botConfPath -or
+    [IO.Path]::GetFullPath($current.runtimeDir) -ne [IO.Path]::GetFullPath($runtimeDirectory) -or
+    [IO.Path]::GetFullPath($current.botConfPath) -ne [IO.Path]::GetFullPath((Join-Path $windBotRoot 'BotWrapper/bot.conf'))) {
+    throw "Select the workspace Release WindBot and its BotWrapper/bot.conf as the candidate in Arena to run the checked Shaddoll build."
 }
-
-Write-Host 'Applying the prepared local duel-server and WindBot settings...'
-Set-LocalArenaSettings
+$server = Start-DedicatedArenaServer
+$serverId = Set-PreparedServerSettings $settings $server
+Save-LocalArenaSettings $public
+Start-Process $arenaUrl
 
 $challengeArguments = @(
     $challengeTool,
-    '--url', $arenaUrl,
+    '--url', $arenaUrl, '--srvpro', $serverId,
     '--games', [string]$GamesPerOpponent
 )
 foreach ($deck in $OpponentDeck) {
