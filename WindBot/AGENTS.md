@@ -24,6 +24,11 @@ executors remain supported and do not need wholesale rewrites for narrow fixes.
   valid. Query remaining own-deck cards with `HasInDeck`/`GetCardCountInDeck`.
 - Use the server's offered cards and response indices. Respect selection bounds,
   cancellation, chain activation/resolution context, and per-duel reset events.
+- For Rush decks, use English card identifiers from the matching card ID in
+  `DeckWorkshop/Data/rush/cards.cdb` and write comments in English. Alternate
+  printings can delegate to the original card in their Rush Lua script. Keep
+  shared Rush decisions in `Game/AI/RushExecutor.cs` and run the cross-deck
+  [Rush checks](Guides/DeckReference.md#rush-duel) when changing them.
 - Keep protocol parsing and shared client state in their existing owners.
 - Follow the enclosing workspace's C# 6, four-space/Allman, and UTF-8/CRLF rules.
 - New core source requires explicit project inclusion. Deck executors, enum
